@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>업무 관리 워크보드</title>
+<title>업무 관리 대시보드</title>
 <style>
 /* Layout: 상단 요약 스트립 → 프로젝트 탭 + 필터 바 → 목록/보드/파트 현황 3개 뷰. 표 중심의 운영 툴
    토큰: 알닷 운영툴 디자인 시스템(alddot-design-system/DESIGN.md) 값. 라이트 테마만 있어요. */
@@ -461,6 +461,26 @@ a.rms:hover{text-decoration:underline}
 .f .nfItem input{width:16px;height:16px;flex:none;margin:2px 0 0;accent-color:var(--accent-dark)}
 .nfItem>span{display:flex;flex-direction:column}
 .nfName{font-weight:600}
+/* 프로필 사진 (원형) */
+.avatar{border-radius:50%;object-fit:cover;flex:none;display:inline-block;vertical-align:middle;background:var(--sunk);max-width:none}
+#pfAvatar{flex:none;line-height:0}
+.avatarInit{display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);border:1px solid var(--line)}
+.f.pfPhoto{flex-direction:row;align-items:center;gap:14px}
+.pfPhotoBtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pfPhotoBtns .hint{flex-basis:100%}
+/* 동기화 상태 · 접속자 */
+.syncBox{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;min-width:0}
+.syncDot{width:7px;height:7px;border-radius:50%;background:var(--ok-strong);flex:none}
+.syncBox[data-state=saving]>.syncDot{background:var(--warn-strong)}
+.syncBox[data-state=offline]>.syncDot{background:var(--bad-strong)}
+.syncBox[data-state=offline] .syncText{color:var(--bad);font-weight:600}
+.syncBox .btn{padding:4px 8px;font-size:12px}
+.onlineWrap{position:relative}
+.onlineList{position:absolute;right:0;top:calc(100% + 4px);z-index:15;min-width:220px;display:flex;flex-direction:column;gap:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-3);font-size:13px;color:var(--fg)}
+.onlineItem{display:flex;align-items:center;gap:8px}
+.onlineItem .legend{margin-left:auto;white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){.syncBox[data-state=saving]>.syncDot{animation:wbPulse .9s ease-in-out infinite}}
+@keyframes wbPulse{50%{opacity:.35}}
 </style>
 </head>
 <body>
@@ -470,7 +490,7 @@ a.rms:hover{text-decoration:underline}
   <div class="top">
     <div class="brand" id="brand">
       <div class="brandView" id="brandView">
-        <h1><span id="siteTitle">파견 워크보드</span><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목과 설명 편집">✎ 편집</button></h1>
+        <h1><span id="siteTitle">업무 관리 대시보드</span><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목과 설명 편집">✎ 편집</button></h1>
         <p id="siteSub">프로젝트 · 파트별 요청과 진행 현황을 한곳에서</p>
       </div>
       <form class="brandEdit" id="brandEdit" hidden novalidate>
@@ -591,11 +611,14 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
     const code=e?.code==='42501'||e?.code==='P0002'||/row-level security|not_found|permission/i.test(m)?'invalid_argument':/too large|payload/i.test(m)?'quota_exceeded':'unavailable';
     return Object.assign(new Error(m),{code});};
   const fire=c=>subs[c]?.forEach(f=>f());
+  // 동기화 상태: 저장 중인 쓰기 수, 마지막으로 서버와 맞춘 시각, 지금 접속 중인 사람
+  const sync={pending:0,last:null,online:[]}, openedAt=new Date().toISOString();
+  const touch=()=>{sync.last=new Date();drawSync();};
   function load(c,force){
     if(!loading[c]||force)loading[c]=(async()=>{
       const m=new Map();
       for(let f=0;;f+=1000){const {data,error}=await sb.from('wb_docs').select('id,data').eq('coll',c).range(f,f+999);if(error)throw toErr(error);data.forEach(r=>m.set(r.id,r.data));if(data.length<1000)break;}
-      cache[c]=m;fire(c);
+      cache[c]=m;fire(c);touch();
     })().catch(e=>{delete loading[c];throw e;});
     return loading[c];
   }
@@ -612,12 +635,15 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
     if(op==='update'&&prev===undefined)throw toErr({code:'P0002',message:'not_found'});
     // 내 변경은 바로 화면에 보이고, 서버가 거절하면 되돌림
     if(op==='delete')m.delete(id);else m.set(id,op==='update'?merge(prev,d):d);fire(c);
-    let r;
-    if(op==='add')r=await sb.from('wb_docs').insert({coll:c,id,data:d});
-    else if(op==='set')r=await sb.from('wb_docs').upsert({coll:c,id,data:d});
-    else if(op==='update')r=await sb.rpc('wb_patch',{p_coll:c,p_id:id,p_patch:d});
-    else{r=await sb.from('wb_docs').delete().eq('coll',c).eq('id',id).select('id');if(!r.error&&!r.data?.length&&prev!==undefined)r={error:{code:'42501',message:'permission'}};}
-    if(r.error){if(prev===undefined)m.delete(id);else m.set(id,prev);fire(c);throw toErr(r.error);}
+    let r;sync.pending++;drawSync();
+    try{
+      if(op==='add')r=await sb.from('wb_docs').insert({coll:c,id,data:d});
+      else if(op==='set')r=await sb.from('wb_docs').upsert({coll:c,id,data:d});
+      else if(op==='update')r=await sb.rpc('wb_patch',{p_coll:c,p_id:id,p_patch:d});
+      else{r=await sb.from('wb_docs').delete().eq('coll',c).eq('id',id).select('id');if(!r.error&&!r.data?.length&&prev!==undefined)r={error:{code:'42501',message:'permission'}};}
+    }catch(e){r={error:e};}finally{sync.pending--;}
+    if(r.error){if(prev===undefined)m.delete(id);else m.set(id,prev);fire(c);drawSync();throw toErr(r.error);}
+    touch();
   }
   const docRef=(c,id)=>({id,path:c+'/'+id,
     get:async()=>{await load(c);const d=cache[c].get(id);return {id,exists:!!d,data:()=>d};},
@@ -635,13 +661,20 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   let netDown=false, wasUp=false;
   const setNet=msg=>{const b=document.getElementById('banner');if(!b)return;
     if(msg){b.textContent=msg;b.hidden=false;b.dataset.net='1';}else if(b.dataset.net){b.hidden=true;delete b.dataset.net;}};
+  // 접속자 현황: Realtime presence에 내 이름과 접속 시각을 올리고, 모두의 목록을 받음
+  let ch=null, chUp=false, trackedName='';
+  function trackMe(){const m=memberOf(me?.id);if(!ch||!chUp||!m)return;trackedName=m.name||'';ch.track({name:trackedName,since:openedAt});}
   function startRealtime(){
-    sb.channel('wb-docs').on('postgres_changes',{event:'*',schema:'public',table:'wb_docs'},p=>{
+    ch=sb.channel('wb-docs',{config:{presence:{key:me.id}}});
+    ch.on('postgres_changes',{event:'*',schema:'public',table:'wb_docs'},p=>{
       const row=p.eventType==='DELETE'?p.old:p.new, c=row?.coll;if(!c||!cache[c])return;
-      if(p.eventType==='DELETE')cache[c].delete(row.id);else cache[c].set(row.id,row.data);fire(c);
+      if(p.eventType==='DELETE')cache[c].delete(row.id);else cache[c].set(row.id,row.data);fire(c);touch();
+      if(c==='members'&&memberOf(me.id)&&memberOf(me.id).name!==trackedName)trackMe();
+    }).on('presence',{event:'sync'},()=>{
+      sync.online=Object.entries(ch.presenceState()).map(([uid,metas])=>({uid,name:metas[0]?.name||'',since:metas.map(x=>x.since).filter(Boolean).sort()[0]||''}));drawSync();
     }).subscribe(st=>{
-      if(st==='SUBSCRIBED'){if(wasUp)Object.keys(loading).forEach(c=>load(c,true).catch(()=>{}));wasUp=true;netDown=false;setNet('');}
-      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){netDown=true;setNet('실시간 연결이 끊겼어요. 다시 연결하는 동안 1분마다 새로 받아 와요.');}
+      if(st==='SUBSCRIBED'){if(wasUp)Object.keys(loading).forEach(c=>load(c,true).catch(()=>{}));wasUp=true;chUp=true;netDown=false;setNet('');touch();trackMe();}
+      else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'||st==='CLOSED'){chUp=false;netDown=true;setNet('실시간 연결이 끊겼어요. 다시 연결하는 동안 1분마다 새로 받아 와요.');drawSync();}
     });
     setInterval(()=>{if(netDown)Object.keys(loading).forEach(c=>load(c,true).catch(()=>{}));},60000);
   }
@@ -666,7 +699,7 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   /* ---------- 로그인 화면 (메일로 받은 6자리 코드) ---------- */
   // 링크 대신 코드를 쓰는 이유: 회사 메일 보안 검사가 로그인 링크를 미리 열어 버려 링크가 무효가 되는 경우가 있어서
   const gate=document.createElement('div');gate.id='authGate';document.body.appendChild(gate);
-  const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 워크보드</h1>${html}</div>`;gate.hidden=false;};
+  const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 대시보드</h1>${html}</div>`;gate.hidden=false;};
   const $g=s=>gate.querySelector(s);
   function emailStep(msg){
     card(`<p>회사 메일(@${escH(STAFF_DOMAIN)})로 로그인해 주세요. 메일로 받은 코드를 넣으면 들어갈 수 있어요.</p>
@@ -728,7 +761,32 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
       catch(err){$g('#gNew').disabled=false;$g('#gErr').textContent='등록하지 못했어요. 잠시 후 다시 시도해 주세요.';}});
   }
 
-  function finish(){gate.hidden=true;gate.innerHTML='';Object.assign(caps,{db,user,downloads});readyRes();}
+  function finish(){gate.hidden=true;gate.innerHTML='';Object.assign(caps,{db,user,downloads});readyRes();trackMe();drawSync();}
+
+  /* ---------- 화면 위 동기화 상태 · 접속자 ---------- */
+  const hm=d=>d.toTimeString().slice(0,8);
+  function drawSync(){
+    let box=document.getElementById('syncBox');
+    if(!box){
+      const row=document.querySelector('.modeRow');if(!row)return;
+      box=document.createElement('div');box.id='syncBox';box.className='syncBox';
+      box.innerHTML=`<span class="syncDot"></span><span class="syncText" id="syncText"></span>
+        <button class="btn ghost" type="button" id="syncNow" title="서버에서 전부 다시 받아 와요">지금 동기화</button>
+        <div class="onlineWrap"><button class="btn ghost" type="button" id="onlineBtn" aria-expanded="false" aria-controls="onlineList"></button><div class="onlineList" id="onlineList" hidden></div></div>`;
+      row.insertBefore(box,document.getElementById('btnProfile'));
+      box.querySelector('#syncNow').onclick=()=>Promise.all(Object.keys(loading).map(c=>load(c,true))).catch(()=>{});
+      const btn=box.querySelector('#onlineBtn'),list=box.querySelector('#onlineList');
+      btn.onclick=()=>{list.hidden=!list.hidden;btn.setAttribute('aria-expanded',String(!list.hidden));};
+      document.addEventListener('click',e=>{if(!box.querySelector('.onlineWrap').contains(e.target)){list.hidden=true;btn.setAttribute('aria-expanded','false');}});
+    }
+    const st=sync.pending?'saving':netDown?'offline':'ok', t=sync.last?hm(sync.last):'—';
+    box.dataset.state=st;
+    box.querySelector('#syncText').textContent=st==='saving'?'저장 중…':st==='offline'?`연결 끊김 · 마지막 동기화 ${t}`:`저장됨 · 마지막 동기화 ${t}`;
+    const people=(sync.online.length?sync.online:me?[{uid:me.id,name:memberOf(me.id)?.name||'',since:openedAt}]:[])
+      .sort((a,b)=>(b.uid===me?.id)-(a.uid===me?.id)||(a.name||'').localeCompare(b.name||'','ko'));
+    box.querySelector('#onlineBtn').textContent=`접속 ${people.length}명`;
+    box.querySelector('#onlineList').innerHTML=`<b>지금 접속 중</b>`+people.map(p=>`<div class="onlineItem">${typeof avatarHtml==='function'?avatarHtml(memberOf(p.uid)||{name:p.name},22):'<span class="syncDot"></span>'}<span>${escH(p.name||'이름 등록 전')}${p.uid===me?.id?' (나)':''}</span><span class="legend">${p.since?escH(hm(new Date(p.since)).slice(0,5))+'부터':''}</span></div>`).join('');
+  }
   async function enter(session){
     me={id:session.user.id,email:(session.user.email||'').toLowerCase()};
     if(!me.email.endsWith('@'+STAFF_DOMAIN)){card(`<p>${escH(me.email)}은(는) 회사 메일이 아니라서 들어갈 수 없어요.</p><button class="btn" type="button" id="gOut">로그아웃</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
@@ -886,7 +944,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   $('#btnMembers').hidden=!adminUI();
-  $('#btnProfile').hidden=!window.wbAuth||!storeReady;$('#btnProfile').textContent=myMember()?`${myMember().name} · 내 프로필`:'내 프로필';
+  $('#btnProfile').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)} · 내 프로필</span>`:'내 프로필';
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
 }
 function render(){
@@ -1257,13 +1315,32 @@ function openTemplates(){
 
 /* ---------- 내 프로필 (서버 버전: 로그인한 본인이 직접 관리) ---------- */
 const adminUI=()=>!window.wbAuth||window.wbAuth.isAdmin;
+// 프로필 사진: 가운데를 정사각형으로 잘라 160px JPEG로 줄여 구성원 문서(avatar)에 저장하고, 화면에서는 원으로 보여 줌
+// ponytail: 사진을 문서에 바로 넣음(1장 약 10KB). 구성원이 수백 명이 되면 Supabase Storage로 옮길 것
+const AVATAR_RE=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+function avatarHtml(m,size=28){
+  const st=`width:${size}px;height:${size}px`;
+  return m?.avatar&&AVATAR_RE.test(m.avatar)?`<img class="avatar" src="${m.avatar}" alt="" style="${st}">`
+    :`<span class="avatar avatarInit" style="${st};font-size:${Math.round(size*.42)}px" aria-hidden="true">${esc((m?.name||'?').trim().slice(0,1)||'?')}</span>`;
+}
+async function toAvatar(file){
+  const img=await createImageBitmap(file);
+  const n=Math.min(img.width,img.height), c=document.createElement('canvas');c.width=c.height=160;
+  c.getContext('2d').drawImage(img,(img.width-n)/2,(img.height-n)/2,n,n,0,0,160,160);img.close?.();
+  return c.toDataURL('image/jpeg',.85);
+}
 function openProfile(){
   const m=myMember();if(!m){openWhoAmI();return;}
   const nf={task:true,comment:true,leave:true,digest:true,...(m.notify||{})};
+  let avatar=m.avatar||'';
   const NF=[['task','내 업무 변동','담당자로 지정됨, 내 업무의 상태·완료 일정·우선순위 변경'],['comment','내 업무 댓글','내가 담당하거나 요청한 업무에 달린 댓글'],['digest','아침 요약','평일 08:30 오늘·내일 마감과 지연된 내 업무'],['leave','내 휴가·투입 변동','다른 사람이 내 휴가나 투입 기록을 바꿨을 때']];
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="profForm" style="max-width:520px" novalidate>
     <header><h2>내 프로필</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body">
+      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,72)}</div><div class="pfPhotoBtns">
+        <button class="btn" type="button" id="pfPick">사진 바꾸기</button><button class="btn ghost" type="button" id="pfDel" ${avatar?'':'hidden'}>사진 지우기</button>
+        <input type="file" id="pfFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="프로필 사진 파일">
+        <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
       <div class="f full"><label>로그인 메일</label><span>${esc(window.wbAuth?.email||'')}</span><span class="hint">알림 메일은 이 주소로 가요.</span></div>
       <div class="f full"><label for="pfName">이름</label><input id="pfName" maxlength="20" value="${esc(m.name||'')}"></div>
       <div class="f"><label for="pfPart">파트</label><select id="pfPart">${PARTS.map(p=>`<option value="${esc(p.k)}" ${m.part===p.k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
@@ -1276,6 +1353,16 @@ function openProfile(){
   $('#xClose').onclick=$('#pfCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#pfOut').onclick=()=>window.wbAuth?.signOut();
+  const showAvatar=()=>{$('#pfAvatar').innerHTML=avatarHtml({...m,name:$('#pfName').value||m.name,avatar},72);$('#pfDel').hidden=!avatar;};
+  $('#pfPick').onclick=()=>$('#pfFile').click();
+  $('#pfFile').addEventListener('change',async e=>{
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    if(!/^image\/(jpeg|png|webp)$/.test(f.type)){$('#pfErr').textContent='JPG·PNG·WEBP 사진만 쓸 수 있어요.';return;}
+    if(f.size>15*1024*1024){$('#pfErr').textContent='15MB 이하 사진을 골라 주세요.';return;}
+    try{avatar=await toAvatar(f);$('#pfErr').textContent='';modalDirty=true;showAvatar();}
+    catch(err){$('#pfErr').textContent='사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.';}
+  });
+  $('#pfDel').onclick=()=>{avatar='';modalDirty=true;showAvatar();};
   $('#profForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const name=$('#pfName').value.trim();if(!name){$('#pfErr').textContent='이름을 입력해 주세요.';return;}
@@ -1283,7 +1370,7 @@ function openProfile(){
     const notify={};document.querySelectorAll('#profForm [data-nf]').forEach(c=>notify[c.dataset.nf]=c.checked);
     $('#pfSave').disabled=true;
     try{
-      await db.collection('members').doc(m.id).update({name,part:$('#pfPart').value,projectId:$('#pfProj').value,notify});
+      await db.collection('members').doc(m.id).update({name,part:$('#pfPart').value,projectId:$('#pfProj').value,notify,...(avatar!==(m.avatar||'')?{avatar}:{})});
       if(m.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===m.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});
       logChange('member','update',m.id,name,{name:m.name,projectId:m.projectId||'',part:m.part||''},{name,projectId:$('#pfProj').value,part:$('#pfPart').value},'내 프로필');
       closeModal();toast('프로필을 저장했어요');render();
@@ -2095,7 +2182,7 @@ function dedupDoneNew(blocks){
 // 화면·텍스트·Markdown·CSV·엑셀 모두 같은 규칙 적용 (확정된 보고서도 보여줄 때 적용)
 function dedupModel(m){if(!m)return m;if(m.people){m={...m};delete m.people;}if(!m.projects)return m;return {...m,projects:m.projects.map(p=>({...p,parts:p.parts.map(pt=>({...pt,blocks:dedupDoneNew(pt.blocks)}))}))};}
 async function buildReportXlsx(ExcelJS,m,notes){
-  const wb=new ExcelJS.Workbook();wb.creator='업무 관리 워크보드';
+  const wb=new ExcelJS.Workbook();wb.creator='업무 관리 대시보드';
   const ws=wb.addWorksheet('주간보고',{views:[{showGridLines:false}],pageSetup:{paperSize:9,orientation:'portrait',fitToPage:true,fitToWidth:1,fitToHeight:0}});
   ws.columns=[{width:14},{width:13},{width:54},{width:42}];
   const FONT='맑은 고딕', thin={style:'thin',color:{argb:'FFD5DCE3'}}, box={top:thin,left:thin,bottom:thin,right:thin};
@@ -2380,7 +2467,7 @@ function openAssign(a,pid){
 }
 
 /* ---------- brand text (제목·설명 편집) ---------- */
-const SITE_DEFAULT={title:'파견 워크보드',subtitle:'프로젝트 · 파트별 요청과 진행 현황을 한곳에서'};
+const SITE_DEFAULT={title:'업무 관리 대시보드',subtitle:'프로젝트 · 파트별 요청과 진행 현황을 한곳에서'};
 let site={...SITE_DEFAULT};
 function renderBrand(){
   if(!$('#brandEdit').hidden)return;

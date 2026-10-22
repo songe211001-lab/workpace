@@ -478,8 +478,9 @@ a.rms:hover{text-decoration:underline}
 /* 선택 항목: --accent-dark 글자는 --accent-soft 위에서 대비 3.8이라 글자는 --fg, 강조는 아이콘 테두리로 */
 .navItem[aria-selected="true"]{background:var(--accent-soft);font-weight:700}
 .navItem:disabled{opacity:.45;cursor:not-allowed}
-.navItem .ico{width:22px;height:22px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:var(--r-sm);color:var(--ink-soft);font-size:11px;font-weight:700}
-.navItem[aria-selected="true"] .ico{border-color:var(--accent);color:var(--fg)}
+.navItem .ico{width:18px;height:18px;flex:none;color:var(--ink-soft)}
+.navItem:hover .ico{color:var(--fg)}
+.navItem[aria-selected="true"] .ico{color:var(--accent-dark)}
 /* 전체 접기: 아이콘만 보이는 좁은 폭. 접힌 섹션도 아이콘은 보여 줌 */
 .shell.fold .side{width:60px;padding-inline:8px}
 .shell.fold .side .brand,.shell.fold .secHead .lbl,.shell.fold .navItem .lbl{display:none}
@@ -539,30 +540,30 @@ a.rms:hover{text-decoration:underline}
       <section class="sideSec" data-sec="work">
         <button type="button" class="secHead" aria-expanded="true" aria-controls="sec-work"><span class="lbl">업무</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="secBody" id="sec-work">
-        <button type="button" role="tab" class="navItem" data-mode="tasks"><span class="ico" aria-hidden="true">업</span><span class="lbl">업무 관리</span></button>
-        <button type="button" role="tab" class="navItem" data-mode="staff"><span class="ico" aria-hidden="true">투</span><span class="lbl">투입 인력</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="tasks"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></svg><span class="lbl">업무 관리</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">투입 인력</span></button>
         </div>
       </section>
       <section class="sideSec" data-sec="time">
         <button type="button" class="secHead" aria-expanded="true" aria-controls="sec-time"><span class="lbl">근태</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="secBody" id="sec-time">
-        <button type="button" role="tab" class="navItem" data-mode="leave"><span class="ico" aria-hidden="true">휴</span><span class="lbl">휴가 관리</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">휴가 관리</span></button>
         </div>
       </section>
       <section class="sideSec" data-sec="report">
         <button type="button" class="secHead" aria-expanded="true" aria-controls="sec-report"><span class="lbl">보고</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="secBody" id="sec-report">
-        <button type="button" role="tab" class="navItem" data-mode="report"><span class="ico" aria-hidden="true">주</span><span class="lbl">주간 보고</span></button>
-        <button type="button" role="tab" class="navItem" data-mode="hours"><span class="ico" aria-hidden="true">시</span><span class="lbl">업무 시간</span></button>
-        <button type="button" role="tab" class="navItem" data-mode="history" id="tabHistory" hidden><span class="ico" aria-hidden="true">이</span><span class="lbl">변경 이력</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="lbl">주간 보고</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="hours"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">업무 시간</span></button>
+        <button type="button" role="tab" class="navItem" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button>
         </div>
       </section>
       <section class="sideSec" data-sec="admin" id="secAdmin">
         <button type="button" class="secHead" aria-expanded="true" aria-controls="sec-admin"><span class="lbl">관리</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="secBody" id="sec-admin">
-        <button type="button" class="navItem" id="btnProjects"><span class="ico" aria-hidden="true">프</span><span class="lbl">프로젝트 관리</span></button>
-        <button type="button" class="navItem" id="btnParts"><span class="ico" aria-hidden="true">파</span><span class="lbl">파트 관리</span></button>
-        <button type="button" class="navItem" id="btnMembers"><span class="ico" aria-hidden="true">구</span><span class="lbl">구성원 관리</span></button>
+        <button type="button" class="navItem" id="btnProjects"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">프로젝트 관리</span></button>
+        <button type="button" class="navItem" id="btnParts"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span class="lbl">파트 관리</span></button>
+        <button type="button" class="navItem" id="btnMembers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span class="lbl">구성원 관리</span></button>
         </div>
       </section>
     </nav>

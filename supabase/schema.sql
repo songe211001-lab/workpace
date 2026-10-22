@@ -1,7 +1,7 @@
 -- ════════════════════════════════════════════════════════════
 -- 업무 관리 대시보드 · Supabase 스키마 (회사 메일 로그인 + 변경 알림 메일)
 -- 대시보드 > SQL Editor에 통째로 붙여넣고 Run 하세요. 여러 번 실행해도 됩니다.
--- 회사 메일 도메인은 아래 'medialog.co.kr' 두 곳(wb_is_staff, wb_before_user_created)과 index.html의 STAFF_DOMAIN을 함께 바꾸세요.
+-- 로그인할 수 있는 메일 도메인(본사·협력사)은 wb_is_staff, wb_before_user_created 두 곳과 index.html의 STAFF_DOMAINS를 함께 바꾸세요.
 -- ════════════════════════════════════════════════════════════
 
 create extension if not exists pg_cron;
@@ -56,7 +56,7 @@ create trigger wb_docs_touch before insert or update on public.wb_docs
 -- 회사 메일로 로그인한 사람만 '직원'
 create or replace function public.wb_is_staff()
 returns boolean language sql stable as $$
-  select coalesce(lower(auth.jwt()->>'email'), '') like '%@medialog.co.kr';
+  select split_part(lower(coalesce(auth.jwt()->>'email', '')), '@', 2) in ('medialog.co.kr', 'medialogpartners.co.kr');
 $$;
 
 create or replace function public.wb_is_admin()
@@ -306,7 +306,7 @@ grant execute on function public.wb_take_outbox(), public.wb_mark_outbox(bigint[
 create or replace function public.wb_before_user_created(event jsonb)
 returns jsonb language plpgsql as $$
 begin
-  if lower(coalesce(event->'user'->>'email', '')) like '%@medialog.co.kr' then return '{}'::jsonb; end if;
+  if split_part(lower(coalesce(event->'user'->>'email', '')), '@', 2) in ('medialog.co.kr', 'medialogpartners.co.kr') then return '{}'::jsonb; end if;
   return jsonb_build_object('error', jsonb_build_object('http_code', 403, 'message', '회사 메일로만 가입할 수 있어요.'));
 end $$;
 revoke execute on function public.wb_before_user_created(jsonb) from public, anon, authenticated;

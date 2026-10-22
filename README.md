@@ -49,7 +49,7 @@ Claude 아티팩트로 만들던 대시보드를 **GitHub Pages + Supabase**로 
 ### 1. Supabase 프로젝트
 1. supabase.com에서 새 프로젝트를 만들어요(Region: Northeast Asia (Seoul) 추천).
 2. SQL Editor에 `supabase/schema.sql`을 통째로 붙여 Run 해요. 여러 번 실행해도 돼요.
-   - 회사 메일 도메인이 `medialog.co.kr`이 아니면 schema.sql 두 곳과 `index.html`의 `STAFF_DOMAIN`을 함께 바꿔요.
+   - 로그인할 수 있는 도메인은 지금 `medialog.co.kr`(본사)과 `medialogpartners.co.kr`(협력사)이에요. 바꾸거나 더하려면 schema.sql 두 곳(`wb_is_staff`, `wb_before_user_created`)과 `index.html`의 `STAFF_DOMAINS`를 함께 바꿔요.
 3. 예약 작업이 쓸 값 두 개를 Vault에 넣어요(SQL Editor).
    ```sql
    select vault.create_secret('https://<프로젝트 ref>.supabase.co', 'wb_project_url');

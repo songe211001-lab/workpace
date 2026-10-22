@@ -604,7 +604,10 @@ a.rms:hover{text-decoration:underline}
    ════════════════════════════════════════════════════════════ */
 const SUPABASE_URL='https://jhokhugxglsmszwteudj.supabase.co';       // Settings > API > Project URL
 const SUPABASE_ANON_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impob2todWd4Z2xzbXN6d3RldWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI2MDgzOTAsImV4cCI6MjEwODE4NDM5MH0.-ilDtBfuG3ZM6j3GFQ7eS17EOu7mELU2Fey6zUk1_UE';  // Settings > API > anon public 키 (service_role 키는 절대 넣지 마세요)
-const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 도메인 (schema.sql과 같게)
+// 로그인할 수 있는 메일 도메인: 본사와 협력사 (schema.sql의 wb_is_staff·wb_before_user_created와 같게)
+const STAFF_DOMAINS=['medialog.co.kr','medialogpartners.co.kr'];
+const isStaffEmail=e=>STAFF_DOMAINS.some(d=>String(e||'').toLowerCase().endsWith('@'+d));
+const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
 
 (()=>{
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase)return; // 설정 전에는 화면이 '저장소에 연결되지 않아…' 안내를 띄움
@@ -718,13 +721,13 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 대시보드</h1>${html}</div>`;gate.hidden=false;};
   const $g=s=>gate.querySelector(s);
   function emailStep(msg){
-    card(`<p>회사 메일(@${escH(STAFF_DOMAIN)})로 로그인해 주세요. 메일로 받은 코드를 넣으면 들어갈 수 있어요.</p>
-      <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAIN)}" value="${escH(localStorage.getItem('wb-email')||'')}">
+    card(`<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})로 로그인해 주세요. 메일로 받은 코드를 넣으면 들어갈 수 있어요.</p>
+      <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(localStorage.getItem('wb-email')||'')}">
       <button class="btn primary" type="submit" id="gSend">인증 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`);
     $g('#gEmail').focus();
     $g('#gEmailF').addEventListener('submit',async e=>{e.preventDefault();
       const email=$g('#gEmail').value.trim().toLowerCase();
-      if(!email.endsWith('@'+STAFF_DOMAIN)){$g('#gErr').textContent=`@${STAFF_DOMAIN} 메일만 쓸 수 있어요.`;return;}
+      if(!isStaffEmail(email)){$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return;}
       $g('#gSend').disabled=true;$g('#gErr').textContent='';
       const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
       if(error){$g('#gSend').disabled=false;$g('#gErr').textContent=error.status===429||/rate|security purposes/i.test(error.message)?'잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.':isNetErr(error)?PAUSED_HINT:error.message;return;}
@@ -805,7 +808,7 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   }
   async function enter(session){
     me={id:session.user.id,email:(session.user.email||'').toLowerCase()};
-    if(!me.email.endsWith('@'+STAFF_DOMAIN)){card(`<p>${escH(me.email)}은(는) 회사 메일이 아니라서 들어갈 수 없어요.</p><button class="btn" type="button" id="gOut">로그아웃</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
+    if(!isStaffEmail(me.email)){card(`<p>${escH(me.email)}은(는) 회사 메일이 아니라서 들어갈 수 없어요.</p><button class="btn" type="button" id="gOut">로그아웃</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
     try{
       const {data}=await sb.rpc('wb_is_admin');isAdmin=data===true;
       await Promise.all(['members','projects','parts'].map(c=>load(c)));
@@ -1968,8 +1971,8 @@ function openMembers(){
     e.preventDefault();
     const rows=[...$('#mlist').querySelectorAll('.prow')].map(r=>({id:r.dataset.id,name:r.querySelector('.mName').value.trim(),email:r.querySelector('.mEmail').value.trim().toLowerCase(),projectId:r.querySelector('.mProj').value,part:r.querySelector('.mPart').value,q:r.querySelector('.mQuota').value})).filter(r=>r.name);
     const names=rows.map(r=>r.name);if(new Set(names).size!==names.length){$('#mErr').textContent='같은 이름이 있습니다. 동명이인은 이름 뒤에 구분을 붙여 주세요.';return;}
-    const dom=typeof STAFF_DOMAIN==='string'?'@'+STAFF_DOMAIN:'';
-    const badMail=rows.find(r=>r.email&&(!/^[^\s@]+@[^\s@]+$/.test(r.email)||(dom&&!r.email.endsWith(dom))));if(badMail){$('#mErr').textContent=`${badMail.name}의 메일을 확인해 주세요.${dom?` (${dom} 주소만)`:''}`;return;}
+    const staffOk=typeof isStaffEmail==='function'?isStaffEmail:()=>true;
+    const badMail=rows.find(r=>r.email&&(!/^[^\s@]+@[^\s@]+$/.test(r.email)||!staffOk(r.email)));if(badMail){$('#mErr').textContent=`${badMail.name}의 메일을 확인해 주세요.${typeof STAFF_DOMAIN_TEXT==='string'?` (${STAFF_DOMAIN_TEXT} 주소만)`:''}`;return;}
     const mails=rows.map(r=>r.email).filter(Boolean);if(new Set(mails).size!==mails.length){$('#mErr').textContent='같은 메일이 두 번 들어갔어요.';return;}
     $('#mSave').disabled=true;
     try{

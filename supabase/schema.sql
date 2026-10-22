@@ -1,5 +1,5 @@
 -- ════════════════════════════════════════════════════════════
--- 업무 관리 워크보드 · Supabase 스키마 (회사 메일 로그인 + 변경 알림 메일)
+-- 업무 관리 대시보드 · Supabase 스키마 (회사 메일 로그인 + 변경 알림 메일)
 -- 대시보드 > SQL Editor에 통째로 붙여넣고 Run 하세요. 여러 번 실행해도 됩니다.
 -- 회사 메일 도메인은 아래 'medialog.co.kr' 두 곳(wb_is_staff, wb_before_user_created)과 index.html의 STAFF_DOMAIN을 함께 바꾸세요.
 -- ════════════════════════════════════════════════════════════
@@ -70,7 +70,9 @@ create or replace function public.wb_can_write(p_coll text, p_data jsonb)
 returns boolean language sql stable as $$
   select public.wb_is_staff() and (public.wb_is_admin() or case
     when p_coll in ('projects', 'parts', 'settings') then false
+    -- 구성원: 본인 것 또는 아직 아무도 연결 안 한 것만. 관리자가 메일을 적어 둔 구성원은 그 메일로 로그인한 사람만
     when p_coll = 'members'  then coalesce(p_data->>'userId', '') in ('', auth.uid()::text)
+                              and coalesce(p_data->>'email', '') in ('', lower(coalesce(auth.jwt()->>'email', '')))
     when p_coll = 'comments' then p_data->>'by' = auth.uid()::text
     when p_coll = 'history'  then false
     else true end);

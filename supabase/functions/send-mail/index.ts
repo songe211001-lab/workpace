@@ -1,4 +1,4 @@
-// 업무 관리 워크보드 · 알림 메일 보내기
+// 업무 관리 대시보드 · 알림 메일 보내기
 // pg_cron이 1분마다(보낼 메일이 있을 때만) 호출합니다. 대기열(wb_outbox)에서 2분 지난 알림을 꺼내
 // 받는 사람별로 한 통에 묶어 회사 SMTP로 보냅니다.
 // 배포: supabase functions deploy send-mail --no-verify-jwt  (호출은 x-cron-secret 헤더를 Vault 값과 비교해 확인)
@@ -18,18 +18,18 @@ const KIND: Record<string, string> = { task: "내 업무", comment: "댓글", le
 
 function compose(name: string, rows: Row[], appUrl: string) {
   const onlyDigest = rows.every((r) => r.kind === "digest");
-  const subject = onlyDigest ? "[워크보드] 오늘의 마감·지연 업무" : `[워크보드] 변경 알림 ${rows.length}건`;
+  const subject = onlyDigest ? "[업무 관리 대시보드] 오늘의 마감·지연 업무" : `[업무 관리 대시보드] 변경 알림 ${rows.length}건`;
   const groups = Object.keys(KIND).map((k) => [k, rows.filter((r) => r.kind === k)] as const).filter(([, l]) => l.length);
   const lines = (r: Row) => r.line.split("\n");
-  const text = `${name}님, 워크보드 알림이에요.\n\n` +
+  const text = `${name}님, 대시보드 알림이에요.\n\n` +
     groups.map(([k, l]) => `■ ${KIND[k]}\n` + l.flatMap(lines).map((s) => `- ${s}`).join("\n")).join("\n\n") +
-    `\n\n워크보드 열기: ${appUrl}\n알림은 워크보드의 '내 프로필'에서 끌 수 있어요.`;
+    `\n\n대시보드 열기: ${appUrl}\n알림은 대시보드의 '내 프로필'에서 끌 수 있어요.`;
   const html = `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;color:#141f2c;line-height:1.6">
-    <p>${esc(name)}님, 워크보드 알림이에요.</p>
+    <p>${esc(name)}님, 대시보드 알림이에요.</p>
     ${groups.map(([k, l]) => `<p style="margin:16px 0 4px;font-weight:700">${KIND[k]}</p><ul style="margin:0;padding-left:20px">${
       l.flatMap(lines).map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`).join("")}
-    <p style="margin-top:20px"><a href="${esc(appUrl)}" style="color:#d74844;font-weight:700">워크보드 열기</a></p>
-    <p style="color:#4b5765;font-size:12px">알림은 워크보드의 '내 프로필'에서 끌 수 있어요.</p></div>`;
+    <p style="margin-top:20px"><a href="${esc(appUrl)}" style="color:#d74844;font-weight:700">대시보드 열기</a></p>
+    <p style="color:#4b5765;font-size:12px">알림은 대시보드의 '내 프로필'에서 끌 수 있어요.</p></div>`;
   return { subject, text, html };
 }
 

@@ -1,6 +1,6 @@
-# 업무 관리 워크보드 · 서버 버전
+# 업무 관리 대시보드 · 서버 버전
 
-Claude 아티팩트로 만들던 워크보드를 **GitHub Pages + Supabase**로 옮긴 버전이에요. 회사 메일로 로그인하고, 처음 들어온 사람이 본인 프로필을 직접 등록하며, 내 업무·휴가가 바뀌면 메일로 알려 줘요.
+Claude 아티팩트로 만들던 대시보드를 **GitHub Pages + Supabase**로 옮긴 버전이에요. 회사 메일로 로그인하고, 처음 들어온 사람이 본인 프로필을 직접 등록하며, 내 업무·휴가가 바뀌면 메일로 알려 줘요.
 
 ## 파일
 
@@ -60,8 +60,8 @@ Claude 아티팩트로 만들던 워크보드를 **GitHub Pages + Supabase**로 
 1. **SMTP**: Authentication > Emails > SMTP Settings에서 회사 SMTP를 넣어요(호스트·포트·계정·비밀번호·보내는 주소). Supabase 기본 메일은 시간당 몇 통뿐이라 실제로는 못 써요.
 2. **메일 내용**: Authentication > Emails > Templates에서 **Confirm signup**(처음 가입하는 사람이 받는 메일)과 **Magic Link**(그다음부터 받는 메일) 두 개의 본문을 모두 코드가 보이게 바꿔요. 하나만 바꾸면 그 메일을 받는 사람에게는 숫자 대신 링크만 가요.
    ```html
-   <h2>워크보드 로그인 코드</h2>
-   <p>아래 코드를 워크보드 로그인 화면에 넣어 주세요. 1시간 동안 쓸 수 있어요.</p>
+   <h2>업무 관리 대시보드 로그인 코드</h2>
+   <p>아래 코드를 업무 관리 대시보드 로그인 화면에 넣어 주세요. 1시간 동안 쓸 수 있어요.</p>
    <p style="font-size:24px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
    ```
 3. **URL**: Authentication > URL Configuration의 Site URL에 GitHub Pages 주소를 넣어요.
@@ -77,7 +77,7 @@ supabase login
 supabase link --project-ref <프로젝트 ref>
 ```
 ```bash
-supabase secrets set SMTP_HOST=<회사 SMTP 주소> SMTP_PORT=465 SMTP_USER=<계정> SMTP_PASS=<비밀번호> MAIL_FROM="업무 워크보드 <보내는주소@medialog.co.kr>" APP_URL=<GitHub Pages 주소> CRON_SECRET=<Vault에 넣은 wb_cron_secret과 같은 값>
+supabase secrets set SMTP_HOST=<회사 SMTP 주소> SMTP_PORT=465 SMTP_USER=<계정> SMTP_PASS=<비밀번호> MAIL_FROM="업무 대시보드 <보내는주소@medialog.co.kr>" APP_URL=<GitHub Pages 주소> CRON_SECRET=<Vault에 넣은 wb_cron_secret과 같은 값>
 ```
 ```bash
 supabase functions deploy send-mail --no-verify-jwt

@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>업무 관리 대시보드</title>
+<meta name="description" content="프로젝트·파트별 업무, 휴가, 투입 인력, 주간 보고를 한곳에서 관리하는 팀 업무 관리 대시보드">
+<meta property="og:type" content="website">
+<meta property="og:title" content="업무 관리 대시보드">
+<meta property="og:description" content="프로젝트·파트별 업무, 휴가, 투입 인력, 주간 보고를 한곳에서. 회사 메일로 로그인해요.">
+<meta name="theme-color" content="#f6f8fa">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d74844'/%3E%3Cpath d='M8 11l2.5 2.5L15 9M8 20l2.5 2.5L15 18' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M18 11.5h6M18 20.5h6' stroke='white' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 /* Layout: 상단 요약 스트립 → 프로젝트 탭 + 필터 바 → 목록/보드/파트 현황 3개 뷰. 표 중심의 운영 툴
    토큰: 알닷 운영툴 디자인 시스템(alddot-design-system/DESIGN.md) 값. 라이트 테마만 있어요. */
@@ -424,14 +430,17 @@ a.rms:hover{text-decoration:underline}
 .pcSw{width:12px;height:12px;border-radius:3px;flex:none}
 .pcName{flex:1;min-width:0;border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:7px 9px}
 .pcUse{font-size:12px;color:var(--muted);white-space:nowrap}
-.mrowEdit,.mhead{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr) minmax(0,.9fr) 84px 52px;gap:8px;align-items:center}
+.mrowEdit,.mhead{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.8fr) 76px 52px;gap:8px;align-items:center}
 .mrowEdit .sel{width:100%;min-width:0}
 .mhead{font-size:11px;font-weight:600;color:var(--muted);padding:0 2px}
-@media (max-width:620px){.mhead{display:none}.mrowEdit{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding-bottom:10px;border-bottom:1px solid var(--line)}.mrowEdit .mName{grid-column:1/-1}}
+@media (max-width:620px){.mhead{display:none}.mrowEdit{grid-template-columns:minmax(0,1fr) minmax(0,1fr);padding-bottom:10px;border-bottom:1px solid var(--line)}.mrowEdit .mName,.mrowEdit .mEmail{grid-column:1/-1}}
 .toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--accent-fg);padding:12px 16px;border-radius:var(--r);font-size:13px;font-weight:600;box-shadow:var(--shadow-toast);z-index:30}
 @media (prefers-reduced-motion:no-preference){.card,.btn,.chip,.modes button,.ptab{transition:border-color .12s var(--ease),background .12s var(--ease),color .12s var(--ease)}}
 /* 좁은 화면: 첫 화면에 업무 목록이 보이도록 머리말·버튼·탭·요약을 줄임 */
 @media (max-width:600px){
+  .sLong,#syncNow{display:none}
+  .todayOff{flex-basis:100%}
+  .modeRow{gap:6px 10px}
   .brand h1{font-size:22px}
   .actions{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}
   .actions .btn{padding:6px 10px;font-size:12px}
@@ -600,6 +609,9 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
 (()=>{
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase)return; // 설정 전에는 화면이 '저장소에 연결되지 않아…' 안내를 띄움
   const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  // 서버에 닿지 않을 때(무료 플랜 일시 정지 등) 보여 줄 안내
+  const PAUSED_HINT='서버에 연결하지 못했어요. 무료 플랜 서버는 7일 동안 아무도 쓰지 않으면 잠시 멈춰요. 관리자에게 Supabase 대시보드에서 프로젝트를 다시 켜 달라고(Restore project) 알려 주세요.';
+  const isNetErr=e=>!e?.status&&/fetch|network|load failed|timeout/i.test(String(e?.message||e||''));
   const escH=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   /* ---------- 문서 저장소: 컬렉션별로 한 번 다 받아 두고 Realtime으로 갱신 ---------- */
@@ -715,7 +727,7 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
       if(!email.endsWith('@'+STAFF_DOMAIN)){$g('#gErr').textContent=`@${STAFF_DOMAIN} 메일만 쓸 수 있어요.`;return;}
       $g('#gSend').disabled=true;$g('#gErr').textContent='';
       const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
-      if(error){$g('#gSend').disabled=false;$g('#gErr').textContent=error.status===429||/rate|security purposes/i.test(error.message)?'잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.':error.message;return;}
+      if(error){$g('#gSend').disabled=false;$g('#gErr').textContent=error.status===429||/rate|security purposes/i.test(error.message)?'잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.':isNetErr(error)?PAUSED_HINT:error.message;return;}
       try{localStorage.setItem('wb-email',email);}catch(e){}
       codeStep(email);});
   }
@@ -740,11 +752,11 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   const NOTIFY_ON={task:true,comment:true,leave:true,digest:true};
   function profileStep(){
     const ms=[...cache.members||[]].map(([id,d])=>({id,...d}));
-    const free=ms.filter(m=>!m.userId).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
+    const free=ms.filter(m=>!m.userId&&(!m.email||m.email===me.email)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));
     const parts=cache.parts?.size?[...cache.parts].map(([id,d])=>[id,d.name||id,d.order??0]).sort((a,b)=>a[2]-b[2]):DEF_PARTS;
     const projs=[...cache.projects||[]].map(([id,d])=>[id,d.name||'',d.order??0]).sort((a,b)=>a[2]-b[2]);
     const opt=list=>list.map(([v,l])=>`<option value="${escH(v)}">${escH(l)}</option>`).join('');
-    card(`<p>처음 오셨네요. 워크보드에서 쓸 내 프로필을 등록해 주세요. 담당 업무·휴가·알림 메일이 이 프로필로 연결돼요.</p>
+    card(`<p>처음 오셨네요. 대시보드에서 쓸 내 프로필을 등록해 주세요. 담당 업무·휴가·알림 메일이 이 프로필로 연결돼요.</p>
       ${free.length?`<form id="gClaimF" class="gateForm" novalidate><label for="gClaim">이미 등록된 이름이 있으면 고르세요</label><select id="gClaim">${free.map(m=>`<option value="${escH(m.id)}">${escH(m.name)}</option>`).join('')}</select>
         <button class="btn" type="submit">이 이름으로 시작</button></form><div class="gateOr">또는 새로 등록</div>`:''}
       <form id="gNewF" class="gateForm" novalidate>
@@ -785,7 +797,7 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
     }
     const st=sync.pending?'saving':netDown?'offline':'ok', t=sync.last?hm(sync.last):'—';
     box.dataset.state=st;
-    box.querySelector('#syncText').textContent=st==='saving'?'저장 중…':st==='offline'?`연결 끊김 · 마지막 동기화 ${t}`:`저장됨 · 마지막 동기화 ${t}`;
+    box.querySelector('#syncText').innerHTML=st==='saving'?'저장 중…':st==='offline'?`연결 끊김<span class="sLong"> · 마지막 동기화</span> ${t}`:`<span class="sLong">저장됨 · 마지막 동기화 </span>${t}`;
     const people=(sync.online.length?sync.online:me?[{uid:me.id,name:memberOf(me.id)?.name||'',since:openedAt}]:[])
       .sort((a,b)=>(b.uid===me?.id)-(a.uid===me?.id)||(a.name||'').localeCompare(b.name||'','ko'));
     box.querySelector('#onlineBtn').textContent=`접속 ${people.length}명`;
@@ -797,9 +809,12 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
     try{
       const {data}=await sb.rpc('wb_is_admin');isAdmin=data===true;
       await Promise.all(['members','projects','parts'].map(c=>load(c)));
-    }catch(e){card(`<p>데이터를 불러오지 못했어요. 잠시 후 새로 고침해 주세요.</p><p class="err">${escH(e.message)}</p>`);return;}
+    }catch(e){card(`<p>${isNetErr(e)?escH(PAUSED_HINT):'데이터를 불러오지 못했어요. 잠시 후 새로 고침해 주세요.'}</p><p class="err">${escH(e.message)}</p>`);return;}
     startRealtime();
-    if(memberOf(me.id))finish();else profileStep();
+    if(memberOf(me.id)){finish();return;}
+    const mine=[...cache.members||[]].find(([,d])=>!d.userId&&d.email&&d.email===me.email);
+    if(mine){try{await write('members',mine[0],'update',{userId:me.id,...(mine[1].notify?{}:{notify:NOTIFY_ON})});finish();return;}catch(e){}}
+    profileStep();
   }
 
   sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&me)location.reload();});
@@ -948,7 +963,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';$('#leaveBar').hidden=state.mode!=='leave';
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   $('#btnMembers').hidden=!adminUI();
-  $('#btnProfile').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)} · 내 프로필</span>`:'내 프로필';
+  $('#btnProfile').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
 }
 function render(){
@@ -1906,6 +1921,7 @@ function openMembers(){
   const Y=lstate.year;
   const row=m=>`<div class="prow mrowEdit" data-id="${esc(m.id||'')}">
     <input class="mName" value="${esc(m.name||'')}" placeholder="이름" aria-label="이름" maxlength="20">
+    <input class="mEmail" type="email" value="${esc(m.email||'')}" placeholder="${m.userId?'로그인 연결됨':'회사 메일 (선택)'}" aria-label="회사 메일" spellcheck="false">
     <select class="mProj sel" aria-label="프로젝트"><option value="">주 프로젝트 없음</option>${projects.map(p=>`<option value="${esc(p.id)}" ${m.projectId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
     <select class="mPart sel" aria-label="파트"><option value="">파트 없음</option>${PARTS.map(p=>`<option value="${esc(p.k)}" ${m.part===p.k?'selected':''}>${esc(p.label)}</option>`).join('')}</select>
     <input class="mQuota" type="number" min="0" step="0.5" inputmode="decimal" value="${esc(quotaOf(m,Y)??'')}" placeholder="연차(일)" aria-label="${Y}년 연차 일수">
@@ -1914,8 +1930,8 @@ function openMembers(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="memForm" novalidate>
     <header><h2>구성원 관리</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr">
-      <p class="legend" style="margin:0">이름 · 프로젝트 · 파트 · <b>${Y}년</b> 연차 부여 일수를 입력하세요. 프로젝트와 파트는 업무 관리에 등록된 목록에서 고릅니다. 다른 연도는 휴가 관리에서 연도를 바꾼 뒤 입력하면 됩니다.</p>
-      <div class="mhead"><span>이름</span><span>프로젝트</span><span>파트</span><span>${Y}년 연차</span><span></span></div>
+      <p class="legend" style="margin:0">이름 · 프로젝트 · 파트 · <b>${Y}년</b> 연차 부여 일수를 입력하세요. 프로젝트와 파트는 업무 관리에 등록된 목록에서 고릅니다. 다른 연도는 휴가 관리에서 연도를 바꾼 뒤 입력하면 됩니다. 회사 메일을 적어 두면 그 메일로 처음 로그인한 사람이 이 이름에 자동으로 연결되고, 다른 사람은 이 이름을 고를 수 없어요.</p>
+      <div class="mhead"><span>이름</span><span>회사 메일</span><span>프로젝트</span><span>파트</span><span>${Y}년 연차</span><span></span></div>
       <div class="plist" id="mlist">${members.map(row).join('')}</div>
       <div><button type="button" class="btn" id="mAdd">+ 구성원 추가</button></div>
       <div id="mConfirm"></div>
@@ -1950,14 +1966,17 @@ function openMembers(){
   });
   $('#memForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const rows=[...$('#mlist').querySelectorAll('.prow')].map(r=>({id:r.dataset.id,name:r.querySelector('.mName').value.trim(),projectId:r.querySelector('.mProj').value,part:r.querySelector('.mPart').value,q:r.querySelector('.mQuota').value})).filter(r=>r.name);
+    const rows=[...$('#mlist').querySelectorAll('.prow')].map(r=>({id:r.dataset.id,name:r.querySelector('.mName').value.trim(),email:r.querySelector('.mEmail').value.trim().toLowerCase(),projectId:r.querySelector('.mProj').value,part:r.querySelector('.mPart').value,q:r.querySelector('.mQuota').value})).filter(r=>r.name);
     const names=rows.map(r=>r.name);if(new Set(names).size!==names.length){$('#mErr').textContent='같은 이름이 있습니다. 동명이인은 이름 뒤에 구분을 붙여 주세요.';return;}
+    const dom=typeof STAFF_DOMAIN==='string'?'@'+STAFF_DOMAIN:'';
+    const badMail=rows.find(r=>r.email&&(!/^[^\s@]+@[^\s@]+$/.test(r.email)||(dom&&!r.email.endsWith(dom))));if(badMail){$('#mErr').textContent=`${badMail.name}의 메일을 확인해 주세요.${dom?` (${dom} 주소만)`:''}`;return;}
+    const mails=rows.map(r=>r.email).filter(Boolean);if(new Set(mails).size!==mails.length){$('#mErr').textContent='같은 메일이 두 번 들어갔어요.';return;}
     $('#mSave').disabled=true;
     try{
       for(const r of rows){
         const q=r.q===''?'':Math.max(0,+r.q), old=memOf(r.id);
-        if(!r.id){const ref=await db.collection('members').add({name:r.name,projectId:r.projectId,part:r.part,quotas:{[Y]:q}});logChange('member','create',ref.id,r.name,null,{projectId:r.projectId,part:r.part,quota:q});}
-        else if(!old||old.name!==r.name||(old.part||'')!==r.part||(old.projectId||'')!==r.projectId||String(quotaOf(old,Y)??'')!==String(q)){await db.collection('members').doc(r.id).update({name:r.name,projectId:r.projectId,part:r.part,quotas:{[Y]:q}});logChange('member','update',r.id,r.name,{name:old?.name,projectId:old?.projectId||'',part:old?.part||'',quota:quotaOf(old,Y)??''},{name:r.name,projectId:r.projectId,part:r.part,quota:q},`${Y}년 기준`);
+        if(!r.id){const ref=await db.collection('members').add({name:r.name,email:r.email,projectId:r.projectId,part:r.part,quotas:{[Y]:q}});logChange('member','create',ref.id,r.name,null,{projectId:r.projectId,part:r.part,quota:q});}
+        else if(!old||old.name!==r.name||(old.email||'')!==r.email||(old.part||'')!==r.part||(old.projectId||'')!==r.projectId||String(quotaOf(old,Y)??'')!==String(q)){await db.collection('members').doc(r.id).update({name:r.name,email:r.email,projectId:r.projectId,part:r.part,quotas:{[Y]:q}});logChange('member','update',r.id,r.name,{name:old?.name,projectId:old?.projectId||'',part:old?.part||'',quota:quotaOf(old,Y)??''},{name:r.name,projectId:r.projectId,part:r.part,quota:q},`${Y}년 기준`);
           // 이름을 바꾸면 이 구성원이 담당한 업무의 담당자 이름도 함께 바꿈(집계·필터가 이름 기준이라)
           if(old&&old.name!==r.name)for(const t of tasks.filter(t=>t.assigneeId===r.id||(!t.assigneeId&&t.assignee===old.name)))await db.collection('tasks').doc(t.id).update({assignee:r.name,assigneeId:r.id});}
       }

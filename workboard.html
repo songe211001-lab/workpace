@@ -436,6 +436,9 @@ a.rms:hover{text-decoration:underline}
 @media (prefers-reduced-motion:no-preference){.card,.btn,.chip,.modes button,.ptab{transition:border-color .12s var(--ease),background .12s var(--ease),color .12s var(--ease)}}
 /* 좁은 화면: 첫 화면에 업무 목록이 보이도록 머리말·버튼·탭·요약을 줄임 */
 @media (max-width:600px){
+  .sLong,#syncNow{display:none}
+  .todayOff{flex-basis:100%}
+  .modeRow{gap:6px 10px}
   .brand h1{font-size:22px}
   .actions{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none}
   .actions .btn{padding:6px 10px;font-size:12px}
@@ -2325,7 +2328,7 @@ function drawSync(){
   if(!db){box.hidden=true;return;}box.hidden=false;
   const offline=room&&!sync.online, st=sync.pending?'saving':offline?'offline':'ok', t=sync.last?hms(sync.last):'—';
   box.dataset.state=st;
-  box.querySelector('#syncText').textContent=st==='saving'?'저장 중…':st==='offline'?`실시간 연결 끊김 · 마지막 동기화 ${t}`:`저장됨 · 마지막 동기화 ${t}`;
+  box.querySelector('#syncText').innerHTML=st==='saving'?'저장 중…':st==='offline'?`실시간 연결 끊김<span class="sLong"> · 마지막 동기화</span> ${t}`:`<span class="sLong">저장됨 · 마지막 동기화 </span>${t}`;
   const wrap=box.querySelector('#onlineWrap');wrap.hidden=!room;if(!room)return;
   // 같은 사람이 탭을 여러 개 열어도 한 명으로
   const by=new Map();

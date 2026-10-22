@@ -575,6 +575,30 @@ a.rms:hover{text-decoration:underline}
 @media (max-width:1200px){.main>.wrap{padding-inline:48px}}
 @media (max-width:900px){.main>.wrap{padding-inline:24px}.pageTools,.topbar>.actions{order:5}.pageTools{flex-basis:100%}}
 @media (max-width:600px){.main>.wrap{padding-inline:16px}.topbar{position:static}}
+/* ---------- 버튼 통일: 높이 32(작은 것 28) · 역할 4종(primary/기본/ghost/danger) · 포커스·눌림·비활성 ---------- */
+.btn{height:32px;padding:0 12px;font-size:13px;font-weight:600;border-radius:var(--r);justify-content:center;line-height:1}
+.btn.sm,.editBtn,td .btn,th .btn,.panel h3 .btn,.scard h3 .btn,.menuList .btn{height:28px;padding:0 10px;font-size:12px}
+.menuList .btn{justify-content:flex-start;height:32px}
+.sel,.search{height:32px;padding-block:0}
+.seg{height:32px}
+.seg button{padding:0 12px}
+.chip{height:28px;padding:0 10px}
+.chip.sm{height:auto;padding:1px 8px}
+.calnav .btn[aria-label],.sideOpen,.sideFold{width:32px;height:32px;padding:0;justify-content:center}
+.btn.ghost{color:var(--ink-soft)}
+.btn.ghost:hover{background:var(--sunk);color:var(--fg)}
+.btn.danger:hover{background:var(--bad-soft)}
+.btn:active:not(:disabled),.chip:active,.seg button:active,.navItem:active{transform:translateY(1px)}
+.btn.primary:active:not(:disabled){filter:brightness(.85)}
+.btn:disabled,.chip:disabled,.seg button:disabled,.navItem:disabled{opacity:.4;cursor:not-allowed;filter:none}
+/* 잘리는 곳(overflow:hidden·스크롤 영역)은 윤곽선을 안쪽으로 */
+.seg button:focus-visible,.navItem:focus-visible,.secHead:focus-visible,.ptab:focus-visible,.menuList .btn:focus-visible{outline:2px solid var(--accent-dark);outline-offset:-2px}
+.menu>summary:focus-visible{outline:2px solid var(--accent-dark);outline-offset:2px;border-radius:var(--r)}
+@media (max-width:900px){
+  .btn,.sel,.search,.seg,.calnav .btn[aria-label],.sideOpen{height:36px;min-height:36px}
+  .calnav .btn[aria-label],.sideOpen{width:36px}
+  .btn.sm,.editBtn,td .btn,.panel h3 .btn,.scard h3 .btn,.chip{height:32px}
+}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -597,12 +621,10 @@ a.rms:hover{text-decoration:underline}
     <div class="sideHead">
       <div class="brand" id="brand">
       <div class="brandView" id="brandView">
-        <h1><span id="siteTitle">업무 관리 대시보드</span><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목과 설명 편집">✎ 편집</button></h1>
-        <p id="siteSub">프로젝트 · 파트별 요청과 진행 현황을 한곳에서</p>
+        <h1><span id="siteTitle">업무 관리 대시보드</span><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목 편집">✎ 편집</button></h1>
       </div>
       <form class="brandEdit" id="brandEdit" hidden novalidate>
         <input id="bTitle" maxlength="40" placeholder="제목" aria-label="제목">
-        <input id="bSub" maxlength="80" placeholder="설명 (비워 두면 숨김)" aria-label="설명">
         <div class="brandBtns"><button class="btn primary" type="submit" id="bSave">저장</button><button class="btn ghost" type="button" id="bCancel">취소</button><span class="err" id="bErr"></span></div>
       </form>
     </div>
@@ -1182,6 +1204,9 @@ function render(){
   // 화면별 도구 줄(.rtool)을 헤더로. 다시 그리지 않은 경우(입력 중 보호)엔 기존 것을 둠
   const t=document.querySelector('.wrap > .area:not([hidden]) > .rtool'),pt=$('#pageTools');
   if(t){pt.replaceChildren(t);pt.dataset.mode=state.mode;}else if(pt.dataset.mode!==state.mode){pt.replaceChildren();pt.dataset.mode=state.mode;}
+  // 쓰기 권한이 없어 막힌 버튼엔 이유를 툴팁으로
+  document.querySelectorAll('button[data-np]').forEach(b=>{if(canWrite||!b.disabled){b.removeAttribute('title');delete b.dataset.np;}});
+  if(!canWrite)document.querySelectorAll('button:disabled:not([title])').forEach(b=>{b.title='편집 권한이 필요해요';b.dataset.np='1';});
 }
 // 헤더로 옮긴 도구 줄에서도 그 화면의 이벤트 처리가 그대로 동작하게
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
@@ -2773,17 +2798,16 @@ function openAssign(a,pid){
 }
 
 /* ---------- brand text (제목·설명 편집) ---------- */
-const SITE_DEFAULT={title:'업무 관리 대시보드',subtitle:'프로젝트 · 파트별 요청과 진행 현황을 한곳에서'};
+const SITE_DEFAULT={title:'업무 관리 대시보드'};
 let site={...SITE_DEFAULT};
 function renderBrand(){
   if(!$('#brandEdit').hidden)return;
   $('#siteTitle').textContent=site.title||SITE_DEFAULT.title;
-  $('#siteSub').textContent=site.subtitle||'';$('#siteSub').hidden=!site.subtitle;
   $('#btnBrandEdit').hidden=!(canWrite&&db&&adminUI());
   document.title=site.title||SITE_DEFAULT.title;
 }
 $('#btnBrandEdit').addEventListener('click',()=>{
-  $('#bTitle').value=site.title||'';$('#bSub').value=site.subtitle||'';$('#bErr').textContent='';
+  $('#bTitle').value=site.title||'';$('#bErr').textContent='';
   $('#brandView').hidden=true;$('#brandEdit').hidden=false;$('#bTitle').focus();$('#bTitle').select();
 });
 const closeBrand=()=>{$('#brandEdit').hidden=true;$('#brandView').hidden=false;renderBrand();};
@@ -2791,9 +2815,9 @@ $('#bCancel').addEventListener('click',closeBrand);
 $('#brandEdit').addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();closeBrand();}});
 $('#brandEdit').addEventListener('submit',async e=>{
   e.preventDefault();
-  const title=$('#bTitle').value.trim(), subtitle=$('#bSub').value.trim();
+  const title=$('#bTitle').value.trim(), subtitle=site.subtitle||'';
   if(!title){$('#bErr').textContent='제목을 입력해 주세요.';$('#bTitle').focus();return;}
-  if(title===site.title&&subtitle===(site.subtitle||'')){closeBrand();return;}
+  if(title===site.title){closeBrand();return;}
   $('#bSave').disabled=true;
   try{await db.doc('settings/site').set({title,subtitle,rmsTemplate:site.rmsTemplate||'',updatedAt:new Date().toISOString()});logChange('site','update','site',title,site,{...site,title,subtitle});site={...site,title,subtitle};closeBrand();toast('제목을 바꿨습니다');}
   catch(err){handleWriteError(err,'#bErr');}

@@ -313,6 +313,8 @@ th.selCell,td.selCell{width:36px;padding-right:0;cursor:default}
 .cmBody{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;margin-top:2px}
 .cmAdd{display:flex;gap:6px;align-items:flex-end}
 .cmAdd textarea{flex:1;min-height:52px}
+.lvRange{display:block!important;font-size:13px;background:var(--sunk);border-radius:var(--r);padding:8px 12px}
+.day.pick{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 1px var(--accent)}
 .areaBar{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .cmCount{margin-left:6px;font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--sunk);border-radius:var(--r-sm);padding:0 5px;white-space:nowrap}
 .tplList{display:flex;flex-direction:column;gap:8px}
@@ -554,7 +556,7 @@ a.rms:hover{text-decoration:underline}
   </div>
   </div>
 
-  <div class="areaBar"><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div>
+  <div class="areaBar"><details class="menu" id="moreMenu"><summary class="btn">더보기 ▾</summary><div class="menuList"><button class="btn" type="button" id="btnTpl">반복 업무 템플릿</button><button class="btn" type="button" id="btnImport">엑셀·CSV로 업무 가져오기</button><button class="btn" type="button" id="btnCsv" hidden>업무 목록 CSV 내보내기</button></div></details><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div>
 
   <div class="filters">
     <div class="chips" id="partChips"></div>
@@ -693,7 +695,10 @@ const STAFF_DOMAIN='medialog.co.kr'; // 로그인할 수 있는 회사 메일 �
   let readyRes;const ready=new Promise(r=>readyRes=r);
   const caps={};
   window.claude={use:async n=>{await ready;return caps[n]??null;}};
-  window.wbAuth={get email(){return me?.email||'';},get isAdmin(){return isAdmin;},signOut:()=>sb.auth.signOut().then(()=>location.reload())};
+  window.wbAuth={get email(){return me?.email||'';},get isAdmin(){return isAdmin;},get uid(){return me?.id||'';},signOut:()=>sb.auth.signOut().then(()=>location.reload()),
+    // 관리자 목록·지정 (서버 함수 wb_admin_ids, wb_set_admin). 오류 문구는 서버가 한국어로 돌려줌
+    listAdmins:async()=>{const {data,error}=await sb.rpc('wb_admin_ids');if(error)throw toErr(error);return data||[];},
+    setAdmin:async(uid,on)=>{const {error}=await sb.rpc('wb_set_admin',{p_user:uid,p_on:on});if(error)throw Object.assign(new Error(error.message),{code:'admin'});if(uid===me.id)isAdmin=on;}};
 
   /* ---------- 로그인 화면 (메일로 받은 6자리 코드) ---------- */
   // 링크 대신 코드를 쓰는 이유: 회사 메일 보안 검사가 로그인 링크를 미리 열어 버려 링크가 무효가 되는 경우가 있어서
@@ -957,7 +962,8 @@ function render(){
   const main=$('#main');
   $('#btnAdd').disabled=!canWrite;
   $('#btnProjects').disabled=!canWrite;$('#btnProjects').hidden=!adminUI();
-  $('#btnParts').disabled=!canWrite;$('#btnParts').hidden=!adminUI();
+  $('#btnParts').disabled=!canWrite;
+  $('#btnImport').disabled=!canWrite;$('#btnParts').hidden=!adminUI();
   if(!storeReady){main.innerHTML=`<div class="empty"><h2>업무를 불러오는 중입니다</h2><p>잠시만 기다려 주세요.</p></div>`;return;}
   if(!projects.length){
     main.innerHTML=`<div class="empty"><h2>첫 프로젝트를 등록해 주세요</h2><p>파견 중인 프로젝트를 먼저 추가하면, 그 아래에 기획·디자인·퍼블·개발·QA 업무를 등록하고 함께 볼 수 있습니다.</p>${canWrite?'<button class="btn primary" type="button" id="emptyProj">프로젝트 추가</button>':''}</div>`;
@@ -1115,6 +1121,9 @@ $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnProfile').addEventListener('click',openProfile);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
+$('#btnTpl').addEventListener('click',openTemplates);
+$('#btnImport').addEventListener('click',openImport);
+$('#btnCsv').addEventListener('click',exportCsv);
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
   if(e.target.closest('.selCell'))return; // 체크박스 칸은 change에서 처리
@@ -1806,7 +1815,14 @@ function renderLeave(){
 }
 
 $('#leaveArea').addEventListener('change',e=>{if(e.target.id==='lProj'){lstate.project=e.target.value;render();return;}if(e.target.id==='lYear'){lstate.year=+e.target.value;lstate.month=`${lstate.year}-${lstate.month.slice(5)}`;render();}});
+// 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
+let lvDrag=null, lvDragDone=false;
+const lvMark=(a,b)=>document.querySelectorAll('#leaveArea .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
+$('#leaveArea').addEventListener('pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid]')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date};});
+$('#leaveArea').addEventListener('pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(lvDrag.a,lvDrag.b);});
+document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b}=lvDrag;lvDrag=null;lvMark();if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a);}});
 $('#leaveArea').addEventListener('click',e=>{
+  if(lvDragDone){lvDragDone=false;return;}
   const id=e.target.id;
   if(id==='lPrev'||id==='lNext'){const [y,m]=lstate.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);lstate.month=ymd(d).slice(0,7);lstate.year=d.getFullYear();render();return;}
   if(id==='lThis'){lstate.month=todayStr().slice(0,7);lstate.year=+todayStr().slice(0,4);render();return;}
@@ -1817,10 +1833,10 @@ $('#leaveArea').addEventListener('click',e=>{
 });
 $('#leaveArea').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const lv=e.target.closest('[data-lid]');if(lv){openLeave(leaves.find(l=>l.id===lv.dataset.lid));return;}const mr=e.target.closest('[data-mid]');if(mr){lstate.member=lstate.member===mr.dataset.mid?'all':mr.dataset.mid;render();}});
 
-function openLeave(l,date){
+function openLeave(l,date,endDate){
   if(!members.length){openMembers();return;}
   const isNew=!l, ro=!canWrite;
-  l=l||{memberId:lstate.member!=='all'?lstate.member:'',type:'annual',date:date||todayStr(),endDate:date||todayStr()};
+  l=l||{memberId:lstate.member!=='all'?lstate.member:'',type:'annual',date:date||todayStr(),endDate:endDate||date||todayStr()};
   let daysTouched=!isNew&&l.days!==''&&l.days!=null&&+l.days!==autoDays(l.type,l.date,l.endDate);
   const opt=(arr,cur)=>arr.map(([k,v])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(v)}</option>`).join('');
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="leaveForm" novalidate>
@@ -1830,6 +1846,7 @@ function openLeave(l,date){
       <div class="f"><label for="lvType">종류 <b>*</b></label><select id="lvType">${opt(LEAVE_TYPES.filter(t=>!t.legacy||t.k===l.type).map(t=>[t.k,t.label+(t.deduct?` (${t.multi?'1일':fmtDays(t.days)+'일'} 차감)`:' (미차감)')]),l.type)}</select></div>
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
       <div class="f" id="lvEndWrap"><label for="lvEnd">종료일</label><input type="date" id="lvEnd" value="${esc(l.endDate||l.date||'')}"></div>
+      <div class="f full lvRange" id="lvRange" aria-live="polite"></div>
       <div class="f" id="lvTimeWrap"><label for="lvTime">사용 시간</label><input id="lvTime" value="${esc(l.time||'')}" placeholder="예: 09:00–11:00"></div>
       <div class="f"><label for="lvDays">일수</label><input type="number" id="lvDays" min="0" step="0.25" inputmode="decimal" value="${esc(isNew?'':leaveDays(l))}"><span class="hint" id="lvDaysHint"></span></div>
       <div class="f full"><label for="lvNote">메모</label><input id="lvNote" value="${esc(l.note||'')}" placeholder="사유, 대체 근무자, 비상 연락 등"></div>
@@ -1847,10 +1864,17 @@ function openLeave(l,date){
     const auto=autoDays(t.k,$('#lvDate').value,t.multi?$('#lvEnd').value:'');
     if(!daysTouched)$('#lvDays').value=auto;
     $('#lvDaysHint').textContent=t.multi?`주말 제외 ${auto}일 · 공휴일이 끼면 직접 수정`:(t.deduct?'연차에서 차감':'연차에서 차감하지 않음');
+    const dw=v=>v?`${+v.slice(5,7)}/${+v.slice(8,10)}(${'일월화수목금토'[new Date(v+'T00:00:00').getDay()]})`:'';
+    const a=$('#lvDate').value,b=t.multi?$('#lvEnd').value:a;
+    $('#lvRange').innerHTML=a?`<b>${dw(a)}${b&&b!==a?` ~ ${dw(b)}`:''}</b> · ${esc(t.label)} ${fmtDays(+$('#lvDays').value||0)}일${t.multi?' <span class="hint">· 여러 날이면 종료일을 바꾸거나, 달력에서 날짜를 끌어서 고르세요</span>':''}`:'';
+    prevStart=a;
   };
+  // 시작일을 바꾸면 종료일도 같은 간격만큼 따라 움직임 (5일짜리를 옮기면 그대로 5일)
+  let prevStart=$('#lvDate').value;
+  $('#lvDate').addEventListener('input',()=>{const a=$('#lvDate').value,b=$('#lvEnd').value;if(a&&b&&prevStart&&ltype($('#lvType').value).multi)$('#lvEnd').value=addDays(b,Math.round((new Date(a+'T00:00:00')-new Date(prevStart+'T00:00:00'))/864e5));});
   sync();
   ['lvType','lvDate','lvEnd'].forEach(id=>$('#'+id).addEventListener('change',()=>{if(id==='lvType')daysTouched=false;sync();}));
-  $('#lvDays').addEventListener('input',()=>daysTouched=true);
+  $('#lvDays').addEventListener('input',()=>{daysTouched=true;sync();});
   $('#xClose').onclick=$('#lvCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#lvDel')?.addEventListener('click',()=>{
@@ -1895,11 +1919,26 @@ function openMembers(){
       <div class="plist" id="mlist">${members.map(row).join('')}</div>
       <div><button type="button" class="btn" id="mAdd">+ 구성원 추가</button></div>
       <div id="mConfirm"></div>
+      ${window.wbAuth?.isAdmin?`<div class="f full adminBox" id="adminBox"><label>관리자</label><div class="nfList" id="adminList"><span class="hint">불러오는 중…</span></div>
+        <span class="hint">관리자는 프로젝트·파트·구성원 관리와 제목 편집을 할 수 있어요. 로그인해서 프로필을 연결한 구성원만 지정할 수 있고, 체크하면 바로 적용돼요.</span></div>`:''}
     </div>
     <footer><span class="err" id="mErr"></span><div class="r"><button class="btn" type="button" id="mCancel">취소</button><button class="btn primary" type="submit" id="mSave">저장</button></div></footer>
   </form></div>`;
   $('#xClose').onclick=$('#mCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
+  // 관리자 지정·해제: 저장 버튼과 별개로 체크하는 즉시 서버에 반영
+  if($('#adminBox')){
+    const drawAdmins=ids=>{const linked=members.filter(m=>m.userId);
+      $('#adminList').innerHTML=linked.length?linked.map(m=>`<label class="nfItem"><input type="checkbox" data-admin="${esc(m.userId)}" ${ids.includes(m.userId)?'checked':''}><span><span class="nfName">${esc(m.name)}${m.userId===window.wbAuth.uid?' (나)':''}</span></span></label>`).join(''):'<span class="hint">아직 프로필을 연결한 구성원이 없어요.</span>';};
+    window.wbAuth.listAdmins().then(drawAdmins).catch(()=>{$('#adminList').innerHTML='<span class="err">관리자 목록을 불러오지 못했어요.</span>';});
+    $('#adminBox').addEventListener('input',e=>e.stopPropagation()); // 바로 저장되므로 닫기 경고 대상이 아님
+    $('#adminBox').addEventListener('change',async e=>{
+      const c=e.target.closest('[data-admin]');if(!c)return;c.disabled=true;$('#mErr').textContent='';
+      try{await window.wbAuth.setAdmin(c.dataset.admin,c.checked);toast(c.checked?'관리자로 지정했어요':'관리자에서 해제했어요');if(c.dataset.admin===window.wbAuth.uid)render();}
+      catch(err){c.checked=!c.checked;$('#mErr').textContent=err.message||'바꾸지 못했어요. 잠시 후 다시 시도해 주세요.';}
+      finally{c.disabled=false;}
+    });
+  }
   $('#mAdd').onclick=()=>{$('#mlist').insertAdjacentHTML('beforeend',row({}));$('#mlist').lastElementChild.querySelector('.mName').focus();};
   if(!members.length)$('#mAdd').click();
   $('#mlist').addEventListener('click',e=>{
@@ -2602,6 +2641,7 @@ render();
   if(!window.claude?.use){storeReady=true;$('#banner').textContent='저장소에 연결되지 않아 읽기 전용으로 표시됩니다.';$('#banner').hidden=false;render();return;}
   const [d,u,dl]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('downloads')]);
   db=d;downloads=dl;
+  if(downloads)$('#btnCsv').hidden=false;
   if(!db){storeReady=true;$('#banner').textContent='로그인한 팀원만 업무를 볼 수 있습니다. claude.ai에 로그인 후 다시 열어 주세요.';$('#banner').hidden=false;render();return;}
   let w=null;try{w=u?await u.can('data.write'):null;}catch(e){}
   canWrite=w!==false;userCap=u;try{actorId=u?await u.id():null;}catch(e){}

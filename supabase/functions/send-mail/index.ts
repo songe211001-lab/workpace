@@ -38,6 +38,10 @@ Deno.serve(async (req) => {
   const { data: ok } = await db.rpc("wb_cron_ok", { p_secret: req.headers.get("x-cron-secret") ?? "" });
   if (ok !== true) return new Response("forbidden", { status: 403 });
 
+  // 메일 설정이 하나라도 빠졌으면 대기열에서 꺼내지 않고 그대로 둠. 설정을 채우면 다음 분에 그대로 나감
+  const missing = ["SMTP_HOST", "SMTP_USER", "SMTP_PASS", "MAIL_FROM", "APP_URL"].filter((k) => !Deno.env.get(k));
+  if (missing.length) return new Response(`메일 설정이 없어요: ${missing.join(", ")}`, { status: 503 });
+
   const { data, error } = await db.rpc("wb_take_outbox");
   if (error) return new Response(error.message, { status: 500 });
   const rows = (data ?? []) as Row[];

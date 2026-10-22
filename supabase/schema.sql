@@ -121,6 +121,26 @@ end $$;
 
 grant execute on function public.wb_patch(text, text, jsonb), public.wb_is_admin() to authenticated;
 
+-- 관리자 목록·지정: 화면의 구성원 관리 창에서 씀. 목록은 직원 누구나 보고, 지정·해제는 관리자만. 마지막 관리자는 해제할 수 없음
+create or replace function public.wb_admin_ids()
+returns uuid[] language sql stable security definer set search_path = public as $$
+  select case when public.wb_is_staff() then coalesce(array_agg(user_id), '{}') else '{}' end from public.wb_admins;
+$$;
+create or replace function public.wb_set_admin(p_user uuid, p_on boolean)
+returns void language plpgsql security definer set search_path = public, auth as $$
+begin
+  if not public.wb_is_admin() then raise exception '관리자만 바꿀 수 있어요' using errcode = '42501'; end if;
+  if p_on then
+    if not exists (select 1 from auth.users where id = p_user) then raise exception '계정을 찾을 수 없어요' using errcode = 'P0002'; end if;
+    insert into public.wb_admins (user_id) values (p_user) on conflict do nothing;
+  else
+    if not exists (select 1 from public.wb_admins where user_id <> p_user) then raise exception '마지막 관리자는 해제할 수 없어요' using errcode = 'P0001'; end if;
+    delete from public.wb_admins where user_id = p_user;
+  end if;
+end $$;
+revoke execute on function public.wb_admin_ids(), public.wb_set_admin(uuid, boolean) from public, anon;
+grant execute on function public.wb_admin_ids(), public.wb_set_admin(uuid, boolean) to authenticated;
+
 -- 4. 알림 메일 대기열에 넣기
 create or replace function public.wb_md(p text)
 returns text language sql immutable as $$

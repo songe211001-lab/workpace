@@ -317,6 +317,8 @@ th.selCell,td.selCell{width:36px;padding-right:0;cursor:default}
 .onlineItem .legend{margin-left:auto;white-space:nowrap}
 @media (prefers-reduced-motion:no-preference){.syncBox[data-state=saving]>.syncDot{animation:wbPulse .9s ease-in-out infinite}}
 @keyframes wbPulse{50%{opacity:.35}}
+.lvRange{display:block!important;font-size:13px;background:var(--sunk);border-radius:var(--r);padding:8px 12px}
+.day.pick{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 1px var(--accent)}
 .areaBar{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
 .cmCount{margin-left:6px;font-size:11px;font-weight:600;color:var(--ink-soft);background:var(--sunk);border-radius:var(--r-sm);padding:0 5px;white-space:nowrap}
 .tplList{display:flex;flex-direction:column;gap:8px}
@@ -516,7 +518,7 @@ a.rms:hover{text-decoration:underline}
   </div>
   </div>
 
-  <div class="areaBar"><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div>
+  <div class="areaBar"><details class="menu" id="moreMenu"><summary class="btn">더보기 ▾</summary><div class="menuList"><button class="btn" type="button" id="btnTpl">반복 업무 템플릿</button><button class="btn" type="button" id="btnImport">엑셀·CSV로 업무 가져오기</button><button class="btn" type="button" id="btnCsv" hidden>업무 목록 CSV 내보내기</button></div></details><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div>
 
   <div class="filters">
     <div class="chips" id="partChips"></div>
@@ -700,6 +702,7 @@ function render(){
   $('#btnAdd').disabled=!canWrite;
   $('#btnProjects').disabled=!canWrite;
   $('#btnParts').disabled=!canWrite;
+  $('#btnImport').disabled=!canWrite;
   if(!storeReady){main.innerHTML=`<div class="empty"><h2>업무를 불러오는 중입니다</h2><p>잠시만 기다려 주세요.</p></div>`;return;}
   if(!projects.length){
     main.innerHTML=`<div class="empty"><h2>첫 프로젝트를 등록해 주세요</h2><p>파견 중인 프로젝트를 먼저 추가하면, 그 아래에 기획·디자인·퍼블·개발·QA 업무를 등록하고 함께 볼 수 있습니다.</p>${canWrite?'<button class="btn primary" type="button" id="emptyProj">프로젝트 추가</button>':''}</div>`;
@@ -856,6 +859,9 @@ $('#btnParts').addEventListener('click',openParts);
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
+$('#btnTpl').addEventListener('click',openTemplates);
+$('#btnImport').addEventListener('click',openImport);
+$('#btnCsv').addEventListener('click',exportCsv);
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
   if(e.target.closest('.selCell'))return; // 체크박스 칸은 change에서 처리
@@ -1482,7 +1488,14 @@ function renderLeave(){
 }
 
 $('#leaveArea').addEventListener('change',e=>{if(e.target.id==='lProj'){lstate.project=e.target.value;render();return;}if(e.target.id==='lYear'){lstate.year=+e.target.value;lstate.month=`${lstate.year}-${lstate.month.slice(5)}`;render();}});
+// 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
+let lvDrag=null, lvDragDone=false;
+const lvMark=(a,b)=>document.querySelectorAll('#leaveArea .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
+$('#leaveArea').addEventListener('pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid]')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date};});
+$('#leaveArea').addEventListener('pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(lvDrag.a,lvDrag.b);});
+document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b}=lvDrag;lvDrag=null;lvMark();if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a);}});
 $('#leaveArea').addEventListener('click',e=>{
+  if(lvDragDone){lvDragDone=false;return;}
   const id=e.target.id;
   if(id==='lPrev'||id==='lNext'){const [y,m]=lstate.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);lstate.month=ymd(d).slice(0,7);lstate.year=d.getFullYear();render();return;}
   if(id==='lThis'){lstate.month=todayStr().slice(0,7);lstate.year=+todayStr().slice(0,4);render();return;}
@@ -1493,10 +1506,10 @@ $('#leaveArea').addEventListener('click',e=>{
 });
 $('#leaveArea').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const lv=e.target.closest('[data-lid]');if(lv){openLeave(leaves.find(l=>l.id===lv.dataset.lid));return;}const mr=e.target.closest('[data-mid]');if(mr){lstate.member=lstate.member===mr.dataset.mid?'all':mr.dataset.mid;render();}});
 
-function openLeave(l,date){
+function openLeave(l,date,endDate){
   if(!members.length){openMembers();return;}
   const isNew=!l, ro=!canWrite;
-  l=l||{memberId:lstate.member!=='all'?lstate.member:'',type:'annual',date:date||todayStr(),endDate:date||todayStr()};
+  l=l||{memberId:lstate.member!=='all'?lstate.member:'',type:'annual',date:date||todayStr(),endDate:endDate||date||todayStr()};
   let daysTouched=!isNew&&l.days!==''&&l.days!=null&&+l.days!==autoDays(l.type,l.date,l.endDate);
   const opt=(arr,cur)=>arr.map(([k,v])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(v)}</option>`).join('');
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="leaveForm" novalidate>
@@ -1506,6 +1519,7 @@ function openLeave(l,date){
       <div class="f"><label for="lvType">종류 <b>*</b></label><select id="lvType">${opt(LEAVE_TYPES.filter(t=>!t.legacy||t.k===l.type).map(t=>[t.k,t.label+(t.deduct?` (${t.multi?'1일':fmtDays(t.days)+'일'} 차감)`:' (미차감)')]),l.type)}</select></div>
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
       <div class="f" id="lvEndWrap"><label for="lvEnd">종료일</label><input type="date" id="lvEnd" value="${esc(l.endDate||l.date||'')}"></div>
+      <div class="f full lvRange" id="lvRange" aria-live="polite"></div>
       <div class="f" id="lvTimeWrap"><label for="lvTime">사용 시간</label><input id="lvTime" value="${esc(l.time||'')}" placeholder="예: 09:00–11:00"></div>
       <div class="f"><label for="lvDays">일수</label><input type="number" id="lvDays" min="0" step="0.25" inputmode="decimal" value="${esc(isNew?'':leaveDays(l))}"><span class="hint" id="lvDaysHint"></span></div>
       <div class="f full"><label for="lvNote">메모</label><input id="lvNote" value="${esc(l.note||'')}" placeholder="사유, 대체 근무자, 비상 연락 등"></div>
@@ -1523,10 +1537,17 @@ function openLeave(l,date){
     const auto=autoDays(t.k,$('#lvDate').value,t.multi?$('#lvEnd').value:'');
     if(!daysTouched)$('#lvDays').value=auto;
     $('#lvDaysHint').textContent=t.multi?`주말 제외 ${auto}일 · 공휴일이 끼면 직접 수정`:(t.deduct?'연차에서 차감':'연차에서 차감하지 않음');
+    const dw=v=>v?`${+v.slice(5,7)}/${+v.slice(8,10)}(${'일월화수목금토'[new Date(v+'T00:00:00').getDay()]})`:'';
+    const a=$('#lvDate').value,b=t.multi?$('#lvEnd').value:a;
+    $('#lvRange').innerHTML=a?`<b>${dw(a)}${b&&b!==a?` ~ ${dw(b)}`:''}</b> · ${esc(t.label)} ${fmtDays(+$('#lvDays').value||0)}일${t.multi?' <span class="hint">· 여러 날이면 종료일을 바꾸거나, 달력에서 날짜를 끌어서 고르세요</span>':''}`:'';
+    prevStart=a;
   };
+  // 시작일을 바꾸면 종료일도 같은 간격만큼 따라 움직임 (5일짜리를 옮기면 그대로 5일)
+  let prevStart=$('#lvDate').value;
+  $('#lvDate').addEventListener('input',()=>{const a=$('#lvDate').value,b=$('#lvEnd').value;if(a&&b&&prevStart&&ltype($('#lvType').value).multi)$('#lvEnd').value=addDays(b,Math.round((new Date(a+'T00:00:00')-new Date(prevStart+'T00:00:00'))/864e5));});
   sync();
   ['lvType','lvDate','lvEnd'].forEach(id=>$('#'+id).addEventListener('change',()=>{if(id==='lvType')daysTouched=false;sync();}));
-  $('#lvDays').addEventListener('input',()=>daysTouched=true);
+  $('#lvDays').addEventListener('input',()=>{daysTouched=true;sync();});
   $('#xClose').onclick=$('#lvCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#lvDel')?.addEventListener('click',()=>{
@@ -2334,6 +2355,7 @@ render();
   if(!window.claude?.use){storeReady=true;$('#banner').textContent='저장소에 연결되지 않아 읽기 전용으로 표시됩니다.';$('#banner').hidden=false;render();return;}
   const [d,u,dl]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('downloads')]);
   db=d&&wrapDb(d);downloads=dl;
+  if(downloads)$('#btnCsv').hidden=false;
   if(db){drawSync();startRoom();}
   if(!db){storeReady=true;$('#banner').textContent='로그인한 팀원만 업무를 볼 수 있습니다. claude.ai에 로그인 후 다시 열어 주세요.';$('#banner').hidden=false;render();return;}
   let w=null;try{w=u?await u.can('data.write'):null;}catch(e){}

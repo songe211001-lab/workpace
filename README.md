@@ -16,10 +16,13 @@ Claude 아티팩트로 만들던 대시보드를 **GitHub Pages + Supabase**로 
 - **데이터**: 표 하나(`wb_docs`)에 업무·프로젝트·구성원·휴가 등 모든 컬렉션을 `coll` + `id` + `data(jsonb)`로 저장해요. 화면 코드는 아티팩트 때의 `db.collection('tasks').doc(id)` 호출을 그대로 쓰고, `index.html` 앞부분의 연결 코드가 이 호출을 Supabase로 바꿔 줘요.
 - **수정 저장**: 바뀐 필드만 `wb_patch`로 합쳐 저장해요(객체 안쪽까지). 두 사람이 같은 업무의 다른 칸을 고쳐도 둘 다 남아요.
 - **실시간**: Supabase Realtime으로 다른 사람 변경이 바로 들어와요. 끊기면 1분마다 새로 받아 와요.
-- **로그인·회원가입**: 비밀번호 없이 회사 메일로 받은 숫자 코드를 넣는 방식이에요. 링크 방식은 회사 메일 보안 검사가 링크를 미리 열어 무효가 될 수 있어서 쓰지 않았어요.
-  - **회원가입** 탭: 이름과 회사 메일을 넣고 코드를 확인하면 계정이 만들어지고, 이어서 파트·소속 프로젝트를 고르는 마무리 화면이 나와요. 관리자가 구성원에 그 메일을 미리 적어 두었으면 마무리 화면 없이 바로 연결돼요.
-  - **로그인** 탭: 가입한 메일만 코드를 받아요. 가입하지 않은 메일이면 "이 메일로 회원가입" 버튼을 보여 줘요.
-  - **로그아웃**: 화면 위 "내 프로필" 옆 버튼, 또는 내 프로필 창 안에서 할 수 있어요.
+- **로그인·회원가입**: 아이디는 회사 메일, 로그인은 메일 + 비밀번호예요. 비밀번호는 8자 이상, 영문과 숫자를 섞어야 해요(화면과 Supabase 설정 모두).
+  - **회원가입** 탭: 이름·회사 메일·비밀번호를 넣으면, 본인 메일인지 확인하려고 한 번만 메일로 받은 6자리 코드를 넣어요. 이어서 파트·소속 프로젝트를 고르는 마무리 화면이 나와요. 관리자가 구성원에 그 메일을 미리 적어 두었으면 마무리 화면 없이 바로 연결돼요.
+  - **로그인** 탭: 메일과 비밀번호로 들어가요. 가입 확인 코드를 아직 안 넣은 계정이면 "가입 확인 코드 받기"를 보여 줘요.
+  - **비밀번호 찾기**: 로그인 탭의 "비밀번호를 잊었어요" → 메일로 받은 코드 → 새 비밀번호. 비밀번호 없이 예전 코드 방식으로만 가입했던 계정도 이걸로 처음 비밀번호를 정해요.
+  - **비밀번호 바꾸기**: 내 프로필 창에서 바로 바꿔요.
+  - **로그아웃**: 화면 위 "내 프로필" 옆 버튼, 또는 내 프로필 창 안. 로그인 정보는 탭에만 남아서 창(탭)을 닫으면 로그아웃돼요.
+  - 확인 코드는 링크 대신 숫자로 받아요. 회사 메일 보안 검사가 링크를 미리 열어 무효가 되는 경우가 있어서예요.
 - **알림**: 업무·댓글·휴가·투입 문서가 바뀌면 DB 트리거가 받는 사람을 골라 `wb_outbox`에 한 줄씩 넣어요. 1분마다 `send-mail` 함수가 2분 지난 것을 꺼내, 받는 사람별로 한 통에 묶어 보내요. 실패하면 다음 분에 다시 시도해요(최대 5번).
 
 ## 권한
@@ -61,15 +64,16 @@ Claude 아티팩트로 만들던 대시보드를 **GitHub Pages + Supabase**로 
 
 ### 2. 로그인 메일 (Authentication)
 1. **SMTP**: Authentication > Emails > SMTP Settings에서 회사 SMTP를 넣어요(호스트·포트·계정·비밀번호·보내는 주소). Supabase 기본 메일은 시간당 몇 통뿐이라 실제로는 못 써요.
-2. **메일 내용**: Authentication > Emails > Templates에서 **Confirm signup**(처음 가입하는 사람이 받는 메일)과 **Magic Link**(그다음부터 받는 메일) 두 개의 본문을 모두 코드가 보이게 바꿔요. 하나만 바꾸면 그 메일을 받는 사람에게는 숫자 대신 링크만 가요.
+2. **가입·비밀번호 설정**: Authentication > Sign In / Providers에서 **Confirm email**을 켜 두고, **Email** 항목의 Minimum password length를 `8`, Password requirements를 `Letters and digits`, Email OTP length를 `6`으로 맞춰요.
+3. **메일 내용**: Authentication > Emails > Templates에서 **Confirm sign up**(회원가입 확인)과 **Reset password**(비밀번호 찾기) 두 메일 본문에 코드가 보이게 `{{ .Token }}`을 넣어요. 링크(`{{ .ConfirmationURL }}`)만 있으면 화면에 넣을 숫자가 오지 않아요.
    ```html
-   <h2>업무 관리 대시보드 로그인 코드</h2>
-   <p>아래 코드를 업무 관리 대시보드 로그인 화면에 넣어 주세요. 1시간 동안 쓸 수 있어요.</p>
+   <h2>업무 관리 대시보드 회원가입 확인 코드</h2>
+   <p>아래 코드를 회원가입 화면에 넣으면 가입이 끝나요. 1시간 동안 쓸 수 있어요.</p>
    <p style="font-size:24px;font-weight:700;letter-spacing:4px">{{ .Token }}</p>
    ```
-3. **URL**: Authentication > URL Configuration의 Site URL에 GitHub Pages 주소를 넣어요.
-4. **가입 제한**: Authentication > Hooks > Before User Created에 Postgres 함수 `public.wb_before_user_created`를 연결해요.
-5. **보내는 횟수**: Authentication > Rate Limits에서 시간당 메일 수를 팀 규모에 맞게 올려요(예: 100).
+4. **URL**: Authentication > URL Configuration의 Site URL에 GitHub Pages 주소를 넣어요.
+5. **가입 제한**: Authentication > Hooks > Before User Created에 Postgres 함수 `public.wb_before_user_created`를 연결해요.
+6. **보내는 횟수**: Authentication > Rate Limits에서 시간당 메일 수를 팀 규모에 맞게 올려요(예: 100).
 
 ### 3. 알림 메일 함수 (Edge Function)
 Supabase CLI를 쓰는 경우:

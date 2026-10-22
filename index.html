@@ -469,8 +469,6 @@ a.rms:hover{text-decoration:underline}
 .gateLinks{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .gateOr{text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
 .nfList{display:flex;flex-direction:column;gap:8px}
-.pwRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
-@media (max-width:560px){.pwRow{grid-template-columns:1fr}}
 .gateTabs{display:flex;border-bottom:1px solid var(--line);margin:-4px 0 4px}
 .gateTabs button{flex:1;border:0;border-bottom:2.5px solid transparent;background:none;padding:10px;font-weight:600;color:var(--muted);cursor:pointer}
 .gateTabs button[aria-selected="true"]{color:var(--accent-dark);border-bottom-color:var(--accent)}
@@ -484,8 +482,9 @@ a.rms:hover{text-decoration:underline}
 #pfAvatar{flex:none;line-height:0}
 .avatarInit{display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);border:1px solid var(--line)}
 .f.pfPhoto{flex-direction:row;align-items:center;gap:14px}
-.pfPhotoBtns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.pfPhotoBtns .hint{flex-basis:100%}
+.pfPhotoBtns{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.pfPhotoBtns .hint{flex-basis:auto}
+@media (max-width:600px){.f.pfPhoto{flex-direction:column;align-items:flex-start}#pfAvatar .avatar{width:80px!important;height:80px!important}#pfAvatar .avatarInit{font-size:34px!important}}
 /* 동기화 상태 · 접속자 */
 .syncBox{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);flex-wrap:wrap;min-width:0}
 .syncDot{width:7px;height:7px;border-radius:50%;background:var(--ok-strong);flex:none}
@@ -699,6 +698,7 @@ a.rms:hover{text-decoration:underline}
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
+      <button class="btn ghost" type="button" id="btnPw" hidden>비밀번호 변경</button>
       <button class="btn ghost" type="button" id="btnLogout" hidden>로그아웃</button>
     </div>
   </header>
@@ -1199,7 +1199,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   $('#btnMembers').hidden=!adminUI();
-  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
+  $('#btnProfile').hidden=$('#btnLogout').hidden=$('#btnPw').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
   $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${state.mode}"] .lbl`)?.textContent||'';
   $('#secAdmin').hidden=[...$('#secAdmin').querySelectorAll('.navItem')].every(b=>b.hidden);
@@ -1400,6 +1400,7 @@ $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnProfile').addEventListener('click',openProfile);
 $('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
+$('#btnPw').addEventListener('click',openPassword);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
@@ -1472,6 +1473,32 @@ async function toAvatar(file){
   c.getContext('2d').drawImage(img,(img.width-n)/2,(img.height-n)/2,n,n,0,0,160,160);img.close?.();
   return c.toDataURL('image/jpeg',.85);
 }
+// 비밀번호 변경: 헤더 버튼으로 여는 작은 창. 프로필 저장과 별개로 바로 적용
+function openPassword(){
+  if(!window.wbAuth)return;
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="pwForm" novalidate style="max-width:420px">
+    <header><h2>비밀번호 변경</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr">
+      <div class="f"><label for="pwNew">새 비밀번호</label><input type="password" id="pwNew" autocomplete="new-password" placeholder="새 비밀번호 (8자 이상, 영문·숫자)"></div>
+      <div class="f"><label for="pwNew2">새 비밀번호 확인</label><input type="password" id="pwNew2" autocomplete="new-password" placeholder="새 비밀번호 확인"></div>
+      <span class="hint">변경을 누르면 바로 적용돼요.</span>
+    </div>
+    <footer><span class="err" id="pwErr"></span><div class="r"><button class="btn" type="button" id="pwCancel">취소</button><button class="btn primary" type="submit" id="pwGo">변경</button></div></footer>
+  </form></div>`;
+  $('#xClose').onclick=$('#pwCancel').onclick=closeModal;
+  $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#pwNew').focus();
+  $('#pwForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const a=$('#pwNew').value,b=$('#pwNew2').value,msg=$('#pwErr');
+    if(a.length<8||!/[a-zA-Z]/.test(a)||!/\d/.test(a)){msg.textContent='비밀번호는 8자 이상, 영문과 숫자를 섞어 주세요.';return;}
+    if(a!==b){msg.textContent='비밀번호 확인이 달라요.';return;}
+    $('#pwGo').disabled=true;
+    try{await window.wbAuth.changePassword(a);closeModal();toast('비밀번호를 바꿨어요');}
+    catch(err){msg.textContent=err.message||'바꾸지 못했어요. 잠시 후 다시 시도해 주세요.';}
+    finally{const g=$('#pwGo');if(g)g.disabled=false;}
+  });
+}
 function openProfile(){
   const m=myMember();if(!m){openWhoAmI();return;}
   const nf={task:true,comment:true,leave:true,digest:true,...(m.notify||{})};
@@ -1480,7 +1507,7 @@ function openProfile(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="profForm" style="max-width:520px" novalidate>
     <header><h2>내 프로필</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body">
-      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,72)}</div><div class="pfPhotoBtns">
+      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,96)}</div><div class="pfPhotoBtns">
         <button class="btn" type="button" id="pfPick">사진 바꾸기</button><button class="btn ghost" type="button" id="pfDel" ${avatar?'':'hidden'}>사진 지우기</button>
         <input type="file" id="pfFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="프로필 사진 파일">
         <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
@@ -1490,25 +1517,12 @@ function openProfile(){
       <div class="f"><label for="pfProj">소속 프로젝트</label><select id="pfProj"><option value="">없음</option>${projects.map(p=>`<option value="${esc(p.id)}" ${m.projectId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
       <div class="f full"><label>알림 메일</label><div class="nfList">${NF.map(([k,l,d])=>`<label class="nfItem"><input type="checkbox" data-nf="${k}" ${nf[k]!==false?'checked':''}><span><span class="nfName">${l}</span><span class="hint">${d}</span></span></label>`).join('')}</div>
         <span class="hint">내가 한 변경은 나에게 보내지 않아요. 몇 분 안에 생긴 변경은 한 통으로 묶어 보내요.</span></div>
-      <div class="f full"><label for="pfPw">비밀번호 바꾸기</label><div class="pwRow"><input type="password" id="pfPw" autocomplete="new-password" placeholder="새 비밀번호 (8자 이상, 영문·숫자)"><input type="password" id="pfPw2" autocomplete="new-password" placeholder="새 비밀번호 확인" aria-label="새 비밀번호 확인"><button class="btn" type="button" id="pfPwBtn">바꾸기</button></div><span class="hint" id="pfPwMsg">프로필 저장과 따로, 바꾸기를 누르면 바로 적용돼요.</span></div>
     </div>
-    <footer><button class="btn ghost" type="button" id="pfOut">로그아웃</button><span class="err" id="pfErr"></span><div class="r"><button class="btn" type="button" id="pfCancel">취소</button><button class="btn primary" type="submit" id="pfSave">저장</button></div></footer>
+    <footer><span class="err" id="pfErr"></span><div class="r"><button class="btn" type="button" id="pfCancel">취소</button><button class="btn primary" type="submit" id="pfSave">저장</button></div></footer>
   </form></div>`;
   $('#xClose').onclick=$('#pfCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  $('#pfOut').onclick=()=>window.wbAuth?.signOut();
-  // 비밀번호 바꾸기: 프로필 저장과 별개로 바로 적용
-  $('#pfPw').closest('.f').addEventListener('input',e=>e.stopPropagation());
-  $('#pfPwBtn').onclick=async()=>{
-    const a=$('#pfPw').value,b=$('#pfPw2').value,msg=$('#pfPwMsg');msg.classList.add('err');
-    if(a.length<8||!/[a-zA-Z]/.test(a)||!/\d/.test(a)){msg.textContent='비밀번호는 8자 이상, 영문과 숫자를 섞어 주세요.';return;}
-    if(a!==b){msg.textContent='비밀번호 확인이 달라요.';return;}
-    $('#pfPwBtn').disabled=true;
-    try{await window.wbAuth.changePassword(a);$('#pfPw').value=$('#pfPw2').value='';msg.classList.remove('err');msg.textContent='비밀번호를 바꿨어요.';toast('비밀번호를 바꿨어요');}
-    catch(err){msg.textContent=err.message||'바꾸지 못했어요. 잠시 후 다시 시도해 주세요.';}
-    finally{$('#pfPwBtn').disabled=false;}
-  };
-  const showAvatar=()=>{$('#pfAvatar').innerHTML=avatarHtml({...m,name:$('#pfName').value||m.name,avatar},72);$('#pfDel').hidden=!avatar;};
+  const showAvatar=()=>{$('#pfAvatar').innerHTML=avatarHtml({...m,name:$('#pfName').value||m.name,avatar},96);$('#pfDel').hidden=!avatar;};
   $('#pfPick').onclick=()=>$('#pfFile').click();
   $('#pfFile').addEventListener('change',async e=>{
     const f=e.target.files[0];e.target.value='';if(!f)return;

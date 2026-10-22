@@ -469,6 +469,10 @@ a.rms:hover{text-decoration:underline}
 .gateLinks{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .gateOr{text-align:center;font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px}
 .nfList{display:flex;flex-direction:column;gap:8px}
+.gateTabs{display:flex;border-bottom:1px solid var(--line);margin:-4px 0 4px}
+.gateTabs button{flex:1;border:0;border-bottom:2.5px solid transparent;background:none;padding:10px;font-weight:600;color:var(--muted);cursor:pointer}
+.gateTabs button[aria-selected="true"]{color:var(--accent-dark);border-bottom-color:var(--accent)}
+#gJoin:empty{display:none}
 .f .nfItem{display:flex;align-items:flex-start;gap:8px;font-size:13px;font-weight:400;color:var(--fg);cursor:pointer}
 .f .nfItem input{width:16px;height:16px;flex:none;margin:2px 0 0;accent-color:var(--accent-dark)}
 .nfItem>span{display:flex;flex-direction:column}
@@ -531,6 +535,7 @@ a.rms:hover{text-decoration:underline}
     </div>
     <span class="todayOff" id="todayOff"></span>
     <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
+    <button class="btn ghost" type="button" id="btnLogout" hidden>로그아웃</button>
   </div>
 
   <div class="banner" id="banner" hidden></div>
@@ -720,28 +725,43 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   const gate=document.createElement('div');gate.id='authGate';document.body.appendChild(gate);
   const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 대시보드</h1>${html}</div>`;gate.hidden=false;};
   const $g=s=>gate.querySelector(s);
-  function emailStep(msg){
-    card(`<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})로 로그인해 주세요. 메일로 받은 코드를 넣으면 들어갈 수 있어요.</p>
-      <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(localStorage.getItem('wb-email')||'')}">
-      <button class="btn primary" type="submit" id="gSend">인증 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`);
-    $g('#gEmail').focus();
+  // 로그인(가입한 메일만) / 회원가입(이름 + 메일) 두 탭. 둘 다 메일로 받은 코드로 확인
+  const otpErr=error=>error.status===429||/rate|security purposes/i.test(error.message)?'잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.':isNetErr(error)?PAUSED_HINT:error.message;
+  const notJoined=error=>/signups? not allowed|not found|user.*(not|no)/i.test(error?.message||'');
+  const sendCode=(email,mode,name)=>sb.auth.signInWithOtp({email,options:mode==='signup'?{shouldCreateUser:true,data:{name}}:{shouldCreateUser:false}});
+  function emailStep(msg,mode='login',prefill){
+    const saved=prefill||localStorage.getItem('wb-email')||'';
+    const tabs=`<div class="gateTabs" role="tablist"><button type="button" role="tab" data-m="login" aria-selected="${mode==='login'}">로그인</button><button type="button" role="tab" data-m="signup" aria-selected="${mode==='signup'}">회원가입</button></div>`;
+    card(tabs+(mode==='login'
+      ?`<p>가입한 회사 메일(${escH(STAFF_DOMAIN_TEXT)})을 넣으면 로그인 코드를 보내 드려요.</p>
+        <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(saved)}">
+        <button class="btn primary" type="submit" id="gSend">로그인 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p><div id="gJoin"></div></form>`
+      :`<p>처음이면 회원가입을 해 주세요. 회사 메일(${escH(STAFF_DOMAIN_TEXT)})로 받은 코드를 넣으면 계정이 만들어져요.</p>
+        <form id="gEmailF" class="gateForm" novalidate><label for="gSignName">이름</label><input id="gSignName" autocomplete="name" maxlength="20" placeholder="예: 홍길동">
+        <label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(saved)}">
+        <button class="btn primary" type="submit" id="gSend">가입 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`));
+    gate.querySelectorAll('.gateTabs [data-m]').forEach(b=>b.onclick=()=>emailStep('',b.dataset.m,$g('#gEmail').value.trim()));
+    (mode==='signup'?$g('#gSignName'):$g('#gEmail')).focus();
     $g('#gEmailF').addEventListener('submit',async e=>{e.preventDefault();
-      const email=$g('#gEmail').value.trim().toLowerCase();
+      const email=$g('#gEmail').value.trim().toLowerCase(), name=mode==='signup'?$g('#gSignName').value.trim():'';
+      if(mode==='signup'&&!name){$g('#gErr').textContent='이름을 입력해 주세요.';$g('#gSignName').focus();return;}
       if(!isStaffEmail(email)){$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return;}
       $g('#gSend').disabled=true;$g('#gErr').textContent='';
-      const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
-      if(error){$g('#gSend').disabled=false;$g('#gErr').textContent=error.status===429||/rate|security purposes/i.test(error.message)?'잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.':isNetErr(error)?PAUSED_HINT:error.message;return;}
+      const {error}=await sendCode(email,mode,name);
+      if(error){$g('#gSend').disabled=false;
+        if(mode==='login'&&notJoined(error)){$g('#gErr').textContent='가입되지 않은 메일이에요.';$g('#gJoin').innerHTML='<button class="btn" type="button" id="gToSign">이 메일로 회원가입</button>';$g('#gToSign').onclick=()=>emailStep('','signup',email);return;}
+        $g('#gErr').textContent=otpErr(error);return;}
       try{localStorage.setItem('wb-email',email);}catch(e){}
-      codeStep(email);});
+      codeStep(email,mode,name);});
   }
-  function codeStep(email){
-    card(`<p><b>${escH(email)}</b>로 인증 코드를 보냈어요. 메일에 있는 숫자를 넣어 주세요.</p>
+  function codeStep(email,mode='login',name=''){
+    card(`<p><b>${escH(email)}</b>로 ${mode==='signup'?'가입':'로그인'} 코드를 보냈어요. 메일에 있는 숫자를 넣어 주세요.${mode==='signup'?' 이미 가입한 메일이면 이 코드로 바로 로그인돼요.':''}</p>
       <form id="gCodeF" class="gateForm" novalidate><label for="gCode">인증 코드</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="숫자 6자리">
-      <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr"></p>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">다른 메일로</button></div></form>`);
+      <button class="btn primary" type="submit" id="gGo">${mode==='signup'?'가입하기':'로그인'}</button><p class="err" id="gErr"></p>
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">처음으로</button></div></form>`);
     $g('#gCode').focus();
-    $g('#gBack').onclick=()=>emailStep();
-    $g('#gResend').onclick=async()=>{const {error}=await sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});$g('#gErr').textContent=error?'잠시 후 다시 시도해 주세요.':'코드를 다시 보냈어요.';};
+    $g('#gBack').onclick=()=>emailStep('',mode,email);
+    $g('#gResend').onclick=async()=>{const {error}=await sendCode(email,mode,name);$g('#gErr').textContent=error?otpErr(error):'코드를 다시 보냈어요.';};
     $g('#gCodeF').addEventListener('submit',async e=>{e.preventDefault();
       const token=$g('#gCode').value.replace(/\s/g,'');if(!token){$g('#gErr').textContent='코드를 입력해 주세요.';return;}
       $g('#gGo').disabled=true;
@@ -759,11 +779,12 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
     const parts=cache.parts?.size?[...cache.parts].map(([id,d])=>[id,d.name||id,d.order??0]).sort((a,b)=>a[2]-b[2]):DEF_PARTS;
     const projs=[...cache.projects||[]].map(([id,d])=>[id,d.name||'',d.order??0]).sort((a,b)=>a[2]-b[2]);
     const opt=list=>list.map(([v,l])=>`<option value="${escH(v)}">${escH(l)}</option>`).join('');
-    card(`<p>처음 오셨네요. 대시보드에서 쓸 내 프로필을 등록해 주세요. 담당 업무·휴가·알림 메일이 이 프로필로 연결돼요.</p>
+    const signName=me.name||'';
+    card(`<p><b>회원가입 마무리</b> · 파트와 소속 프로젝트를 골라 주세요. 담당 업무·휴가·알림 메일이 이 프로필로 연결돼요.</p>
       ${free.length?`<form id="gClaimF" class="gateForm" novalidate><label for="gClaim">이미 등록된 이름이 있으면 고르세요</label><select id="gClaim">${free.map(m=>`<option value="${escH(m.id)}">${escH(m.name)}</option>`).join('')}</select>
         <button class="btn" type="submit">이 이름으로 시작</button></form><div class="gateOr">또는 새로 등록</div>`:''}
       <form id="gNewF" class="gateForm" novalidate>
-        <label for="gName">이름</label><input id="gName" maxlength="20" placeholder="예: 홍길동">
+        <label for="gName">이름</label><input id="gName" maxlength="20" placeholder="예: 홍길동" value="${escH(signName)}">
         <label for="gPart">파트</label><select id="gPart">${opt(parts)}</select>
         <label for="gProj">소속 프로젝트</label><select id="gProj"><option value="">아직 없음</option>${opt(projs)}</select>
         <button class="btn primary" type="submit" id="gNew">등록하고 시작</button></form>
@@ -807,7 +828,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
     box.querySelector('#onlineList').innerHTML=`<b>지금 접속 중</b>`+people.map(p=>`<div class="onlineItem">${typeof avatarHtml==='function'?avatarHtml(memberOf(p.uid)||{name:p.name},22):'<span class="syncDot"></span>'}<span>${escH(p.name||'이름 등록 전')}${p.uid===me?.id?' (나)':''}</span><span class="legend">${p.since?escH(hm(new Date(p.since)).slice(0,5))+'부터':''}</span></div>`).join('');
   }
   async function enter(session){
-    me={id:session.user.id,email:(session.user.email||'').toLowerCase()};
+    me={id:session.user.id,email:(session.user.email||'').toLowerCase(),name:(session.user.user_metadata?.name||'').trim()};
     if(!isStaffEmail(me.email)){card(`<p>${escH(me.email)}은(는) 회사 메일이 아니라서 들어갈 수 없어요.</p><button class="btn" type="button" id="gOut">로그아웃</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
     try{
       const {data}=await sb.rpc('wb_is_admin');isAdmin=data===true;
@@ -966,7 +987,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';$('#leaveBar').hidden=state.mode!=='leave';
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   $('#btnMembers').hidden=!adminUI();
-  $('#btnProfile').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
+  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
 }
 function render(){
@@ -1138,6 +1159,7 @@ $('#btnParts').addEventListener('click',openParts);
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnProfile').addEventListener('click',openProfile);
+$('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
 $('#btnTpl').addEventListener('click',openTemplates);
 $('#btnImport').addEventListener('click',openImport);

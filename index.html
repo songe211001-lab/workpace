@@ -616,7 +616,10 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
 
 (()=>{
   if(!SUPABASE_URL||!SUPABASE_ANON_KEY||!window.supabase)return; // 설정 전에는 화면이 '저장소에 연결되지 않아…' 안내를 띄움
-  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  // 로그인 정보는 탭 저장소(sessionStorage)에만 둠: 창(탭)을 닫으면 로그아웃되고, 다시 열면 로그인 화면부터
+  // 예전 버전이 브라우저 영구 저장소(localStorage)에 남긴 로그인 정보는 지움
+  try{Object.keys(localStorage).filter(k=>/^sb-.+-auth-token/.test(k)).forEach(k=>localStorage.removeItem(k));}catch(e){}
+  const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{storage:window.sessionStorage,persistSession:true}});
   // 서버에 닿지 않을 때(무료 플랜 일시 정지 등) 보여 줄 안내
   const PAUSED_HINT='서버에 연결하지 못했어요. 무료 플랜 서버는 7일 동안 아무도 쓰지 않으면 잠시 멈춰요. 관리자에게 Supabase 대시보드에서 프로젝트를 다시 켜 달라고(Restore project) 알려 주세요.';
   const isNetErr=e=>!e?.status&&/fetch|network|load failed|timeout/i.test(String(e?.message||e||''));

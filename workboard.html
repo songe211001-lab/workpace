@@ -553,6 +553,22 @@ a.rms:hover{text-decoration:underline}
   .calnav .btn[aria-label],.sideOpen{width:36px}
   .btn.sm,.editBtn,td .btn,.panel h3 .btn,.scard h3 .btn,.chip{height:32px}
 }
+/* ---------- 프로젝트 탭 + / ⋯ · 휴가 연차 띠 · 보고서 확정 줄 ---------- */
+.ptabW{display:inline-flex;align-items:center;flex:none}
+.ptabMore{border:0;background:none;color:var(--ink-soft);width:24px;height:24px;border-radius:var(--r-sm);cursor:pointer;opacity:0;font-weight:700}
+.ptabW:hover .ptabMore,.ptabW:focus-within .ptabMore{opacity:1}
+.ptabMore:hover{background:var(--sunk);color:var(--fg)}
+@media (hover:none){.ptabMore{opacity:1}}
+.ptabAdd{color:var(--ink-soft)}
+.mstrip{display:flex;gap:8px;overflow-x:auto;padding:12px 14px;scrollbar-width:thin}
+.mcard{flex:0 0 200px;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:6px;background:var(--surface)}
+.mcard:hover{border-color:var(--grey-400)}
+.mcard.on{border-color:var(--accent);background:var(--accent-soft)}
+.mnums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;font-size:11px;color:var(--muted)}
+.mnums b{display:block;font-size:14px;font-weight:700;color:var(--fg)}
+#leaveArea .day{min-height:120px}
+@media (max-width:600px){#leaveArea .day{min-height:72px}.mcard{flex-basis:170px}}
+.rbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -596,8 +612,6 @@ a.rms:hover{text-decoration:underline}
       <section class="sideSec" data-sec="admin" id="secAdmin">
         <button type="button" class="secHead" aria-expanded="true" aria-controls="sec-admin"><span class="lbl">관리</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="secBody" id="sec-admin">
-        <button type="button" class="navItem" id="btnProjects"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span class="lbl">프로젝트 관리</span></button>
-        <button type="button" class="navItem" id="btnParts"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5z"/><path d="m3 13 9 5 9-5"/></svg><span class="lbl">파트 관리</span></button>
         <button type="button" class="navItem" id="btnMembers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span class="lbl">구성원 관리</span></button>
         </div>
       </section>
@@ -609,7 +623,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button><details class="menu" id="moreMenu"><summary class="btn">더보기 ▾</summary><div class="menuList"><button class="btn" type="button" id="btnTpl">반복 업무 템플릿</button><button class="btn" type="button" id="btnImport">엑셀·CSV로 업무 가져오기</button><button class="btn" type="button" id="btnCsv" hidden>업무 목록 CSV 내보내기</button></div></details></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 휴가 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><select class="sel" id="pPick" aria-label="기간" hidden></select><span class="legend" id="pHint"></span><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 휴가 등록</button></div>
     <div class="modeRow topRight">
     </div>
   </header>
@@ -623,28 +637,6 @@ a.rms:hover{text-decoration:underline}
   <!-- 프로젝트 탭과 기간 선택을 한 줄에 -->
   <div class="ptRow">
   <div class="ptabs" id="ptabs" role="tablist"></div>
-  <div class="periodBar" id="periodBar">
-    <div class="seg" id="periodSeg" role="group" aria-label="기간 단위">
-      <button type="button" data-period="all">전체</button>
-      <button type="button" data-period="week">주간</button>
-      <button type="button" data-period="month">월간</button>
-    </div>
-    <div class="calnav" id="periodNav" hidden>
-      <button class="btn ghost" type="button" id="pPrev" aria-label="이전 기간">◀</button>
-      <span class="mlabel plabel" id="pLabel"></span>
-      <button class="btn ghost" type="button" id="pNext" aria-label="다음 기간">▶</button>
-      <button class="btn ghost" type="button" id="pNow">이번 주</button>
-    </div>
-    <label class="toggle" id="pBasisWrap" hidden>기준
-      <select class="sel" id="pBasis" aria-label="기간 기준">
-        <option value="active">기간 중 진행된 업무</option>
-        <option value="request">요청일</option>
-        <option value="due">완료 일정(마감일)</option>
-        <option value="done">실제 완료일</option>
-      </select>
-    </label>
-    <span class="legend" id="pHint"></span>
-  </div>
   </div>
 
 
@@ -697,7 +689,7 @@ const PCOLORS=['#1d5c84','#c2457a','#b57a12','#2f8a5b','#7a4fb0','#c4552f','#4b7
 let db=null, downloads=null, canWrite=false, storeReady=false;
 let projects=[], tasks=[], wlogs=[], comments=[], templates=[], wlRefresh=null;
 const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',project:'all',part:'all',status:'all',assignee:'all',q:'',late:false,sort:{key:'dueDate',dir:1}};
-try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,s);state.pAnchor=null;}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,s);state.pAnchor=null;state.pBasis='active';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
 {const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history'].includes(h))state.mode=h;}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
@@ -735,6 +727,22 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTi
 
 /* ---------- period (주간·월간 보기) ---------- */
 // 기준: active=기간 중 요청~완료가 겹치는 업무, request=요청일, due=완료 일정, done=실제 완료일
+/* ---------- 기간 선택 상자: 주(월요일 시작, 그 주 목요일이 속한 달의 n번째 주) · 월 ---------- */
+const dowOf=d=>new Date(d+'T00:00:00').getDay();
+function weekLabel(mon){
+  const th=addDays(mon,3), m1=th.slice(0,8)+'01', firstThu=addDays(m1,(4-dowOf(m1)+7)%7);
+  const n=Math.round((new Date(th+'T00:00:00')-new Date(firstThu+'T00:00:00'))/(7*864e5))+1;
+  return `${th.slice(2,4)}년 ${+th.slice(5,7)}월 ${n}주`;
+}
+const mdot=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
+// 선택지: 주는 과거 26주~미래 8주, 월은 과거 12개월~미래 3개월. 현재 값이 범위 밖이면 끼워 넣음
+function periodOptions(kind,cur){
+  const t=todayStr(),out=[];
+  if(kind==='week'){const base=mondayOf(t);for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));}
+  else{const d=new Date(t.slice(0,7)+'-01T00:00:00');for(let i=-12;i<=3;i++)out.push(ymd(new Date(d.getFullYear(),d.getMonth()+i,1)));}
+  if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
+  return out.map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
+}
 function periodRange(){
   if(state.period==='all')return null;
   const t=todayStr();
@@ -758,28 +766,13 @@ function periodLabel(r){
   return `${r[0].slice(2).replace(/-/g,'.')} ~ ${r[1].slice(5).replace('-','.')}`;
 }
 function renderPeriodBar(){
-  const r=periodRange(), on=state.period!=='all';
-  document.querySelectorAll('#periodSeg [data-period]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.period===state.period));
-  $('#periodNav').hidden=!on;$('#pBasisWrap').hidden=!on;
-  if(on){
-    $('#pLabel').textContent=periodLabel(r);
-    const t=todayStr(), cur=state.period==='week'?mondayOf(t):t.slice(0,7)+'-01';
-    $('#pNow').textContent=state.period==='week'?'이번 주':'이번 달';$('#pNow').hidden=state.pAnchor===cur;
-    $('#pBasis').value=state.pBasis;
-  }
+  const on=state.period!=='all';if(on)periodRange();
+  $('#periodSel').value=state.period;$('#pPick').hidden=!on;
+  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor);
   $('#pHint').textContent=on?`${periodTasks().length}건`:'';
 }
-$('#periodSeg').addEventListener('click',e=>{const b=e.target.closest('[data-period]');if(!b)return;state.period=b.dataset.period;state.pAnchor=null;persistUI();render();});
-$('#periodNav').addEventListener('click',e=>{
-  const id=e.target.closest('button')?.id;if(!id)return;
-  if(id==='pNow'){state.pAnchor=null;render();return;}
-  const dir=id==='pNext'?1:id==='pPrev'?-1:0;if(!dir)return;
-  periodRange();
-  if(state.period==='week')state.pAnchor=addDays(state.pAnchor,7*dir);
-  else{const d=new Date(state.pAnchor+'T00:00:00');state.pAnchor=ymd(new Date(d.getFullYear(),d.getMonth()+dir,1));}
-  render();
-});
-$('#pBasis').addEventListener('change',e=>{state.pBasis=e.target.value;persistUI();render();});
+$('#periodSel').addEventListener('change',e=>{state.period=e.target.value;state.pAnchor=null;persistUI();render();});
+$('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.value;render();});
 
 /* ---------- filtering ---------- */
 function scoped(){return periodTasks().filter(t=>state.project==='all'||t.projectId===state.project);}
@@ -819,11 +812,12 @@ function applyMode(){
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
   $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${state.mode}"] .lbl`)?.textContent||'';
-  if(typeof adminUI==='function')$('#btnProjects').hidden=$('#btnParts').hidden=!adminUI();
   $('#secAdmin').hidden=[...$('#secAdmin').querySelectorAll('.navItem')].every(b=>b.hidden);
 }
 function render(){
-  renderBody();
+  renderBody();liftTools();
+}
+function liftTools(){
   // 화면별 도구 줄(.rtool)을 헤더로. 다시 그리지 않은 경우(입력 중 보호)엔 기존 것을 둠
   const t=document.querySelector('.wrap > .area:not([hidden]) > .rtool'),pt=$('#pageTools');
   if(t){pt.replaceChildren(t);pt.dataset.mode=state.mode;}else if(pt.dataset.mode!==state.mode){pt.replaceChildren();pt.dataset.mode=state.mode;}
@@ -843,13 +837,10 @@ function renderBody(){
   renderPeriodBar();renderSummary();renderTabs();renderFilters();
   const main=$('#main');
   $('#btnAdd').disabled=!canWrite;
-  $('#btnProjects').disabled=!canWrite;
-  $('#btnParts').disabled=!canWrite;
-  $('#btnImport').disabled=!canWrite;
   if(!storeReady){main.innerHTML=`<div class="empty"><h2>업무를 불러오는 중입니다</h2><p>잠시만 기다려 주세요.</p></div>`;return;}
   if(!projects.length){
     main.innerHTML=`<div class="empty"><h2>첫 프로젝트를 등록해 주세요</h2><p>파견 중인 프로젝트를 먼저 추가하면, 그 아래에 기획·디자인·퍼블·개발·QA 업무를 등록하고 함께 볼 수 있습니다.</p>${canWrite?'<button class="btn primary" type="button" id="emptyProj">프로젝트 추가</button>':''}</div>`;
-    $('#emptyProj')?.addEventListener('click',openProjects);return;
+    $('#emptyProj')?.addEventListener('click',()=>openProject(null));return;
   }
   const list=filtered();
   if(!tasks.length){
@@ -884,7 +875,8 @@ function renderTabs(){
   const pt=periodTasks(), count=id=>pt.filter(t=>(id==='all'||t.projectId===id)&&(state.period!=='all'||t.status!=='done')).length;
   const tabs=[{id:'all',name:'전체 프로젝트'},...projects];
   if(state.project!=='all'&&!projOf(state.project))state.project='all';
-  $('#ptabs').innerHTML=tabs.map(p=>`<button class="ptab" role="tab" type="button" data-p="${esc(p.id)}" aria-selected="${state.project===p.id}">${p.color?`<span class="dot" style="background:${esc(p.color)}"></span>`:''}${esc(p.name)}<span class="c" title="${state.period==='all'?'미완료':'이 기간 업무'}">${count(p.id)}</span></button>`).join('');
+  const admin=canWrite&&!!db&&(typeof adminUI!=='function'||adminUI());
+  $('#ptabs').innerHTML=tabs.map(p=>`<span class="ptabW"><button class="ptab" role="tab" type="button" data-p="${esc(p.id)}" aria-selected="${state.project===p.id}">${p.color?`<span class="dot" style="background:${esc(p.color)}"></span>`:''}${esc(p.name)}<span class="c" title="${state.period==='all'?'미완료':'이 기간 업무'}">${count(p.id)}</span></button>${admin&&p.id!=='all'?`<button type="button" class="ptabMore" data-pedit="${esc(p.id)}" aria-label="${esc(p.name)} 프로젝트 수정·순서·삭제" title="수정·순서·삭제">⋯</button>`:''}</span>`).join('')+(admin?'<button type="button" class="ptab ptabAdd" id="pAddTab">+ 프로젝트</button>':'');
 }
 
 function renderFilters(){
@@ -930,7 +922,7 @@ async function applyBulk(btn){
 }
 function renderList(list){
   for(const id of [...sel])if(!list.some(t=>t.id===id))sel.delete(id);
-  if(!list.length){$('#main').innerHTML=`<div class="empty"><h2>조건에 맞는 업무가 없습니다</h2><p>${state.period!=='all'?`${esc(periodLabel(periodRange()))}에 해당하는 업무가 없습니다. 기간이나 기준을 바꿔 보세요.`:'필터를 바꾸거나 검색어를 지워 보세요.'}</p></div>`;return;}
+  if(!list.length){$('#main').innerHTML=`<div class="empty"><h2>조건에 맞는 업무가 없습니다</h2><p>${state.period!=='all'?`${esc(periodLabel(periodRange()))}에 해당하는 업무가 없습니다. 기간을 바꿔 보세요.`:'필터를 바꾸거나 검색어를 지워 보세요.'}</p></div>`;return;}
   const cols=[['project','프로젝트'],['part','파트'],['title','요청내용'],['assignee','담당자'],['requester','요청자'],['requestDate','요청일'],['priority','우선순위'],['status','진행 현황'],['dueDate','실제 완료 / 완료 일정'],['estHours','소요(실제/예상)']];
   const arr=k=>state.sort.key===k?`<span class="arr">${state.sort.dir>0?'▲':'▼'}</span>`:'';
   const rows=sorted(list).map(t=>{
@@ -1010,7 +1002,7 @@ function renderMatrix(){
 })();
 
 /* ---------- events ---------- */
-$('#ptabs').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b)return;state.project=b.dataset.p;persistUI();render();});
+$('#ptabs').addEventListener('click',e=>{const ed=e.target.closest('[data-pedit]');if(ed){openProject(projOf(ed.dataset.pedit));return;}if(e.target.closest('#pAddTab')){openProject(null);return;}const b=e.target.closest('[data-p]');if(!b)return;state.project=b.dataset.p;persistUI();render();});
 $('#partChips').addEventListener('click',e=>{const b=e.target.closest('[data-part]');if(!b)return;state.part=b.dataset.part;persistUI();render();});
 $('#fStatus').addEventListener('change',e=>{state.status=e.target.value;persistUI();render();});
 $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMember()){e.target.value=state.assignee;openWhoAmI();return;}state.assignee=e.target.value;persistUI();render();});
@@ -1018,14 +1010,9 @@ $('#fLate').addEventListener('change',e=>{state.late=e.target.checked;persistUI(
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#btnAdd').addEventListener('click',()=>openTask());
-$('#btnProjects').addEventListener('click',openProjects);
-$('#btnParts').addEventListener('click',openParts);
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
-$('#btnTpl').addEventListener('click',openTemplates);
-$('#btnImport').addEventListener('click',openImport);
-$('#btnCsv').addEventListener('click',exportCsv);
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
   if(e.target.closest('.selCell'))return; // 체크박스 칸은 change에서 처리
@@ -1081,144 +1068,6 @@ function openWhoAmI(){
   });
 }
 
-/* ---------- A6: 엑셀·CSV 가져오기 ---------- */
-// 첫 줄 머리글 이름으로 열을 맞춤. Jira·RMS 내보내기의 흔한 영문 머리글도 받음
-const IMPORT_COLS={
-  title:['요청내용','제목','요약','업무','summary','title'],
-  jiraKey:['jira','jira 키','jira키','이슈 키','key','issue key'],
-  rmsNo:['rms','rms 번호','rms번호'],
-  part:['파트','part'],
-  assignee:['담당자','assignee'],
-  requester:['요청자','reporter','보고자'],
-  status:['진행 현황','상태','status'],
-  priority:['우선순위','priority'],
-  requestDate:['요청일','요청일자','생성일','created'],
-  dueDate:['완료 일정','마감일','기한','due date','due'],
-  estHours:['예상 소요시간','예상 소요','예상 시간','예상(h)','original estimate'],
-  note:['메모','설명','description']
-};
-const IMP_STATUS={'대기':'wait','to do':'wait','open':'wait','진행중':'doing','진행 중':'doing','in progress':'doing','검토중':'review','검토 중':'review','in review':'review','보류':'hold','on hold':'hold','완료':'done','done':'done','closed':'done','resolved':'done'};
-const IMP_PRI={'긴급':0,'highest':0,'blocker':0,'높음':1,'high':1,'보통':2,'medium':2,'낮음':3,'low':3,'lowest':3};
-function parseCsv(text){
-  const rows=[];let row=[],f='',q=false;
-  for(let i=0;i<text.length;i++){const c=text[i];
-    if(q){if(c==='"'){if(text[i+1]==='"'){f+='"';i++;}else q=false;}else f+=c;}
-    else if(c==='"')q=true;else if(c===','){row.push(f);f='';}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(f);rows.push(row);row=[];f='';}else f+=c;}
-  if(f||row.length){row.push(f);rows.push(row);}
-  return rows.filter(r=>r.some(v=>String(v).trim()));
-}
-function impDate(v){
-  if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);
-  const m=String(v||'').trim().match(/^(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
-  return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:'';
-}
-async function readImportFile(file){
-  if(/\.xlsx$/i.test(file.name)){
-    const X=await loadExcel(),wb=new X.Workbook();await wb.xlsx.load(await file.arrayBuffer());
-    const ws=wb.worksheets[0],rows=[];if(!ws)return rows;
-    ws.eachRow(r=>{rows.push(r.values.slice(1).map(c=>c&&typeof c==='object'&&!(c instanceof Date)?(c.text??c.result??(c.richText?c.richText.map(x=>x.text).join(''):'')):c));});
-    return rows;
-  }
-  let text=await file.text();if(text.charCodeAt(0)===0xFEFF)text=text.slice(1);
-  return parseCsv(text);
-}
-function mapImport(rows,projectId,defPart){
-  const head=(rows[0]||[]).map(h=>String(h??'').trim().toLowerCase());
-  const idx={};for(const [k,names] of Object.entries(IMPORT_COLS)){const i=head.findIndex(h=>names.includes(h));if(i>=0)idx[k]=i;}
-  const out=[],skipped={noTitle:0,dup:0},badDate=new Set();
-  const seen=new Set(tasks.filter(t=>t.projectId===projectId&&t.jiraKey).map(t=>t.jiraKey));
-  for(const r of rows.slice(1)){
-    const g=k=>idx[k]==null?'':r[idx[k]], str=k=>String(g(k)??'').trim();
-    const title=str('title');if(!title){skipped.noTitle++;continue;}
-    const jiraKey=str('jiraKey').toUpperCase();if(jiraKey&&seen.has(jiraKey)){skipped.dup++;continue;}if(jiraKey)seen.add(jiraKey);
-    const pName=str('part'),part=PARTS.find(p=>p.label===pName||p.k===pName)?.k||defPart;
-    const aName=str('assignee'),m=members.find(x=>x.name===aName);
-    const dates={};for(const k of ['requestDate','dueDate']){const raw=g(k);dates[k]=impDate(raw);if(raw&&!dates[k])badDate.add(k==='dueDate'?'완료 일정':'요청일');}
-    const est=parseFloat(str('estHours'));
-    out.push({projectId,part,title:title.slice(0,200),jiraKey,rmsNo:str('rmsNo'),rmsUrl:'',assignee:m?m.name:aName,assigneeId:m?m.id:'',requester:str('requester'),
-      status:IMP_STATUS[str('status').toLowerCase()]||'wait',priority:IMP_PRI[str('priority').toLowerCase()]??2,
-      requestDate:dates.requestDate||todayStr(),dueDate:dates.dueDate,doneDate:'',estHours:isNaN(est)?'':Math.max(0,est),actHours:'',link:'',note:str('note'),parentId:''});
-  }
-  return {idx,out,skipped,badDate:[...badDate]};
-}
-function openImport(){
-  if(!projects.length){openProjects();return;}
-  const st={rows:null,file:'',result:null};
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="impForm" novalidate>
-    <header><h2>업무 가져오기</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body">
-      <div class="f full"><label for="impFile">엑셀(.xlsx) 또는 CSV 파일</label><input type="file" id="impFile" accept=".xlsx,.csv,text/csv">
-        <span class="hint">첫 줄은 머리글이어야 해요. 요청내용(또는 제목·Summary) 열은 꼭 있어야 하고, Jira 키·담당자·요청자·진행 현황·우선순위·요청일·완료 일정·예상 소요시간·파트·메모 열이 있으면 함께 가져와요.</span></div>
-      <div class="f"><label for="impProj">넣을 프로젝트</label><select id="impProj">${projects.map(p=>`<option value="${esc(p.id)}" ${state.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
-      <div class="f"><label for="impPart">파트 열이 없을 때 파트</label><select id="impPart">${PARTS.map(p=>`<option value="${esc(p.k)}" ${state.part===p.k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
-      <div class="f full" id="impPreview"></div>
-    </div>
-    <footer><span class="err" id="impErr"></span><div class="r"><button class="btn" type="button" id="impCancel">취소</button><button class="btn primary" type="submit" id="impGo" disabled>가져오기</button></div></footer>
-  </form></div>`;
-  $('#xClose').onclick=$('#impCancel').onclick=askClose;
-  $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  const LBL={title:'요청내용',jiraKey:'Jira 키',rmsNo:'RMS 번호',part:'파트',assignee:'담당자',requester:'요청자',status:'진행 현황',priority:'우선순위',requestDate:'요청일',dueDate:'완료 일정',estHours:'예상 소요',note:'메모'};
-  const preview=()=>{
-    if(!st.rows){$('#impPreview').innerHTML='';$('#impGo').disabled=true;return;}
-    const r=mapImport(st.rows,$('#impProj').value,$('#impPart').value);st.result=r;
-    if(r.idx.title==null){$('#impPreview').innerHTML='';$('#impErr').textContent='요청내용(또는 제목·Summary) 머리글을 찾지 못했어요. 첫 줄 머리글을 확인해 주세요.';$('#impGo').disabled=true;return;}
-    $('#impErr').textContent='';
-    const unknownA=[...new Set(r.out.filter(t=>t.assignee&&!t.assigneeId).map(t=>t.assignee))];
-    $('#impPreview').innerHTML=`<div class="banner"><b>${r.out.length}건</b>을 가져와요. 맞춘 열: ${Object.keys(r.idx).map(k=>LBL[k]).join(', ')}
-      ${r.skipped.noTitle?`<br>요청내용이 비어 건너뛰는 줄 ${r.skipped.noTitle}개`:''}${r.skipped.dup?`<br>이 프로젝트에 같은 Jira 키가 있어 건너뛰는 줄 ${r.skipped.dup}개`:''}
-      ${r.badDate.length?`<br>날짜를 읽지 못한 칸이 있어요(${r.badDate.join(', ')}). 2026-10-22 형식이 아니면 비워 둬요.`:''}
-      ${unknownA.length?`<br>구성원에 없는 담당자: ${esc(unknownA.slice(0,5).join(', '))}${unknownA.length>5?' 외':''} (이름만 들어가요)`:''}</div>
-      ${r.out.length?`<div class="tablebox" style="margin-top:8px"><table style="min-width:520px"><thead><tr><th>요청내용</th><th>담당자</th><th>진행 현황</th><th>완료 일정</th></tr></thead><tbody>${r.out.slice(0,5).map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(t.assignee||'—')}</td><td>${esc(statusOf(t.status).label)}</td><td class="num">${fmtDate(t.dueDate)}</td></tr>`).join('')}</tbody></table></div>${r.out.length>5?`<p class="legend">처음 5건만 보여요</p>`:''}`:''}`;
-    $('#impGo').disabled=!r.out.length||r.out.length>500;
-    if(r.out.length>500)$('#impErr').textContent='한 번에 500건까지 가져올 수 있어요. 파일을 나눠 주세요.';
-  };
-  $('#impFile').addEventListener('change',async e=>{
-    const f=e.target.files[0];st.rows=null;$('#impErr').textContent='';if(!f){preview();return;}
-    if(!/\.(xlsx|csv)$/i.test(f.name)){$('#impErr').textContent='.xlsx 또는 .csv 파일만 가져올 수 있어요.';preview();return;}
-    $('#impPreview').innerHTML='<p class="legend">파일을 읽는 중…</p>';
-    try{st.rows=await readImportFile(f);st.file=f.name;}catch(err){$('#impErr').textContent=err?.message==='load'?'엑셀 도구를 불러오지 못했어요. CSV로 저장해서 다시 시도해 주세요.':'파일을 읽지 못했어요. 엑셀에서 CSV(UTF-8)로 저장해서 다시 시도해 주세요.';}
-    preview();
-  });
-  $('#impProj').addEventListener('change',preview);$('#impPart').addEventListener('change',preview);
-  $('#impForm').addEventListener('submit',async e=>{
-    e.preventDefault();const list=st.result?.out||[];if(!list.length)return;
-    $('#impGo').disabled=true;let n=0;const now=new Date().toISOString();
-    try{for(const t of list){await db.collection('tasks').add({...t,createdAt:now,updatedAt:now});n++;$('#impGo').textContent=`가져오는 중… ${n}/${list.length}`;}
-      logChange('task','update','',`${st.file}에서 업무 가져오기`,null,null,`${n}건 가져옴`);closeModal();toast(`${n}건을 가져왔어요`);
-    }catch(err){$('#impGo').textContent='가져오기';$('#impGo').disabled=false;handleWriteError(err,'#impErr');$('#impErr').textContent=`${n}건까지 가져오고 멈췄어요. `+$('#impErr').textContent;}
-  });
-}
-
-/* ---------- A8: 반복 업무 템플릿 ---------- */
-// 매주 같은 업무(회귀 테스트 등)를 템플릿으로 저장해 두고 버튼으로 이번 주 업무를 만듦. 자동 생성은 하지 않음
-function saveTemplate(t){
-  const off=t.requestDate&&t.dueDate?Math.round((new Date(t.dueDate+'T00:00:00')-new Date(t.requestDate+'T00:00:00'))/864e5):'';
-  return db.collection('templates').add({name:t.title,projectId:t.projectId,part:t.part,title:t.title,assignee:t.assignee||'',assigneeId:t.assigneeId||'',requester:t.requester||'',priority:t.priority??2,estHours:t.estHours??'',dueOffset:off===''?'':Math.max(0,off),note:t.note||'',createdAt:new Date().toISOString()});
-}
-function openTemplates(){
-  const ws=mondayOf(todayStr()),we=addDays(ws,6);
-  const madeThisWeek=id=>tasks.some(t=>t.templateId===id&&t.requestDate>=ws&&t.requestDate<=we);
-  const draw=()=>{$('#tplList').innerHTML=templates.length?templates.map(x=>`<div class="tplRow"><div class="tplName"><b>${esc(x.name)}</b><span class="legend">${esc(projOf(x.projectId)?.name||'프로젝트 없음')} · ${esc(partOf(x.part).label)} · ${esc(x.assignee||'담당 미지정')}${x.dueOffset!==''?` · 요청일 +${x.dueOffset}일 마감`:''}</span>${madeThisWeek(x.id)?'<span class="legend">이번 주에 이미 만들었어요</span>':''}</div>
-      ${canWrite?`<button class="btn" type="button" data-make="${esc(x.id)}">이번 주 업무 만들기</button><button class="btn ghost" type="button" data-tdel="${esc(x.id)}">삭제</button>`:''}</div>`).join(''):'<p class="legend">아직 템플릿이 없어요. 업무 창 아래의 "템플릿으로 저장"으로 추가해 주세요.</p>';};
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:640px">
-    <header><h2>반복 업무 템플릿</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><div class="tplList" id="tplList"></div><span class="err" id="tplErr"></span></div></div></div>`;
-  draw();wlRefresh=draw;
-  $('#xClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
-  $('#tplList').addEventListener('click',async e=>{
-    const mk=e.target.closest('[data-make]'),dl=e.target.closest('[data-tdel]');
-    if(mk){const x=templates.find(y=>y.id===mk.dataset.make);if(!x)return;
-      if(madeThisWeek(x.id)&&!mk.dataset.sure){mk.dataset.sure='1';mk.textContent='그래도 만들기';return;}
-      if(!projOf(x.projectId)){$('#tplErr').textContent='템플릿의 프로젝트가 삭제됐어요. 템플릿을 지우고 다시 만들어 주세요.';return;}
-      mk.disabled=true;const now=new Date().toISOString(),req=todayStr();
-      const t={projectId:x.projectId,part:x.part,title:x.title,assignee:x.assignee,assigneeId:x.assigneeId,requester:x.requester,jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:x.priority??2,requestDate:req,dueDate:x.dueOffset===''?'':addDays(req,+x.dueOffset),doneDate:'',estHours:x.estHours??'',actHours:'',link:'',note:x.note||'',parentId:'',templateId:x.id,createdAt:now,updatedAt:now};
-      try{const ref=await db.collection('tasks').add(t);logChange('task','create',ref.id,t.title,null,t,'템플릿으로 만듦');toast('이번 주 업무를 만들었어요');draw();}catch(err){mk.disabled=false;handleWriteError(err,'#tplErr');}
-      return;}
-    if(dl){if(!dl.dataset.sure){dl.dataset.sure='1';dl.textContent='정말 삭제';return;}
-      try{await db.collection('templates').doc(dl.dataset.tdel).delete();toast('템플릿을 삭제했어요');}catch(err){handleWriteError(err,'#tplErr');}}
-  });
-}
-
 /* ---------- task modal ---------- */
 function closeModal(){$('#modalRoot').innerHTML='';modalDirty=false;closeWarned=false;wlRefresh=null;}
 // 입력한 내용이 있으면 바깥 클릭·Esc·취소로 바로 닫지 않고 한 번 알려 줌. 한 번 더 하면 닫힘
@@ -1228,7 +1077,7 @@ function askClose(){if(modalDirty&&!closeWarned){closeWarned=true;toast('저장�
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').innerHTML)askClose();});
 
 function openTask(t,prefill){
-  if(!projects.length){openProjects();return;}
+  if(!projects.length){openProject(null);return;}
   const isNew=!t;
   t=t||{projectId:state.project!=='all'?state.project:projects[0].id,part:state.part!=='all'?state.part:PARTS[0].k,status:'wait',priority:2,requestDate:todayStr(),...prefill};
   const ro=!canWrite;
@@ -1271,7 +1120,7 @@ function openTask(t,prefill){
     </div></fieldset>
     <datalist id="peopleList">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <footer>
-      <div id="delZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="tDel">삭제</button>':''}${!isNew&&canWrite&&nextPart(t.part)?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(nextPart(t.part).label)}(으)로 넘기기</button>`:''}${!isNew&&canWrite?'<button class="btn ghost" type="button" id="tTpl">템플릿으로 저장</button>':''}</div>
+      <div id="delZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="tDel">삭제</button>':''}${!isNew&&canWrite&&nextPart(t.part)?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(nextPart(t.part).label)}(으)로 넘기기</button>`:''}</div>
       <span class="err" id="tErr"></span>
       <div class="r"><button class="btn" type="button" id="tCancel">${ro?'닫기':'취소'}</button>${ro?'':`<button class="btn primary" type="submit" id="tSave">${isNew?'등록':'저장'}</button>`}</div>
     </footer>
@@ -1355,7 +1204,6 @@ function openTask(t,prefill){
   const dueSync=()=>{const av=$('#tAssignee').value,m=av.startsWith('name:')?null:memOf(av),l=m&&leaveOn(m.id,$('#tDue').value);$('#dueLeave').textContent=l?`담당자가 이날 휴가예요 (${leaveLabel(l)})`:'';};
   dueSync();$('#tAssignee').addEventListener('change',dueSync);$('#tDue').addEventListener('change',dueSync);
   // 다음 파트로 넘기기: 같은 요청을 다음 파트 업무로 새로 만듦(parentId로 연결)
-  $('#tTpl')?.addEventListener('click',async e=>{e.target.disabled=true;try{await saveTemplate(t);toast('템플릿으로 저장했어요. 템플릿 버튼에서 이번 주 업무를 만들 수 있어요.');}catch(err){handleWriteError(err,'#tErr');}finally{e.target.disabled=false;}});
   $('#tParent')?.addEventListener('click',()=>openTask(tasks.find(x=>x.id===t.parentId)));
   $('#tNext')?.addEventListener('click',()=>{const np=nextPart(t.part),pt=partOf(t.part);
     openTask(null,{projectId:t.projectId,part:np.k,title:t.title,jiraKey:t.jiraKey||'',rmsNo:t.rmsNo||'',rmsUrl:t.rmsUrl||'',link:t.link||'',requester:t.assignee||t.requester||'',priority:t.priority??2,parentId:t.id,note:`이전 단계: ${pt.label} · ${t.title}`});});
@@ -1408,133 +1256,54 @@ function openTask(t,prefill){
 }
 
 /* ---------- projects modal ---------- */
-function openProjects(){
+/* ---------- 프로젝트 하나 추가·수정·순서·삭제 (업무 관리 프로젝트 탭의 + / ⋯) ---------- */
+function openProject(p){
   if(!canWrite)return;
-  const row=p=>`<div class="prow" data-pid="${esc(p.id||'')}">
-    <div class="swatches">${PCOLORS.slice(0,4).map(c=>`<button type="button" class="swatch" style="background:${c}" data-c="${c}" aria-label="색상" aria-pressed="${p.color===c}"></button>`).join('')}</div>
-    <input class="pName" value="${esc(p.name||'')}" placeholder="프로젝트명" aria-label="프로젝트명">
-    <input class="pClient" value="${esc(p.client||'')}" placeholder="고객사 · 기간" aria-label="고객사">
-    ${p.id?`<button type="button" class="btn ghost pDel">삭제</button>`:'<span></span>'}
-  </div>`;
-  const draw=()=>{
-    $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="projForm" novalidate>
-      <header><h2>프로젝트 관리</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-      <div class="body" style="grid-template-columns:1fr"><div class="plist" id="plist">${projects.map(row).join('')}</div>
-      <div><button type="button" class="btn" id="pAdd">+ 프로젝트 추가</button></div>
-      <div id="pConfirm"></div></div>
-      <footer><span class="err" id="pErr"></span><div class="r"><button class="btn" type="button" id="pCancel">취소</button><button class="btn primary" type="submit">저장</button></div></footer>
-    </form></div>`;
-    $('#xClose').onclick=$('#pCancel').onclick=askClose;
-    $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-    $('#pAdd').onclick=()=>{const used=projects.length+$('#plist').querySelectorAll('[data-pid=""]').length;$('#plist').insertAdjacentHTML('beforeend',row({color:PCOLORS[used%4]}));$('#plist').lastElementChild.querySelector('.pName').focus();};
-    if(!projects.length)$('#pAdd').click();
-    $('#plist').addEventListener('click',e=>{
-      const sw=e.target.closest('.swatch');
-      if(sw){sw.parentElement.querySelectorAll('.swatch').forEach(s=>s.setAttribute('aria-pressed',s===sw));return;}
-      const del=e.target.closest('.pDel');if(!del)return;
-      const r=del.closest('.prow'),pid=r.dataset.pid,p=projOf(pid),n=tasks.filter(t=>t.projectId===pid).length;
-      $('#pConfirm').innerHTML=`<div class="confirm">'${esc(p?.name)}' 프로젝트${n?`와 업무 ${n}건`:''}을 삭제할까요? <button class="btn danger" type="button" id="pDelYes">삭제</button><button class="btn ghost" type="button" id="pDelNo">취소</button></div>`;
-      $('#pDelNo').onclick=()=>$('#pConfirm').innerHTML='';
-      $('#pDelYes').onclick=async()=>{
-        try{for(const t of tasks.filter(t=>t.projectId===pid))await db.collection('tasks').doc(t.id).delete();
-          for(const a of assigns.filter(a=>a.projectId===pid))await db.collection('assignments').doc(a.id).delete();
-          await db.collection('projects').doc(pid).delete();logChange('project','delete',pid,p?.name,null,null,n?`업무 ${n}건 함께 삭제`:'');r.remove();$('#pConfirm').innerHTML='';toast('삭제했습니다');}
-        catch(err){handleWriteError(err,'#pErr');}
-      };
-    });
-    $('#projForm').addEventListener('submit',async e=>{
-      e.preventDefault();
-      const rows=[...$('#plist').querySelectorAll('.prow')];
-      try{
-        for(const [i,r] of rows.entries()){
-          const name=r.querySelector('.pName').value.trim();if(!name)continue;
-          const color=r.querySelector('.swatch[aria-pressed="true"]')?.dataset.c||PCOLORS[i%4];
-          const client=r.querySelector('.pClient').value.trim(), pid=r.dataset.pid;
-          const old=projOf(pid);
-          if(pid){if(!old||old.name!==name||old.color!==color||(old.client||'')!==client){await db.collection('projects').doc(pid)[old?'update':'set'](old?{name,color,client}:{name,color,client,order:i});logChange('project','update',pid,name,old,{name,color,client});}}
-          else{const ref=await db.collection('projects').add({name,color,client,order:Date.now()});logChange('project','create',ref.id,name,null,{name,client});}
-        }
-        closeModal();toast('프로젝트를 저장했습니다');
-      }catch(err){handleWriteError(err,'#pErr');}
-    });
-  };
-  draw();
-}
-
-/* ---------- parts modal ---------- */
-function openParts(){
-  if(!canWrite)return;
-  // 작업용 사본: 저장 버튼을 누를 때만 실제로 반영
-  let rows=PARTS.map(p=>({id:p.k,name:p.label,color:p.c}));
-  const removed=[]; // {id, moveTo}
-  let pending=null; // 삭제 확인 중인 행 index
-  const usage=id=>tasks.filter(t=>t.part===id).length;
-  const sync=()=>document.querySelectorAll('#partList .pcard').forEach((el,i)=>{if(rows[i])rows[i].name=el.querySelector('.pcName').value;});
-  const draw=()=>{
-    $('#partList').innerHTML=rows.map((r,i)=>{
-      const n=r.id?usage(r.id):0;
-      const others=rows.filter((_,j)=>j!==i);
-      return `<div class="pcard" data-i="${i}">
-        <div class="pcTop">
-          <div class="order"><button type="button" class="btn ghost mv" data-d="-1" aria-label="위로" ${i===0?'disabled':''}>▲</button><button type="button" class="btn ghost mv" data-d="1" aria-label="아래로" ${i===rows.length-1?'disabled':''}>▼</button></div>
-          <span class="pcSw" style="background:${esc(r.color)}"></span>
-          <input class="pcName" id="partName${i}" value="${esc(r.name)}" placeholder="파트명 (예: 기획, 디자인, QA, 마케팅)" aria-label="파트명" maxlength="20">
-          <span class="pcUse num">${n}건</span>
-          <button type="button" class="btn ghost pcDel" ${rows.length<=1?'disabled title="파트는 최소 1개 필요합니다"':''}>삭제</button>
-        </div>
-        <div class="swatches wrap">${PART_COLORS.map(c=>`<button type="button" class="swatch" style="background:${c}" data-c="${c}" aria-label="색상 선택" aria-pressed="${r.color===c}"></button>`).join('')}</div>
-        ${pending===i?`<div class="confirm">${n?`이 파트의 업무 ${n}건을 <select class="sel" id="moveTo">${others.map(o=>`<option value="${esc(o.id||'')}" ${o.id?'':'disabled'}>${esc(o.name||'이름 없음')}${o.id?'':' (저장 후 선택 가능)'}</option>`).join('')}</select> 파트로 옮기고 삭제할까요?`:'이 파트를 삭제할까요?'}
-          <button class="btn danger" type="button" id="pcYes">삭제</button><button class="btn ghost" type="button" id="pcNo">취소</button></div>`:''}
-      </div>`;}).join('');
-  };
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="partForm" novalidate>
-    <header><h2>파트 관리</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+  const isNew=!p, idx=p?projects.indexOf(p):-1, color0=p?.color||PCOLORS[projects.length%4];
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="projForm" novalidate style="max-width:480px">
+    <header><h2>${isNew?'프로젝트 추가':'프로젝트 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr">
-      <p class="legend" style="margin:0">업무를 나누는 파트(카테고리)를 추가·수정·정렬합니다. 여기서 정한 순서대로 필터, 목록, 파트 현황에 표시됩니다.</p>
-      <div class="plist" id="partList"></div>
-      <div><button type="button" class="btn" id="pcAdd">+ 파트 추가</button></div>
+      <div class="f"><label for="pName">프로젝트명 <b>*</b></label><input id="pName" value="${esc(p?.name||'')}" maxlength="40" placeholder="프로젝트명"></div>
+      <div class="f"><label for="pClient">고객사 · 기간</label><input id="pClient" value="${esc(p?.client||'')}" maxlength="60" placeholder="고객사 · 기간"></div>
+      <div class="f"><label>색</label><div class="swatches">${PCOLORS.slice(0,4).map(c=>`<button type="button" class="swatch" style="background:${c}" data-c="${c}" aria-label="색상" aria-pressed="${color0===c}"></button>`).join('')}</div></div>
+      ${isNew?'':`<div class="f"><label>탭 순서</label><div style="display:flex;gap:6px"><button class="btn" type="button" id="pUp" ${idx<=0?'disabled':''}>◀ 앞으로</button><button class="btn" type="button" id="pDown" ${idx>=projects.length-1?'disabled':''}>뒤로 ▶</button></div></div>`}
+      <div id="pConfirm"></div>
     </div>
-    <footer><span class="err" id="pcErr"></span><div class="r"><button class="btn" type="button" id="pcCancel">취소</button><button class="btn primary" type="submit" id="pcSave">저장</button></div></footer>
+    <footer>${isNew?'<span></span>':'<button class="btn danger" type="button" id="pDel">삭제</button>'}<span class="err" id="pErr"></span><div class="r"><button class="btn" type="button" id="pCancel">취소</button><button class="btn primary" type="submit">저장</button></div></footer>
   </form></div>`;
-  draw();
-  $('#xClose').onclick=$('#pcCancel').onclick=askClose;
+  $('#xClose').onclick=$('#pCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  $('#pcAdd').onclick=()=>{sync();const used=new Set(rows.map(r=>r.color));rows.push({id:'',name:'',color:PART_COLORS.find(c=>!used.has(c))||PART_COLORS[rows.length%PART_COLORS.length]});pending=null;draw();$('#partList').lastElementChild.querySelector('.pcName').focus();};
-  $('#partList').addEventListener('click',e=>{
-    const card=e.target.closest('.pcard');if(!card)return;const i=+card.dataset.i;
-    const sw=e.target.closest('.swatch');
-    if(sw){sync();rows[i].color=sw.dataset.c;draw();return;}
-    const mv=e.target.closest('.mv');
-    if(mv){sync();const j=i+(+mv.dataset.d);if(j<0||j>=rows.length)return;[rows[i],rows[j]]=[rows[j],rows[i]];pending=null;draw();return;}
-    if(e.target.closest('.pcDel')){sync();pending=i;draw();return;}
-    if(e.target.id==='pcNo'){sync();pending=null;draw();return;}
-    if(e.target.id==='pcYes'){
-      sync();const r=rows[i];
-      if(r.id){const n=usage(r.id);const moveTo=n?$('#moveTo')?.value:'';if(n&&!moveTo){$('#pcErr').textContent='업무를 옮길 파트를 선택해 주세요.';return;}removed.push({id:r.id,moveTo});}
-      rows.splice(i,1);pending=null;$('#pcErr').textContent='';draw();
-    }
+  $('#projForm').querySelector('.swatches').addEventListener('click',e=>{const sw=e.target.closest('.swatch');if(sw)sw.parentElement.querySelectorAll('.swatch').forEach(s=>s.setAttribute('aria-pressed',s===sw));});
+  $('#pName').focus();
+  const move=async dir=>{
+    const list=projects.slice(), j=idx+dir;[list[idx],list[j]]=[list[j],list[idx]];
+    try{for(const [i,q] of list.entries())if(q.order!==i)await db.collection('projects').doc(q.id).update({order:i});
+      logChange('project','update',p.id,p.name,{order:idx},{order:j},'탭 순서 변경');closeModal();toast('순서를 바꿨습니다');}
+    catch(err){handleWriteError(err,'#pErr');}
+  };
+  $('#pUp')?.addEventListener('click',()=>move(-1));
+  $('#pDown')?.addEventListener('click',()=>move(1));
+  $('#pDel')?.addEventListener('click',()=>{
+    const pid=p.id,n=tasks.filter(t=>t.projectId===pid).length;
+    $('#pConfirm').innerHTML=`<div class="confirm">'${esc(p.name)}' 프로젝트${n?`와 업무 ${n}건`:''}을 삭제할까요? <button class="btn danger" type="button" id="pDelYes">삭제</button><button class="btn ghost" type="button" id="pDelNo">취소</button></div>`;
+    $('#pDelNo').onclick=()=>$('#pConfirm').innerHTML='';
+    $('#pDelYes').onclick=async()=>{
+      try{for(const t of tasks.filter(t=>t.projectId===pid))await db.collection('tasks').doc(t.id).delete();
+        for(const a of assigns.filter(a=>a.projectId===pid))await db.collection('assignments').doc(a.id).delete();
+        await db.collection('projects').doc(pid).delete();logChange('project','delete',pid,p.name,null,null,n?`업무 ${n}건 함께 삭제`:'');
+        if(state.project===pid)state.project='all';closeModal();toast('삭제했습니다');}
+      catch(err){handleWriteError(err,'#pErr');}
+    };
   });
-  $('#partForm').addEventListener('submit',async e=>{
-    e.preventDefault();sync();
-    const keep=rows.map(r=>({...r,name:r.name.trim()})).filter(r=>r.name);
-    if(!keep.length){$('#pcErr').textContent='파트를 최소 1개 이상 입력해 주세요.';return;}
-    const names=keep.map(r=>r.name);if(new Set(names).size!==names.length){$('#pcErr').textContent='같은 이름의 파트가 있습니다.';return;}
-    $('#pcSave').disabled=true;
+  $('#projForm').addEventListener('submit',async e=>{
+    e.preventDefault();
+    const name=$('#pName').value.trim(), client=$('#pClient').value.trim(), color=$('#projForm .swatch[aria-pressed="true"]')?.dataset.c||color0;
+    if(!name){$('#pErr').textContent='프로젝트명을 입력해 주세요.';$('#pName').focus();return;}
     try{
-      // 1) 파트 저장(순서 포함)
-      for(const [i,r] of keep.entries()){
-        const ref=r.id?db.collection('parts').doc(r.id):db.collection('parts').doc();
-        const old=PARTS.find(p=>p.k===r.id);
-        if(!partsStored||!old||old.label!==r.name||old.c!==r.color||old.order!==i){await ref.set({name:r.name,color:r.color,order:i});if(!old)logChange('part','create',ref.id,r.name,null,{name:r.name});else logChange('part','update',r.id,r.name,{name:old.label,color:old.c,order:partsStored?old.order:i},{name:r.name,color:r.color,order:i});}
-      }
-      // 2) 삭제된 파트의 업무 이동 후 파트 삭제
-      for(const d of removed){
-        const movedN=tasks.filter(t=>t.part===d.id).length;
-        if(d.moveTo)for(const t of tasks.filter(t=>t.part===d.id))await db.collection('tasks').doc(t.id).update({part:d.moveTo,updatedAt:new Date().toISOString()});
-        if(partsStored)await db.collection('parts').doc(d.id).delete();{const op=PARTS.find(p=>p.k===d.id),n=movedN;logChange('part','delete',d.id,op?.label,null,null,d.moveTo&&n?`업무 ${n}건 → ${partOf(d.moveTo).label} 파트로 이동`:'');}
-      }
-      closeModal();toast('파트를 저장했습니다');
-    }catch(err){$('#pcSave').disabled=false;handleWriteError(err,'#pcErr');}
+      if(isNew){const ref=await db.collection('projects').add({name,color,client,order:Date.now()});logChange('project','create',ref.id,name,null,{name,client});}
+      else if(p.name!==name||p.color!==color||(p.client||'')!==client){await db.collection('projects').doc(p.id).update({name,color,client});logChange('project','update',p.id,name,p,{name,color,client});}
+      closeModal();toast('프로젝트를 저장했습니다');
+    }catch(err){handleWriteError(err,'#pErr');}
   });
 }
 
@@ -1602,14 +1371,11 @@ function renderLeave(){
     const s=memberStats(m,Y), p=PARTS.find(x=>x.k===m.part), pj=projOf(m.projectId);
     const base=Math.max(s.quota||0,s.used+s.planned)||1;
     const over=s.quota!=null&&s.used+s.planned>s.quota;
-    return `<tr class="mrow ${lstate.member===m.id?'on':''}" data-mid="${esc(m.id)}" tabindex="0">
-      <td><div class="mname">${esc(m.name)}</div>${pj||p?`<div class="mpart">${pj?`<span class="sw" style="background:${esc(pj.color)};border-radius:50%"></span>${esc(pj.name)}`:''}${pj&&p?' · ':''}${p?`<span class="sw" style="background:${p.c}"></span>${esc(p.label)}`:''}</div>`:''}</td>
-      <td class="r num">${s.quota==null?'—':fmtDays(s.quota)}</td>
-      <td class="r num">${fmtDays(s.used)}</td>
-      <td class="r num">${fmtDays(s.planned)}</td>
-      <td class="r"><span class="rem ${s.remain!=null&&s.remain<0?'neg':''}">${s.remain==null?'—':fmtDays(s.remain)}</span>
-        <div class="qbar"><span class="${over?'x':'u'}" style="width:${Math.min(100,s.used/base*100)}%"></span><span class="p" style="width:${Math.min(100,s.planned/base*100)}%"></span></div></td>
-    </tr>`;}).join('');
+    return `<div class="mcard ${lstate.member===m.id?'on':''}" data-mid="${esc(m.id)}" tabindex="0" role="button" aria-pressed="${lstate.member===m.id}">
+      <div class="mname">${esc(m.name)}</div>${pj||p?`<div class="mpart">${pj?`<span class="sw" style="background:${esc(pj.color)};border-radius:50%"></span>${esc(pj.name)}`:''}${pj&&p?' · ':''}${p?`<span class="sw" style="background:${p.c}"></span>${esc(p.label)}`:''}</div>`:''}
+      <div class="mnums"><span>부여<b class="num">${s.quota==null?'—':fmtDays(s.quota)}</b></span><span>사용<b class="num">${fmtDays(s.used)}</b></span><span>예정<b class="num">${fmtDays(s.planned)}</b></span><span>잔여<b class="num rem ${s.remain!=null&&s.remain<0?'neg':''}">${s.remain==null?'—':fmtDays(s.remain)}</b></span></div>
+      <div class="qbar"><span class="${over?'x':'u'}" style="width:${Math.min(100,s.used/base*100)}%"></span><span class="p" style="width:${Math.min(100,s.planned/base*100)}%"></span></div>
+    </div>`;}).join('');
   // 달력
   const [cy,cm]=lstate.month.split('-').map(Number);
   const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
@@ -1622,33 +1388,17 @@ function renderLeave(){
     const cls=['day',d.getMonth()!==cm-1?'out':'',isWeekend(k)?'we':'',k===T?'today':'',canWrite?'can':''].join(' ');
     cells+=`<div class="${cls}" data-date="${k}"><span class="dn">${d.getDate()}</span>${items.slice(0,4).map(l=>`<div class="lv ${ltype(l.type).cls}" data-lid="${esc(l.id)}" title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`).join('')}${items.length>4?`<span class="more">+${items.length-4}명</span>`:''}</div>`;
   }
-  // 이번 달 목록
-  const mStart=`${lstate.month}-01`, mEnd=ymd(last);
-  const inMonth=pool.filter(l=>l.date<=mEnd&&(l.endDate&&ltype(l.type).multi?l.endDate:l.date)>=mStart).sort((a,b)=>a.date.localeCompare(b.date));
-  const lrows=inMonth.map(l=>{const t=ltype(l.type);return `<tr data-lid="${esc(l.id)}" tabindex="0">
-    <td class="nowrap num">${fmtDate(l.date)}${t.multi&&l.endDate&&l.endDate!==l.date?` ~ ${fmtDate(l.endDate)}`:''}</td>
-    <td class="nowrap">${esc(memOf(l.memberId).name)}</td>
-    <td class="nowrap"><span class="pill ${t.cls}">${esc(leaveLabel(l))}</span></td>
-    <td class="r num nowrap">${fmtDays(leaveDays(l))}일${t.deduct?'':' <span class="legend">(미차감)</span>'}</td>
-    <td>${esc(l.note||'')}</td></tr>`;}).join('');
   const sel=lstate.member!=='all'?memOf(lstate.member):null;
   area.innerHTML=`
     <div class="rtool"><select class="sel" id="lProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${lstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="none" ${lstate.project==='none'?'selected':''}>프로젝트 미지정</option></select><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
-    <div class="lgrid">
-      <div class="panel">
-        <h3><span>${Y}년 연차 현황</span></h3>
-        ${shown.length?'':'<p class="legend" style="margin:0;padding:16px 14px">이 프로젝트에 배정된 구성원이 없습니다. 구성원 관리에서 프로젝트를 지정해 주세요.</p>'}<div class="scroll" ${shown.length?'':'hidden'}><table><thead><tr><th>구성원</th><th class="r">부여</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th></tr></thead><tbody>${mrows}</tbody></table></div>
-        <p class="legend" style="margin:0;padding:8px 14px">단위: 일 · 반차 0.5 · 반반차 0.25 · 이름을 누르면 해당 구성원만 표시</p>
-      </div>
-      <div class="panel">
+    <div class="panel">
+      <h3><span>${Y}년 연차 현황</span><span class="legend">단위: 일 · 반차 0.5 · 반반차 0.25 · 카드를 누르면 해당 구성원만 표시</span></h3>
+      ${shown.length?`<div class="mstrip">${mrows}</div>`:'<p class="legend" style="margin:0;padding:16px 14px">이 프로젝트에 배정된 구성원이 없습니다. 구성원 관리에서 프로젝트를 지정해 주세요.</p>'}
+    </div>
+    <div class="panel">
         <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달">◀</button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달">▶</button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
           <span class="legend">${sel?`<b style="color:var(--fg)">${esc(sel.name)}</b>만 보는 중 · <button class="btn ghost" type="button" id="lAll" style="padding:0 4px">전체 보기</button>`:canWrite?'날짜를 누르면 휴가 등록':''}</span></h3>
         <div class="cal">${['월','화','수','목','금','토','일'].map((d,i)=>`<div class="dow ${i>4?'we':''}">${d}</div>`).join('')}${cells}</div>
-      </div>
-    </div>
-    <div class="panel">
-      <h3><span>${cm}월 휴가 목록 <span class="legend">${inMonth.length}건${sel?' · '+esc(sel.name):''}</span></span></h3>
-      ${inMonth.length?`<div class="scroll"><table class="ltable"><thead><tr><th>날짜</th><th>이름</th><th>종류</th><th class="r">일수</th><th>메모</th></tr></thead><tbody>${lrows}</tbody></table></div>`:`<p class="legend" style="margin:0;padding:16px 14px">이 달에 등록된 휴가가 없습니다.</p>`}
     </div>`;
 }
 
@@ -1932,18 +1682,16 @@ function renderReport(){
   const drafts=reports.filter(r=>!r.confirmed&&r.projectId===rstate.project&&r.week!==ws&&Object.values(r.notes||{}).some(v=>(v||'').trim())).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,6);
   area.innerHTML=`
     <div class="rtool">
-      <div class="calnav"><button class="btn ghost" type="button" id="rPrev" aria-label="이전 주">◀</button><span class="mlabel wk">${ws.slice(2).replace(/-/g,'.')} ~ ${we.slice(5).replace('-','.')}</span><button class="btn ghost" type="button" id="rNext" aria-label="다음 주">▶</button>${isThis?'':'<button class="btn ghost" type="button" id="rThis">이번 주</button>'}</div>
       <select class="sel" id="rProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${rstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
-      <span class="pill ${confirmed?'s-done':'s-wait'}">${confirmed?'확정됨':'작성 중 · 실시간 집계'}</span>
-      <span class="spacer"></span>
+      <select class="sel" id="rWeek" aria-label="주">${periodOptions('week',ws)}</select>
       <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
       <button class="btn" type="button" id="rCopy">텍스트 복사</button>
       ${downloads?'<button class="btn" type="button" id="rXlsx" title="화면과 같은 양식으로 서식이 적용된 엑셀 파일">엑셀 저장</button><button class="btn" type="button" id="rCsv" title="서식 없는 데이터 목록">CSV</button><button class="btn" type="button" id="rMd">Markdown</button>':''}
       </div></details>
-      ${canWrite?(confirmed?'<button class="btn" type="button" id="rUnconfirm">확정 해제 · 다시 집계</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}
     </div>
     <div class="rgrid">
       <article class="panel report">
+        <div class="rbar"><span class="pill ${confirmed?'s-done':'s-wait'}">${confirmed?'확정됨':'작성 중 · 실시간 집계'}</span>${canWrite?(confirmed?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제 · 다시 집계</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
         <header class="rhead"><div><div class="legend">주간 업무 보고</div><h2>${esc(m.projectName)}</h2></div><div class="legend num">${m.ws.replace(/-/g,'.')} (월) ~ ${m.we.replace(/-/g,'.')} (일)${confirmed?`<br>확정 ${esc(fmtDate((saved.confirmedAt||'').slice(0,10)))}`:''}</div></header>
         <div class="rkpi">${kpis.map(([k,v,u])=>`<div><span class="k">${k}</span><span class="v num">${v}<small>${u}</small></span></div>`).join('')}</div>
         <div class="rnotes">${NOTE_FIELDS.slice(0,1).map(([k,l])=>`<div class="f"><label for="rn_${k}">${l}</label><textarea id="rn_${k}" data-note="${k}" data-base="${esc(notes[k]||'')}" ${canWrite?'':'readonly'} placeholder="이번 주 핵심 내용을 2~3줄로">${esc(notes[k]||'')}</textarea></div>`).join('')}</div>
@@ -1981,11 +1729,9 @@ function queueNoteSave(){
 function flushNotes(){if(noteTimer){clearTimeout(noteTimer);noteTimer=null;noteBusy=noteBusy.then(saveChangedNotes).catch(()=>{});}}
 
 onArea('#reportArea','input',e=>{if(e.target.dataset.note&&canWrite)queueNoteSave();});
-onArea('#reportArea','change',e=>{if(e.target.id==='rProj'){flushNotes();rstate.project=e.target.value;render();}});
+onArea('#reportArea','change',e=>{if(e.target.id==='rProj'){flushNotes();rstate.project=e.target.value;render();}if(e.target.id==='rWeek'){flushNotes();rstate.week=e.target.value;render();}});
 onArea('#reportArea','click',async e=>{
   const t=e.target.closest('button');if(!t)return;
-  if(t.id==='rPrev'||t.id==='rNext'){flushNotes();rstate.week=addDays(rstate.week,t.id==='rNext'?7:-7);render();return;}
-  if(t.id==='rThis'){flushNotes();rstate.week=mondayOf(todayStr());render();return;}
   if(t.dataset.week){flushNotes();rstate.week=t.dataset.week;render();return;}
   const id=reportId(rstate.week,rstate.project), saved=reports.find(r=>r.id===id);
   const model=dedupModel(saved?.confirmed&&saved.model?saved.model:buildReport(rstate.week,rstate.project));
@@ -2164,11 +1910,11 @@ function renderHours(){
       <td class="r num">${p.doingN}건 · ${hrs(p.doingH)}h</td><td class="r num">${p.leaveH?hrs(p.leaveH)+'h':'—'}</td></tr>${detail}`;}).join('');
   area.innerHTML=`
     <div class="rtool">
-      <div class="seg" id="hrSeg"><button type="button" data-hp="week" aria-pressed="${hrState.period==='week'}">주간</button><button type="button" data-hp="month" aria-pressed="${hrState.period==='month'}">월간</button></div>
-      <div class="calnav"><button class="btn ghost" type="button" id="hrPrev" aria-label="이전">◀</button><span class="mlabel plabel">${label}</span><button class="btn ghost" type="button" id="hrNext" aria-label="다음">▶</button>${hrState.anchor===cur?'':`<button class="btn ghost" type="button" id="hrNow">${hrState.period==='week'?'이번 주':'이번 달'}</button>`}</div>
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+      <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
+      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor)}</select>
       <span class="spacer"></span>
-      ${downloads&&people.length?'<button class="btn" type="button" id="hrCsv">CSV</button>':''}
+      ${downloads&&people.length?'<button class="btn" type="button" id="hrCsv">내보내기</button>':''}
     </div>
     <div class="summary hsum">
       <div class="stat"><div class="k">총 집계</div><div class="v">${hrs(sum.total)}<small>h</small></div></div>
@@ -2184,10 +1930,7 @@ function renderHours(){
 }
 onArea('#hoursArea','click',async e=>{
   const tk=e.target.closest('[data-task]');if(tk){openTask(tasks.find(t=>t.id===tk.dataset.task));return;}
-  const seg=e.target.closest('[data-hp]');if(seg){hrState.period=seg.dataset.hp;hrState.anchor=null;render();return;}
   const id=e.target.closest('button')?.id;
-  if(id==='hrPrev'||id==='hrNext'){const dir=id==='hrNext'?1:-1;hrRange();if(hrState.period==='week')hrState.anchor=addDays(hrState.anchor,7*dir);else{const d=new Date(hrState.anchor+'T00:00:00');hrState.anchor=ymd(new Date(d.getFullYear(),d.getMonth()+dir,1));}render();return;}
-  if(id==='hrNow'){hrState.anchor=null;render();return;}
   if(id==='hrCsv'){
     const [a,b]=hrRange(),{people}=peopleStats(a,b,hrState.project,false);
     const cell=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
@@ -2197,7 +1940,7 @@ onArea('#hoursArea','click',async e=>{
   }
   const row=e.target.closest('[data-person]');if(row){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}
 });
-onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}});
+onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}if(e.target.id==='hrPer'){hrState.period=e.target.value;hrState.anchor=null;render();}if(e.target.id==='hrPick'){hrState.anchor=e.target.value;render();}});
 onArea('#hoursArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.closest('[data-person]');if(row&&!e.target.closest('[data-task]')){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}});
 
 /* ---------- staffing (투입 인력) ---------- */
@@ -2214,7 +1957,7 @@ function activeRate(memberId,t=todayStr()){return assigns.filter(a=>a.memberId==
 function renderStaff(){
   const area=$('#staffArea');
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>투입 인력을 불러오는 중입니다</h2></div>`;return;}
-  if(!projects.length){area.innerHTML=`<div class="empty"><h2>먼저 프로젝트를 등록해 주세요</h2><p>업무 관리의 「프로젝트 관리」에서 프로젝트를 추가하면 프로젝트마다 투입 인력을 등록할 수 있습니다.</p></div>`;return;}
+  if(!projects.length){area.innerHTML=`<div class="empty"><h2>먼저 프로젝트를 등록해 주세요</h2><p>업무 관리 프로젝트 탭의 「+ 프로젝트」로 추가하면 프로젝트마다 투입 인력을 등록할 수 있습니다.</p></div>`;return;}
   if(sstate.project!=='all'&&!projOf(sstate.project))sstate.project='all';
   const T=todayStr();
   const projs=sstate.project==='all'?projects:projects.filter(p=>p.id===sstate.project);
@@ -2246,7 +1989,7 @@ function renderStaff(){
   area.innerHTML=`
     <div class="rtool">
       <select class="sel" id="sProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${sstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
-      <div class="seg" id="sShow">${[['active','투입 중·예정'],['on','투입 중'],['plan','예정'],['end','종료'],['all','전체']].map(([k,l])=>`<button type="button" data-show="${k}" aria-pressed="${sstate.show===k}">${l}</button>`).join('')}</div>
+      <select class="sel" id="sShow" aria-label="투입 상태">${[['active','투입 중·예정'],['on','투입 중'],['plan','예정'],['end','종료'],['all','전체']].map(([k,l])=>`<option value="${k}" ${sstate.show===k?'selected':''}>${l}</option>`).join('')}</select>
       <span class="spacer"></span>
       ${canWrite?'<button class="btn primary" type="button" id="sAdd">+ 투입 등록</button>':''}
     </div>
@@ -2260,9 +2003,8 @@ function renderStaff(){
     ${cards}
     <p class="legend" style="margin:0">투입률은 해당 프로젝트에 쓰는 비중(%)입니다. 100% = 1 M/M. 한 사람이 여러 프로젝트에 동시에 투입되면 합계가 100%를 넘을 때 빨간색으로 표시됩니다. 여기서 투입한 프로젝트는 휴가 관리·업무 시간의 프로젝트 필터에도 반영됩니다.</p>`;
 }
-onArea('#staffArea','change',e=>{if(e.target.id==='sProj'){sstate.project=e.target.value;render();}});
+onArea('#staffArea','change',e=>{if(e.target.id==='sProj'){sstate.project=e.target.value;render();}if(e.target.id==='sShow'){sstate.show=e.target.value;render();}});
 onArea('#staffArea','click',e=>{
-  const sh=e.target.closest('[data-show]');if(sh){sstate.show=sh.dataset.show;render();return;}
   const ap=e.target.closest('[data-addp]');if(ap){openAssign(null,ap.dataset.addp);return;}
   const id=e.target.closest('button')?.id;
   if(id==='sAdd'){openAssign(null,sstate.project!=='all'?sstate.project:'');return;}
@@ -2422,7 +2164,7 @@ function renderHistory(){
   const byDay={};for(const h of list){const d=new Date(h.at);const k=ymd(d);(byDay[k]=byDay[k]||[]).push(h);}
   const days=Object.keys(byDay).sort().reverse();
   area.innerHTML=`
-    <div class="filters">
+    <div class="rtool">
       ${sel('hEnt',hstate.entity,[['all','전체 대상'],...Object.entries(HENT)])}
       ${sel('hAct',hstate.action,[['all','전체 작업'],...Object.entries(HACT).map(([k,v])=>[k,v[0]])])}
       ${sel('hActor',hstate.actor,[['all','전체 사용자'],...actors.map(a=>[a,actorName(a)])])}
@@ -2439,19 +2181,9 @@ function renderHistory(){
         ${(h.changes||[]).length?`<ul class="hchg">${h.changes.map(c=>`<li><span class="hf">${esc(c.l)}</span>${h.action==='update'?`${val(c.from||'')}<span class="harr">→</span>`:''}${val(c.to||'')}</li>`).join('')}</ul>`:''}
         ${h.extra?`<div class="legend">${esc(h.extra)}</div>`:''}</div></li>`;}).join('')}</ol></section>`;}).join(''):`<div class="empty"><h2>${historyItems.length?'조건에 맞는 이력이 없습니다':'아직 기록된 변경 이력이 없습니다'}</h2><p>${historyItems.length?'필터를 바꿔 보세요.':'이제부터 업무·프로젝트·파트·구성원·휴가·주간 보고·제목을 등록하거나 수정하면 여기에 자동으로 쌓입니다.'}</p></div>`}`;
 }
-$('#historyArea').addEventListener('change',e=>{const m={hEnt:'entity',hAct:'action',hActor:'actor',hRange:'range'}[e.target.id];if(m){hstate[m]=e.target.value;render();}});
-let hqT;$('#historyArea').addEventListener('input',e=>{if(e.target.id!=='hQ')return;clearTimeout(hqT);hqT=setTimeout(()=>{hstate.q=e.target.value;render();const i=$('#hQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},200);});
-$('#historyArea').addEventListener('click',e=>{const b=e.target.closest('[data-task]');if(b)openTask(tasks.find(t=>t.id===b.dataset.task));});
-
-/* ---------- CSV ---------- */
-async function exportCsv(){
-  if(!downloads)return;
-  const head=['프로젝트','파트','요청내용','Jira 키','RMS 번호','RMS 링크','담당자','요청자','요청일자','우선순위','진행현황','완료일정','실제완료일','예상소요(h)','실제소요(h)','지연','링크','메모'];
-  const cell=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-  const lines=sorted(filtered()).map(t=>[projOf(t.projectId)?.name,partOf(t.part).label,t.title,t.jiraKey,t.rmsNo,rmsHref(t),t.assignee,t.requester,t.requestDate,PRIS[t.priority??2],statusOf(t.status).label,t.dueDate,t.doneDate,t.estHours,t.actHours,isLate(t)?'Y':'',t.link,t.note].map(cell).join(','));
-  try{await downloads.save({filename:`업무현황_${(()=>{const r=periodRange();return r?`${r[0].replace(/-/g,'')}-${r[1].replace(/-/g,'')}`:todayStr().replace(/-/g,'');})()}.csv`,data:'﻿'+[head.join(','),...lines].join('\r\n')});}
-  catch(err){if(err?.code!=='declined')toast('파일을 내보내지 못했습니다');}
-}
+onArea('#historyArea','change',e=>{const m={hEnt:'entity',hAct:'action',hActor:'actor',hRange:'range'}[e.target.id];if(m){hstate[m]=e.target.value;render();}});
+let hqT;onArea('#historyArea','input',e=>{if(e.target.id!=='hQ')return;clearTimeout(hqT);hqT=setTimeout(()=>{hstate.q=e.target.value;renderHistory();liftTools();const i=$('#hQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},200);});
+onArea('#historyArea','click',e=>{const b=e.target.closest('[data-task]');if(b)openTask(tasks.find(t=>t.id===b.dataset.task));});
 
 function handleWriteError(err,sel){
   const msg=err?.code==='invalid_argument'?'수정 권한이 없거나 입력값이 올바르지 않습니다.':err?.code==='quota_exceeded'?'저장 공간이 가득 찼습니다. 완료된 업무를 정리해 주세요.':'저장하지 못했습니다. 잠시 후 다시 시도해 주세요.';
@@ -2518,7 +2250,6 @@ render();
   if(!window.claude?.use){storeReady=true;$('#banner').textContent='저장소에 연결되지 않아 읽기 전용으로 표시됩니다.';$('#banner').hidden=false;render();return;}
   const [d,u,dl]=await Promise.all([claude.use('db'),claude.use('user'),claude.use('downloads')]);
   db=d&&wrapDb(d);downloads=dl;
-  if(downloads)$('#btnCsv').hidden=false;
   if(db){drawSync();startRoom();}
   if(!db){storeReady=true;$('#banner').textContent='로그인한 팀원만 업무를 볼 수 있습니다. claude.ai에 로그인 후 다시 열어 주세요.';$('#banner').hidden=false;render();return;}
   let w=null;try{w=u?await u.can('data.write'):null;}catch(e){}

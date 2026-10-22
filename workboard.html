@@ -569,6 +569,19 @@ a.rms:hover{text-decoration:underline}
 #leaveArea .day{min-height:120px}
 @media (max-width:600px){#leaveArea .day{min-height:72px}.mcard{flex-basis:170px}}
 .rbar{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+/* ---------- 상단 요약 표 · 주간 보고 넓게 · 헤더 부재자 ---------- */
+.statWrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+.statTable{width:100%;border-collapse:collapse;table-layout:fixed;min-width:560px}
+.statTable th{position:static;font-size:12px;font-weight:600;color:var(--muted);background:var(--surface);padding:10px 14px;border-bottom:1px solid var(--line);border-left:1px solid var(--line);text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.statTable td{padding:10px 14px;border-left:1px solid var(--line);border-bottom:0;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--fg);vertical-align:top}
+.statTable th:first-child,.statTable td:first-child{border-left:0}
+.statTable td small{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
+.statTable td.alert{color:var(--bad)}
+.statTable tbody tr,.statTable tbody tr:hover{background:none}
+.rgrid{display:block}
+.panel.report{border:0;border-radius:0;padding-inline:0;overflow:visible}
+.topRight .todayOff{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:420px}
+@media (max-width:900px){.topRight .todayOff{max-width:100%;white-space:normal}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -623,16 +636,16 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><select class="sel" id="pPick" aria-label="기간" hidden></select><span class="legend" id="pHint"></span><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 휴가 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><select class="sel" id="pPick" aria-label="기간" hidden></select><button class="btn primary" id="btnAdd" type="button">+ 업무 등록</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 휴가 등록</button></div>
     <div class="modeRow topRight">
+      <span class="todayOff" id="todayOff"></span>
     </div>
   </header>
 <div class="wrap">
-  <div class="todayLine"><span class="todayOff" id="todayOff"></span></div>
   <div class="banner" id="banner" hidden></div>
 
   <div class="area" id="taskArea">
-  <div class="summary" id="summary"></div>
+  <div id="summary"></div>
 
   <!-- 프로젝트 탭과 기간 선택을 한 줄에 -->
   <div class="ptRow">
@@ -736,12 +749,13 @@ function weekLabel(mon){
 }
 const mdot=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
 // 선택지: 주는 과거 26주~미래 8주, 월은 과거 12개월~미래 3개월. 현재 값이 범위 밖이면 끼워 넣음
-function periodOptions(kind,cur){
+function periodOptions(kind,cur,has){
   const t=todayStr(),out=[];
   if(kind==='week'){const base=mondayOf(t);for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));}
   else{const d=new Date(t.slice(0,7)+'-01T00:00:00');for(let i=-12;i<=3;i++)out.push(ymd(new Date(d.getFullYear(),d.getMonth()+i,1)));}
   if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
-  return out.map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
+  const keep=kind==='week'?mondayOf(t):t.slice(0,7)+'-01', endOf=v=>kind==='week'?addDays(v,6):ymd(new Date(+v.slice(0,4),+v.slice(5,7),0));
+  return out.filter(v=>v===keep||v===cur||!has||has(v,endOf(v))).map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
 }
 function periodRange(){
   if(state.period==='all')return null;
@@ -768,8 +782,7 @@ function periodLabel(r){
 function renderPeriodBar(){
   const on=state.period!=='all';if(on)periodRange();
   $('#periodSel').value=state.period;$('#pPick').hidden=!on;
-  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor);
-  $('#pHint').textContent=on?`${periodTasks().length}건`:'';
+  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor,(a,b)=>tasks.some(x=>inPeriod(x,[a,b])));
 }
 $('#periodSel').addEventListener('change',e=>{state.period=e.target.value;state.pAnchor=null;persistUI();render();});
 $('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.value;render();});
@@ -852,6 +865,8 @@ function renderBody(){
   else renderList(list);
 }
 
+// 상단 요약 표: [항목, 값 HTML, 칸 class] 목록 → 한 줄 표(좁은 화면은 가로 스크롤)
+const statTable=list=>`<div class="statWrap"><table class="statTable"><thead><tr>${list.map(([k,,c])=>`<th class="${c}">${k}</th>`).join('')}</tr></thead><tbody><tr>${list.map(([,v,c])=>`<td class="${c}">${v}</td>`).join('')}</tr></tbody></table></div>`;
 function renderSummary(){
   const s=scoped(), t=todayStr();
   const done=s.filter(x=>x.status==='done').length;
@@ -862,13 +877,7 @@ function renderSummary(){
   const doneLabel=!pr?'이번 주 완료':state.period==='month'?'이 달 완료':'이 주 완료';
   const est=s.reduce((a,x)=>a+(+x.estHours||0),0), act=s.reduce((a,x)=>a+(+x.actHours||0),0);
   const rate=s.length?Math.round(done/s.length*100):0;
-  $('#summary').innerHTML=`
-    <div class="stat"><div class="k">전체 업무</div><div class="v">${s.length}<small>건</small></div></div>
-    <div class="stat"><div class="k">진행·검토중</div><div class="v">${doing}<small>건</small></div></div>
-    <div class="stat ${late?'alert':''}"><div class="k">일정 지연</div><div class="v">${late}<small>건</small></div></div>
-    <div class="stat"><div class="k">${doneLabel} <span class="num" style="font-size:11px">${md(wS)}~${md(wE)}</span></div><div class="v">${doneWeek}<small>건</small></div></div>
-    <div class="stat"><div class="k">완료율</div><div class="v">${rate}<small>%</small></div><div class="bar"><i style="width:${rate}%"></i></div></div>
-    <div class="stat"><div class="k">소요시간 실제/예상</div><div class="v">${hrs(act)}<small>/ ${hrs(est)}h</small></div></div>`;
+  $('#summary').innerHTML=statTable([[`전체 업무`,`${s.length}<small>건</small>`,``],[`진행·검토중`,`${doing}<small>건</small>`,``],[`일정 지연`,`${late}<small>건</small>`,`${late?'alert':''}`],[`${doneLabel} <span class="num" style="font-size:11px">${md(wS)}~${md(wE)}</span>`,`${doneWeek}<small>건</small>`,``],[`완료율`,`${rate}<small>%</small><div class="bar"><i style="width:${rate}%"></i></div>`,``],[`소요시간 실제/예상`,`${hrs(act)}<small>/ ${hrs(est)}h</small>`,``]]);
 }
 
 function renderTabs(){
@@ -1678,12 +1687,10 @@ function renderReport(){
   const notes=saved?.notes||{};
   const isThis=ws===mondayOf(todayStr());
   const kpis=[['완료',m.kpi.done,'건'],['진행 중',m.kpi.doing,'건'],['신규 요청',m.kpi.newReq,'건'],['지연·보류',m.kpi.late,'건'],['완료 소요',hrs(m.kpi.hours),'h'],['휴가·부재',m.kpi.leave,'건']];
-  const arch=reports.filter(r=>r.confirmed&&r.projectId===rstate.project).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,12);
-  const drafts=reports.filter(r=>!r.confirmed&&r.projectId===rstate.project&&r.week!==ws&&Object.values(r.notes||{}).some(v=>(v||'').trim())).sort((a,b)=>b.week.localeCompare(a.week)).slice(0,6);
   area.innerHTML=`
     <div class="rtool">
       <select class="sel" id="rProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${rstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
-      <select class="sel" id="rWeek" aria-label="주">${periodOptions('week',ws)}</select>
+      <select class="sel" id="rWeek" aria-label="주">${periodOptions('week',ws,(a,b)=>reports.some(r=>r.week===a)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
       <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
       <button class="btn" type="button" id="rCopy">텍스트 복사</button>
       ${downloads?'<button class="btn" type="button" id="rXlsx" title="화면과 같은 양식으로 서식이 적용된 엑셀 파일">엑셀 저장</button><button class="btn" type="button" id="rCsv" title="서식 없는 데이터 목록">CSV</button><button class="btn" type="button" id="rMd">Markdown</button>':''}
@@ -1699,11 +1706,6 @@ function renderReport(){
         <div class="rnotes three">${NOTE_FIELDS.slice(1).map(([k,l])=>`<div class="f"><label for="rn_${k}">${l}</label><textarea id="rn_${k}" data-note="${k}" data-base="${esc(notes[k]||'')}" ${canWrite?'':'readonly'}>${esc(notes[k]||'')}</textarea></div>`).join('')}</div>
         <p class="legend rsave" id="rSaveState">${canWrite?(saved?.updatedAt?`메모 저장됨 · ${esc(saved.updatedAt.slice(5,16).replace('T',' '))}`:'메모는 입력을 멈추면 자동 저장됩니다'):'보기 전용'}</p>
       </article>
-      <aside class="panel rarch">
-        <h3>확정된 보고서</h3>
-        ${arch.length?`<ul class="alist">${arch.map(r=>`<li><button type="button" class="aitem ${r.week===ws?'on':''}" data-week="${esc(r.week)}"><span class="num">${r.week.slice(2).replace(/-/g,'.')}</span><span class="legend">완료 ${r.model?.kpi?.done??0} · 지연 ${r.model?.kpi?.late??0}</span></button></li>`).join('')}</ul>`:'<p class="legend" style="padding:12px 14px;margin:0">아직 확정된 보고서가 없습니다. 주 단위로 내용을 확인한 뒤 「확정」하면 여기에 쌓이고, 이후 업무가 바뀌어도 그 주 내용은 그대로 보존됩니다.</p>'}
-        ${drafts.length?`<h3>작성 중인 메모</h3><ul class="alist">${drafts.map(r=>`<li><button type="button" class="aitem" data-week="${esc(r.week)}"><span class="num">${r.week.slice(2).replace(/-/g,'.')}</span><span class="legend">작성 중</span></button></li>`).join('')}</ul>`:''}
-      </aside>
     </div>`;
 }
 
@@ -1912,18 +1914,11 @@ function renderHours(){
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
-      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor)}</select>
+      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor,(a,b)=>wlogs.some(l=>l.date>=a&&l.date<=b)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
       <span class="spacer"></span>
       ${downloads&&people.length?'<button class="btn" type="button" id="hrCsv">내보내기</button>':''}
     </div>
-    <div class="summary hsum">
-      <div class="stat"><div class="k">총 집계</div><div class="v">${hrs(sum.total)}<small>h</small></div></div>
-      <div class="stat"><div class="k">총 가용</div><div class="v">${hrs(sum.avail)}<small>h</small></div></div>
-      <div class="stat ${rate>100?'alert':''}"><div class="k">투입률</div><div class="v">${rate}<small>%</small></div><div class="bar"><i style="width:${Math.min(100,rate)}%"></i></div></div>
-      <div class="stat"><div class="k">완료 소요</div><div class="v">${hrs(sum.done)}<small>h</small></div></div>
-      <div class="stat"><div class="k">진행 중 소요</div><div class="v">${hrs(sum.doing)}<small>h</small></div></div>
-      <div class="stat"><div class="k">휴가</div><div class="v">${hrs(sum.leave)}<small>h</small></div></div>
-    </div>
+    ${statTable([[`총 집계`,`${hrs(sum.total)}<small>h</small>`,``],[`총 가용`,`${hrs(sum.avail)}<small>h</small>`,``],[`투입률`,`${rate}<small>%</small><div class="bar"><i style="width:${Math.min(100,rate)}%"></i></div>`,`${rate>100?'alert':''}`],[`완료 소요`,`${hrs(sum.done)}<small>h</small>`,``],[`진행 중 소요`,`${hrs(sum.doing)}<small>h</small>`,``],[`휴가`,`${hrs(sum.leave)}<small>h</small>`,``]])}
     ${people.length?`<div class="tablebox"><table class="ptable"><thead><tr><th>담당자</th><th class="r">집계</th><th class="r">가용</th><th class="r">투입률</th><th style="min-width:180px">투입</th><th class="r">완료</th><th class="r">진행 중</th><th class="r">휴가</th></tr></thead><tbody>${rows}</tbody></table></div>
     <p class="legend" style="margin:0">막대 <span class="lgd d"></span>완료 <span class="lgd g"></span>진행 중 · 세로선 = 가용 시간 · 이름을 누르면 집계된 업무 목록이 펼쳐집니다 · 가용 = 평일 ${work/8}일 × 8h − 휴가 · 작업 시간 기록이 있는 업무는 기록한 날짜 기준, 없는 업무는 요청일~완료일(진행 중이면 오늘)의 평일에 고르게 나눠 이 기간 몫만 집계합니다</p>`
     :`<div class="empty"><h2>이 기간에 집계할 담당자가 없습니다</h2><p>업무에 담당자를 지정하고 완료 시 실제 소요시간을 입력하면 여기에 사람별 시간이 모입니다.</p></div>`}`;
@@ -1993,12 +1988,7 @@ function renderStaff(){
       <span class="spacer"></span>
       ${canWrite?'<button class="btn primary" type="button" id="sAdd">+ 투입 등록</button>':''}
     </div>
-    <div class="summary ssum">
-      <div class="stat"><div class="k">현재 투입 인원</div><div class="v">${people.size}<small>명</small></div></div>
-      <div class="stat"><div class="k">현재 투입 M/M</div><div class="v">${(onNow.reduce((s,a)=>s+(+a.rate||0),0)/100).toFixed(1).replace(/\.0$/,'')}<small>M/M</small></div></div>
-      <div class="stat"><div class="k">투입 예정</div><div class="v">${live.filter(a=>asgStatus(a)==='plan').length}<small>건</small></div></div>
-      <div class="stat ${over.length?'alert':''}"><div class="k">100% 초과 투입</div><div class="v">${over.length}<small>명</small></div></div>
-    </div>
+    ${statTable([[`현재 투입 인원`,`${people.size}<small>명</small>`,``],[`현재 투입 M/M`,`${(onNow.reduce((s,a)=>s+(+a.rate||0),0)/100).toFixed(1).replace(/\.0$/,'')}<small>M/M</small>`,``],[`투입 예정`,`${live.filter(a=>asgStatus(a)==='plan').length}<small>건</small>`,``],[`100% 초과 투입`,`${over.length}<small>명</small>`,`${over.length?'alert':''}`]])}
     ${!members.length?`<div class="banner">아직 등록된 구성원이 없습니다. 「구성원 관리」에서 사람을 먼저 추가한 뒤 프로젝트에 투입하세요.</div>`:''}
     ${cards}
     <p class="legend" style="margin:0">투입률은 해당 프로젝트에 쓰는 비중(%)입니다. 100% = 1 M/M. 한 사람이 여러 프로젝트에 동시에 투입되면 합계가 100%를 넘을 때 빨간색으로 표시됩니다. 여기서 투입한 프로젝트는 휴가 관리·업무 시간의 프로젝트 필터에도 반영됩니다.</p>`;

@@ -655,6 +655,21 @@ a.rms:hover{text-decoration:underline}
   .shell.fold .sideBrand .brandName{display:block}
   .shell.fold #btnBrandEdit:not([hidden]){display:inline-flex}
 }
+/* ---------- GNB 묶음(아코디언): 프로젝트·서비스별로 메뉴를 묶음. 열림 상태는 브라우저에 기억 ---------- */
+.gnbGroup{display:flex;flex-direction:column;gap:4px}
+.gnbHead{display:flex;align-items:center;gap:10px;width:100%;height:36px;padding:0 12px;border:0;background:none;border-radius:var(--r-lg);color:var(--ink-soft);font-size:13px;font-weight:700;text-align:left;cursor:pointer}
+.gnbHead:hover{background:var(--sunk);color:var(--fg)}
+.gnbHead .ico{width:18px;height:18px;flex:none}
+.gnbHead .lbl{flex:1;min-width:0}
+.gnbHead .chev{font-size:11px;transition:transform .12s var(--ease)}
+.gnbGroup.closed .chev{transform:rotate(-90deg)}
+.gnbGroup.closed .gnbBody{display:none}
+.gnbBody{display:flex;flex-direction:column;gap:4px;padding-left:8px}
+.gnbHead:focus-visible{outline:2px solid var(--accent-dark);outline-offset:-2px}
+.shell.fold .gnbHead{display:none}
+.shell.fold .gnbGroup.closed .gnbBody{display:flex}
+.shell.fold .gnbBody{padding-left:0}
+@media (max-width:900px){.shell.fold .gnbHead{display:flex}.shell.fold .gnbGroup.closed .gnbBody{display:none}.shell.fold .gnbBody{padding-left:8px}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -676,15 +691,20 @@ a.rms:hover{text-decoration:underline}
   <aside class="side" id="side" aria-label="메뉴">
     <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button></div>
     <nav class="sideNav" id="modeTabs" role="tablist" aria-orientation="vertical" aria-label="화면">
-      <button type="button" role="tab" class="navItem" title="업무 관리" data-mode="tasks"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></svg><span class="lbl">업무 관리</span></button>
-      <button type="button" role="tab" class="navItem" title="투입 인력" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">투입 인력</span></button>
-      <button type="button" role="tab" class="navItem" title="휴가 관리" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">휴가 관리</span></button>
-      <button type="button" role="tab" class="navItem" title="주간 보고" data-mode="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="lbl">주간 보고</span></button>
-      <button type="button" role="tab" class="navItem" title="업무 시간" data-mode="hours"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">업무 시간</span></button>
-      <button type="button" role="tab" class="navItem" title="변경 이력" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button>
-      <div class="sideSec" id="secAdmin">
-        <button type="button" class="navItem" title="구성원 관리" id="btnMembers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span class="lbl">구성원 관리</span></button>
-      </div>
+      <section class="gnbGroup" data-grp="work">
+        <button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-work"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg><span class="lbl">업무 관리</span><span class="chev" aria-hidden="true">▾</span></button>
+        <div class="gnbBody" id="grp-work">
+          <button type="button" role="tab" class="navItem" title="업무 관리" data-mode="tasks"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></svg><span class="lbl">업무 관리</span></button>
+          <button type="button" role="tab" class="navItem" title="투입 인력" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">투입 인력</span></button>
+          <button type="button" role="tab" class="navItem" title="휴가 관리" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">휴가 관리</span></button>
+          <button type="button" role="tab" class="navItem" title="주간 보고" data-mode="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="lbl">주간 보고</span></button>
+          <button type="button" role="tab" class="navItem" title="업무 시간" data-mode="hours"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">업무 시간</span></button>
+          <button type="button" role="tab" class="navItem" title="변경 이력" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button>
+          <div class="sideSec" id="secAdmin">
+            <button type="button" class="navItem" title="구성원 관리" id="btnMembers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span class="lbl">구성원 관리</span></button>
+          </div>
+        </div>
+      </section>
     </nav>
     <div class="brand sideBrand" id="brand">
       <div class="brandView" id="brandView"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6" style="fill:var(--warn-strong)"/><circle cx="15" cy="12" r="7" style="fill:var(--accent);fill-opacity:.9"/></svg><h1 class="brandName"><span id="siteTitle">업무 관리 대시보드</span></h1><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목 편집">✎ 편집</button></div>
@@ -704,7 +724,6 @@ a.rms:hover{text-decoration:underline}
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
-      <button class="btn ghost" type="button" id="btnPw" hidden>비밀번호 변경</button>
       <button class="btn ghost" type="button" id="btnLogout" hidden>로그아웃</button>
     </div>
   </header>
@@ -868,123 +887,52 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   const caps={};
   window.claude={use:async n=>{await ready;return caps[n]??null;}};
   window.wbAuth={get email(){return me?.email||'';},get isAdmin(){return isAdmin;},get uid(){return me?.id||'';},signOut:()=>sb.auth.signOut().then(()=>location.reload()),
-    changePassword:async pw=>{const {error}=await sb.auth.updateUser({password:pw});if(error)throw Object.assign(new Error(authErr(error)),{code:'pw'});},
     // 관리자 목록·지정 (서버 함수 wb_admin_ids, wb_set_admin). 오류 문구는 서버가 한국어로 돌려줌
     listAdmins:async()=>{const {data,error}=await sb.rpc('wb_admin_ids');if(error)throw toErr(error);return data||[];},
     setAdmin:async(uid,on)=>{const {error}=await sb.rpc('wb_set_admin',{p_user:uid,p_on:on});if(error)throw Object.assign(new Error(error.message),{code:'admin'});if(uid===me.id)isAdmin=on;}};
 
-  /* ---------- 로그인 화면 (회사 메일 + 비밀번호) ---------- */
-  // 확인 코드는 링크 대신 숫자로 받음: 회사 메일 보안 검사가 링크를 미리 열어 무효가 되는 경우가 있어서
+  /* ---------- 로그인 화면 (회사 메일로 받은 6자리 코드) ---------- */
+  // 링크 대신 코드를 쓰는 이유: 회사 메일 보안 검사가 로그인 링크를 미리 열어 버려 링크가 무효가 되는 경우가 있어서
+  // 비밀번호 없음. 처음 오는 메일이면 코드 확인 뒤 이름·파트를 정하는 마무리 화면으로 이어짐
   const gate=document.createElement('div');gate.id='authGate';document.body.appendChild(gate);
   const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 대시보드</h1>${html}</div>`;gate.hidden=false;};
   const $g=s=>gate.querySelector(s);
-  // 로그인 = 회사 메일 + 비밀번호. 회원가입·비밀번호 찾기 때만 메일로 받은 확인 코드를 넣어 본인 메일인지 확인
-  const PW_MIN=8;
   const authErr=e=>{const m=String(e?.message||'');
-    if(e?.status===429||/rate|security purposes/i.test(m))return '잠시 후 다시 시도해 주세요. 메일은 1분에 한 번 보낼 수 있어요.';
+    if(e?.status===429||/rate|security purposes/i.test(m))return '잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.';
     if(isNetErr(e))return PAUSED_HINT;
-    if(/invalid login credentials/i.test(m))return '메일 또는 비밀번호가 맞지 않아요.';
-    if(/already registered|already exists/i.test(m))return '이미 가입된 메일이에요. 로그인해 주세요.';
-    if(/password.*(at least|short|weak|characters)|weak password/i.test(m))return `비밀번호는 ${PW_MIN}자 이상, 영문과 숫자를 섞어 주세요.`;
-    if(/token|otp|expired|invalid/i.test(m))return '코드가 맞지 않거나 시간이 지났어요. 코드를 다시 받아 주세요.';
     return m||'잠시 후 다시 시도해 주세요.';};
-  const pwOk=p=>p.length>=PW_MIN&&/[a-zA-Z]/.test(p)&&/\d/.test(p);
-  const tabsHtml=mode=>`<div class="gateTabs" role="tablist"><button type="button" role="tab" data-m="login" aria-selected="${mode==='login'}">로그인</button><button type="button" role="tab" data-m="signup" aria-selected="${mode==='signup'}">회원가입</button></div>`;
-  const bindTabs=()=>gate.querySelectorAll('.gateTabs [data-m]').forEach(b=>b.onclick=()=>(b.dataset.m==='login'?loginStep:signupStep)('',$g('#gEmail')?.value.trim()));
   const savedEmail=()=>{try{return localStorage.getItem('wb-email')||'';}catch(e){return '';}};
   const keepEmail=e=>{try{localStorage.setItem('wb-email',e);}catch(x){}};
-  const emailField=v=>`<label for="gEmail">회사 메일 (아이디)</label><input id="gEmail" type="email" autocomplete="username" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(v||'')}">`;
+  const sendCode=email=>sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
 
   function loginStep(msg,prefill){
-    card(tabsHtml('login')+`<form id="gLoginF" class="gateForm" novalidate>${emailField(prefill||savedEmail())}
-      <label for="gPw">비밀번호</label><input id="gPw" type="password" autocomplete="current-password">
-      <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr">${escH(msg||'')}</p><div id="gMore"></div>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gForgot">비밀번호를 잊었어요</button></div></form>`);
-    bindTabs();($g('#gEmail').value?$g('#gPw'):$g('#gEmail')).focus();
-    $g('#gForgot').onclick=()=>resetStep($g('#gEmail').value.trim());
-    $g('#gLoginF').addEventListener('submit',async e=>{e.preventDefault();
-      const email=$g('#gEmail').value.trim().toLowerCase(), password=$g('#gPw').value;
+    card(`<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})을 넣으면 로그인 코드를 보내 드려요. 처음이면 같은 방법으로 가입돼요.</p>
+      <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(prefill||savedEmail())}">
+      <button class="btn primary" type="submit" id="gGo">로그인 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`);
+    $g('#gEmail').focus();
+    $g('#gEmailF').addEventListener('submit',async e=>{e.preventDefault();
+      const email=$g('#gEmail').value.trim().toLowerCase();
       if(!isStaffEmail(email)){$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return;}
-      if(!password){$g('#gErr').textContent='비밀번호를 입력해 주세요.';return;}
-      $g('#gGo').disabled=true;$g('#gErr').textContent='';$g('#gMore').innerHTML='';
-      const {data,error}=await sb.auth.signInWithPassword({email,password});
-      if(error){$g('#gGo').disabled=false;
-        // 가입은 했지만 메일 확인 코드를 아직 안 넣은 경우: 코드를 다시 받아 확인
-        if(/email not confirmed/i.test(error.message)){$g('#gErr').textContent='가입 확인이 아직 안 됐어요.';$g('#gMore').innerHTML='<button class="btn" type="button" id="gConfirm">가입 확인 코드 받기</button>';
-          $g('#gConfirm').onclick=async()=>{const {error:er}=await sb.auth.resend({type:'signup',email});if(er){$g('#gErr').textContent=authErr(er);return;}verifyStep(email,'signup');};return;}
-        $g('#gErr').textContent=authErr(error);return;}
-      keepEmail(email);enter(data.session);});
-  }
-
-  function signupStep(msg,prefill){
-    card(tabsHtml('signup')+`<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})이 아이디예요. 가입할 때 한 번만 메일로 받은 확인 코드를 넣어요.</p>
-      <form id="gSignF" class="gateForm" novalidate><label for="gSignName">이름</label><input id="gSignName" autocomplete="name" maxlength="20" placeholder="예: 홍길동">
-      ${emailField(prefill||'')}
-      <label for="gPw">비밀번호</label><input id="gPw" type="password" autocomplete="new-password" placeholder="${PW_MIN}자 이상, 영문·숫자 섞기">
-      <label for="gPw2">비밀번호 확인</label><input id="gPw2" type="password" autocomplete="new-password">
-      <button class="btn primary" type="submit" id="gGo">회원가입</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`);
-    bindTabs();$g('#gSignName').focus();
-    $g('#gSignF').addEventListener('submit',async e=>{e.preventDefault();
-      const name=$g('#gSignName').value.trim(), email=$g('#gEmail').value.trim().toLowerCase(), password=$g('#gPw').value;
-      const err=!name?'이름을 입력해 주세요.':!isStaffEmail(email)?`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`:!pwOk(password)?`비밀번호는 ${PW_MIN}자 이상, 영문과 숫자를 섞어 주세요.`:password!==$g('#gPw2').value?'비밀번호 확인이 달라요.':'';
-      if(err){$g('#gErr').textContent=err;return;}
       $g('#gGo').disabled=true;$g('#gErr').textContent='';
-      const {data,error}=await sb.auth.signUp({email,password,options:{data:{name}}});
+      const {error}=await sendCode(email);
       if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
-      keepEmail(email);
-      if(data.session){enter(data.session);return;} // 메일 확인을 끈 프로젝트면 바로 입장
-      // 이미 가입된 메일이면 Supabase가 빈 identities로 돌려줌(메일은 보내지 않음)
-      if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){loginStep('이미 가입된 메일이에요. 비밀번호로 로그인해 주세요.',email);return;}
-      verifyStep(email,'signup');});
+      keepEmail(email);codeStep(email);});
   }
 
-  // 가입 확인(signup) 또는 비밀번호 찾기(recovery) 코드 확인
-  function verifyStep(email,type){
-    const signup=type==='signup';
-    card(`<p><b>${escH(email)}</b>로 ${signup?'가입 확인':'비밀번호 재설정'} 코드를 보냈어요. 메일에 있는 숫자를 넣어 주세요.</p>
-      <form id="gCodeF" class="gateForm" novalidate><label for="gCode">확인 코드</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="숫자 6자리">
-      <button class="btn primary" type="submit" id="gGo">${signup?'가입 완료':'다음'}</button><p class="err" id="gErr"></p>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">로그인 화면으로</button></div></form>`);
+  function codeStep(email){
+    card(`<p><b>${escH(email)}</b>로 로그인 코드를 보냈어요. 메일에 있는 숫자를 넣어 주세요.</p>
+      <form id="gCodeF" class="gateForm" novalidate><label for="gCode">인증 코드</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="숫자 6자리">
+      <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr"></p>
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">처음으로</button></div></form>`);
     $g('#gCode').focus();
     $g('#gBack').onclick=()=>loginStep('',email);
-    $g('#gResend').onclick=async()=>{const {error}=signup?await sb.auth.resend({type:'signup',email}):await sb.auth.resetPasswordForEmail(email);$g('#gErr').textContent=error?authErr(error):'코드를 다시 보냈어요.';};
+    $g('#gResend').onclick=async()=>{const {error}=await sendCode(email);$g('#gErr').textContent=error?authErr(error):'코드를 다시 보냈어요.';};
     $g('#gCodeF').addEventListener('submit',async e=>{e.preventDefault();
       const token=$g('#gCode').value.replace(/\s/g,'');if(!token){$g('#gErr').textContent='코드를 입력해 주세요.';return;}
       $g('#gGo').disabled=true;
-      const {data,error}=await sb.auth.verifyOtp({email,token,type});
+      const {data,error}=await sb.auth.verifyOtp({email,token,type:'email'});
       if(error||!data.session){$g('#gGo').disabled=false;$g('#gErr').textContent='코드가 맞지 않거나 시간이 지났어요. 코드를 다시 받아 주세요.';return;}
-      if(signup)enter(data.session);else newPwStep(data.session);});
-  }
-
-  function resetStep(prefill){
-    card(`<p>가입한 회사 메일을 넣으면 비밀번호를 다시 정할 수 있는 코드를 보내 드려요.</p>
-      <form id="gResetF" class="gateForm" novalidate>${emailField(prefill||savedEmail())}
-      <button class="btn primary" type="submit" id="gGo">재설정 코드 받기</button><p class="err" id="gErr"></p>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gBack">로그인 화면으로</button></div></form>`);
-    $g('#gEmail').focus();$g('#gBack').onclick=()=>loginStep('',$g('#gEmail').value.trim());
-    $g('#gResetF').addEventListener('submit',async e=>{e.preventDefault();
-      const email=$g('#gEmail').value.trim().toLowerCase();
-      if(!isStaffEmail(email)){$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return;}
-      $g('#gGo').disabled=true;
-      const {error}=await sb.auth.resetPasswordForEmail(email);
-      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
-      verifyStep(email,'recovery');});
-  }
-
-  function newPwStep(session){
-    card(`<p>새 비밀번호를 정해 주세요.</p>
-      <form id="gNewPwF" class="gateForm" novalidate><label for="gPw">새 비밀번호</label><input id="gPw" type="password" autocomplete="new-password" placeholder="${PW_MIN}자 이상, 영문·숫자 섞기">
-      <label for="gPw2">새 비밀번호 확인</label><input id="gPw2" type="password" autocomplete="new-password">
-      <button class="btn primary" type="submit" id="gGo">비밀번호 바꾸고 들어가기</button><p class="err" id="gErr"></p></form>`);
-    $g('#gPw').focus();
-    $g('#gNewPwF').addEventListener('submit',async e=>{e.preventDefault();
-      const password=$g('#gPw').value;
-      if(!pwOk(password)){$g('#gErr').textContent=`비밀번호는 ${PW_MIN}자 이상, 영문과 숫자를 섞어 주세요.`;return;}
-      if(password!==$g('#gPw2').value){$g('#gErr').textContent='비밀번호 확인이 달라요.';return;}
-      $g('#gGo').disabled=true;
-      const {error}=await sb.auth.updateUser({password});
-      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
-      enter(session);});
+      enter(data.session);});
   }
 
   /* ---------- 첫 방문: 본인이 프로필(구성원)을 등록 ---------- */
@@ -1205,7 +1153,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
   $('#btnMembers').hidden=!adminUI();
-  $('#btnProfile').hidden=$('#btnLogout').hidden=$('#btnPw').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
+  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>`:'내 프로필';$('#btnProfile').title='내 프로필';
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
   $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${state.mode}"] .lbl`)?.textContent||'';
   $('#secAdmin').hidden=[...$('#secAdmin').querySelectorAll('.navItem')].every(b=>b.hidden);
@@ -1374,14 +1322,17 @@ function renderMatrix(){
 
 /* ---------- 왼쪽 메뉴: 전체 접기 · 좁은 화면 서랍 (접힘 상태는 이 브라우저에 기억) ---------- */
 (()=>{
-  const shell=$('#shell');let st={fold:false};
+  const shell=$('#shell');let st={fold:false,gc:[]};
   try{st={...st,...JSON.parse(localStorage.getItem('wb-side')||'{}')};}catch(e){}
-  const save=()=>{try{localStorage.setItem('wb-side',JSON.stringify({fold:!!st.fold}));}catch(e){}};
+  if(!Array.isArray(st.gc))st.gc=[];
+  const save=()=>{try{localStorage.setItem('wb-side',JSON.stringify({fold:!!st.fold,gc:st.gc}));}catch(e){}};
   const draw=()=>{
     shell.classList.toggle('fold',!!st.fold);
     const lb=st.fold?'메뉴 펼치기':'메뉴 접기';$('#sideFold').setAttribute('aria-label',lb);$('#sideFold').title=lb;
+    document.querySelectorAll('.gnbGroup').forEach(g=>{const c=st.gc.includes(g.dataset.grp);g.classList.toggle('closed',c);g.querySelector('.gnbHead').setAttribute('aria-expanded',String(!c));});
   };
   $('#sideFold').onclick=()=>{st.fold=!st.fold;save();draw();};
+  document.querySelectorAll('.gnbHead').forEach(h=>h.addEventListener('click',()=>{const k=h.closest('.gnbGroup').dataset.grp;st.gc=st.gc.includes(k)?st.gc.filter(x=>x!==k):[...st.gc,k];save();draw();}));
   const setDrawer=o=>{shell.classList.toggle('drawer',o);$('#sideOpen').setAttribute('aria-expanded',String(o));};
   $('#sideOpen').onclick=()=>setDrawer(!shell.classList.contains('drawer'));
   $('#sideBackdrop').onclick=()=>setDrawer(false);
@@ -1403,7 +1354,6 @@ $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode
 $('#btnMembers').addEventListener('click',openMembers);
 $('#btnProfile').addEventListener('click',openProfile);
 $('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
-$('#btnPw').addEventListener('click',openPassword);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
@@ -1475,32 +1425,6 @@ async function toAvatar(file){
   const n=Math.min(img.width,img.height), c=document.createElement('canvas');c.width=c.height=160;
   c.getContext('2d').drawImage(img,(img.width-n)/2,(img.height-n)/2,n,n,0,0,160,160);img.close?.();
   return c.toDataURL('image/jpeg',.85);
-}
-// 비밀번호 변경: 헤더 버튼으로 여는 작은 창. 프로필 저장과 별개로 바로 적용
-function openPassword(){
-  if(!window.wbAuth)return;
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="pwForm" novalidate style="max-width:420px">
-    <header><h2>비밀번호 변경</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr">
-      <div class="f"><label for="pwNew">새 비밀번호</label><input type="password" id="pwNew" autocomplete="new-password" placeholder="새 비밀번호 (8자 이상, 영문·숫자)"></div>
-      <div class="f"><label for="pwNew2">새 비밀번호 확인</label><input type="password" id="pwNew2" autocomplete="new-password" placeholder="새 비밀번호 확인"></div>
-      <span class="hint">변경을 누르면 바로 적용돼요.</span>
-    </div>
-    <footer><span class="err" id="pwErr"></span><div class="r"><button class="btn" type="button" id="pwCancel">취소</button><button class="btn primary" type="submit" id="pwGo">변경</button></div></footer>
-  </form></div>`;
-  $('#xClose').onclick=$('#pwCancel').onclick=closeModal;
-  $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
-  $('#pwNew').focus();
-  $('#pwForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const a=$('#pwNew').value,b=$('#pwNew2').value,msg=$('#pwErr');
-    if(a.length<8||!/[a-zA-Z]/.test(a)||!/\d/.test(a)){msg.textContent='비밀번호는 8자 이상, 영문과 숫자를 섞어 주세요.';return;}
-    if(a!==b){msg.textContent='비밀번호 확인이 달라요.';return;}
-    $('#pwGo').disabled=true;
-    try{await window.wbAuth.changePassword(a);closeModal();toast('비밀번호를 바꿨어요');}
-    catch(err){msg.textContent=err.message||'바꾸지 못했어요. 잠시 후 다시 시도해 주세요.';}
-    finally{const g=$('#pwGo');if(g)g.disabled=false;}
-  });
 }
 function openProfile(){
   const m=myMember();if(!m){openWhoAmI();return;}

@@ -756,6 +756,14 @@ a.rms:hover{text-decoration:underline}
 .mnTip b{display:block;margin-bottom:6px;color:var(--fg)}
 .mnTip ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
 @media (max-width:900px){.mnWrap{grid-template-columns:1fr}.mnTree{min-height:0}.mnRow{grid-template-columns:1fr}}
+/* ---------- 일정 창 구분 색상 · 달력의 읽기 전용 연차 ---------- */
+.scColors{display:flex;gap:10px;flex-wrap:wrap}
+.scColor{position:relative;cursor:pointer;display:inline-flex}
+.scColor input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.scColor span{display:block;width:26px;height:26px;border-radius:50%;background:var(--c)}
+.scColor input:checked+span{outline:2px solid var(--fg);outline-offset:2px}
+.scColor input:focus-visible+span{outline:2px solid var(--accent-dark);outline-offset:3px}
+.lv.lvRo{cursor:default}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1248,7 +1256,7 @@ let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#btnAdd').addEventListener('click',()=>{if(state.post){state.post=null;persistUI();render();}const t=$('#pnTitle');if(t){t.scrollIntoView({block:'center',behavior:'smooth'});t.focus({preventScroll:true});}});
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
-$('#btnLeaveAdd').addEventListener('click',()=>openLeave());
+$('#btnLeaveAdd').addEventListener('click',()=>openSched());
 $('#main').addEventListener('click',async e=>{
   if(e.target.closest('a'))return;
   const yh=e.target.closest('[data-year]');if(yh){const f=new Set(state.yfold||[]),y=yh.dataset.year;f.has(y)?f.delete(y):f.add(y);state.yfold=[...f];persistUI();render();return;}
@@ -1611,20 +1619,20 @@ function renderLeave(){
   const Y=lstate.year;
   area.innerHTML=`
     <div class="rtool"><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
-    ${calPanel(lstate,calFilter(),true)}`;
+    ${calPanel(lstate,calFilter(),true,true)}`;
 }
 // 월 달력 하나: 일정 관리(lstate, 보기 필터 state.cf)와 연차 관리(astate, 연차만)가 같이 씀
-function calPanel(st,cf,withFilters){
+function calPanel(st,cf,withFilters,leaveRo){
   const T=todayStr(), [cy,cm]=st.month.split('-').map(Number);
   const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
   const last=new Date(cy,cm,0), end=new Date(last);end.setDate(last.getDate()+(7-((last.getDay()+6)%7)-1));
   const a0=ymd(start), b0=ymd(end);
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
   if(cf.leave)for(const l of [...leaves].filter(l=>memOf(l.memberId)).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
-    push(d,`<div class="lv ${ltype(l.type).cls}" data-lid="${esc(l.id)}" tabindex="0" title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
-  if(cf.project)for(const ev of events.filter(e=>e.kind==='project')){const p=projOf(ev.projectId);for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
-    push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc(p?.color||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
-  if(cf.deploy)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
+    push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
+  if(cf.event)for(const ev of events.filter(e=>e.kind==='project'||e.kind==='event')){const p=ev.kind==='project'?projOf(ev.projectId):null;for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
+    push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
+  if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
     push(d,`<div class="ev evd" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" title="${esc((p?p.name+' · ':'')+ev.title)}"><span class="evtag">배포</span>${esc(p?.name||ev.title)}</div>`);}
   if(cf.due)for(const t of workItems().filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
     push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(t.assignee||'미지정'))}">마감 · ${esc(t.title)}</div>`);
@@ -1637,7 +1645,7 @@ function calPanel(st,cf,withFilters){
   lvDayItems=byDay;
   return `<div class="panel">
         <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달">◀</button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달">▶</button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
-          ${withFilters?`<span class="calFilters">${[['leave','연차'],['project','프로젝트 일정'],['deploy','정기 배포'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
+          ${withFilters?`<span class="calFilters">${[['event','일정'],['leave','연차'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
         <div class="cal">${['월','화','수','목','금','토','일'].map((d,i)=>`<div class="dow ${i>4?'we':''}">${d}</div>`).join('')}${cells}</div>
     </div>`;
 }
@@ -1646,9 +1654,10 @@ onArea('#leaveArea','change',e=>{const c=e.target.dataset.cf;if(c){state.cf={...
 // 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
 let lvDrag=null, lvDragDone=false;
 const lvMark=(sel,a,b)=>document.querySelectorAll(sel+' .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
-document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b,sel,only}=lvDrag;lvDrag=null;lvMark(sel);if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a,only);}});
+document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b,sel,only}=lvDrag;lvDrag=null;lvMark(sel);if(a!==b){lvDragDone=true;calNew(only,a<b?a:b,a<b?b:a);}});
+const calNew=(only,a,b)=>only?openLeave(null,a,b,true):openSched(null,a,b);
 function bindCal(sel,st,only){
-  onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
+  onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue,.lvRo')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
   onArea(sel,'pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(sel,lvDrag.a,lvDrag.b);});
   onArea(sel,'click',e=>{
     if(lvDragDone){lvDragDone=false;return;}
@@ -1657,8 +1666,8 @@ function bindCal(sel,st,only){
     if(id==='lThis'){st.month=todayStr().slice(0,7);st.year=+todayStr().slice(0,4);render();return;}
     const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
     const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
-    if(e.target.closest('.evdue'))return; // 업무 마감은 표시만
-    const day=e.target.closest('.day');if(day&&canWrite)openLeave(null,day.dataset.date,undefined,only);
+    if(e.target.closest('.evdue,.lvRo'))return; // 업무 마감·(일정 관리의) 연차는 표시만
+    const day=e.target.closest('.day');if(day&&canWrite)calNew(only,day.dataset.date);
   });
   onArea(sel,'keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
 }
@@ -1671,12 +1680,8 @@ function renderAnnual(){
   const area=$('#annualArea');
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
   if(!members.length){area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>인력 관리에서 구성원과 연간 연차 일수를 정하면 여기에 달력과 현황이 보여요.</p></div>`;return;}
-  const Y=+astate.month.slice(0,4);
-  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
-    return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
-    ${calPanel(astate,{leave:true},false)}
-    <div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    ${calPanel(astate,{leave:true},false,false)}`;
 }
 bindCal('#annualArea',astate,true);
 onArea('#annualArea','click',e=>{if(e.target.id==='aAdd')openLeave(null,undefined,undefined,true);});
@@ -1742,15 +1747,49 @@ onArea('#menusArea','click',e=>{
 
 /* ---------- 일정 관리: 프로젝트 일정 · 정기 배포(events) ---------- */
 let events=[], lvDayItems={};
-const CF_DEF={leave:true,project:true,deploy:true,due:true};
+const CF_DEF={event:true,leave:true,due:true};
 const calFilter=()=>({...CF_DEF,...(state.cf||{})});
 // 정기 배포: from~until 사이 지정 요일(0=일~6=토), skip 날짜 제외
 function deployDates(ev,a,b){const out=[],from=ev.from||a,until=ev.until||b,wd=new Set((ev.weekdays||[]).map(Number));
   for(let d=from>a?from:a;d<=b&&d<=until;d=addDays(d,1))if(wd.has(new Date(d+'T00:00:00').getDay())&&!(ev.skip||[]).includes(d))out.push(d);return out;}
-const SCHED_KINDS=[['leave','연차 신청'],['project','프로젝트 일정'],['deploy','정기 배포']];
-const kindSelect=cur=>`<div class="f full"><label for="evKind">분류</label><select id="evKind">${SCHED_KINDS.map(([k,l])=>`<option value="${k}" ${k===cur?'selected':''}>${l}</option>`).join('')}</select></div>`;
-// 새 일정 창에서 분류를 바꾸면 그 분류의 창으로 다시 엶(날짜 유지)
-function bindKind(date,endDate){$('#evKind')?.addEventListener('change',e=>{const k=e.target.value;if(k==='leave')openLeave(null,date,endDate);else openEvent(k,null,date,endDate);});}
+// 일정 등록·수정: 제목 + 기간 + 구분 색상 (events kind 'event'). 연차는 연차 관리에서만 등록
+function openSched(ev,date,endDate){
+  const isNew=!ev, ro=!canWrite;
+  ev=ev||{kind:'event',title:'',start:date||todayStr(),end:endDate||date||todayStr(),color:PCOLORS[0],note:''};
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="scForm" novalidate style="max-width:520px">
+    <header><h2>${isNew?'일정 등록':ro?'일정':'일정 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
+      <div class="f full"><label for="scTitle">제목 <b>*</b></label><input id="scTitle" maxlength="60" value="${esc(ev.title||'')}" placeholder="예: 2차 오픈, 워크숍"></div>
+      <div class="f"><label for="scStart">시작일 <b>*</b></label><input type="date" id="scStart" value="${esc(ev.start||'')}"></div>
+      <div class="f"><label for="scEnd">종료일</label><input type="date" id="scEnd" value="${esc(ev.end||ev.start||'')}"></div>
+      <div class="f full"><label id="scColLbl">구분 색상</label><div class="scColors" role="radiogroup" aria-labelledby="scColLbl">${PCOLORS.map((c,i)=>`<label class="scColor" style="--c:${c}"><input type="radio" name="scColor" value="${c}" ${(ev.color||PCOLORS[0])===c?'checked':''} aria-label="색 ${i+1}"><span></span></label>`).join('')}</div></div>
+      <div class="f full"><label for="scNote">메모</label><input id="scNote" value="${esc(ev.note||'')}"></div>
+    </div></fieldset>
+    <footer><div id="scDelZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="scDel">삭제</button>':''}</div><span class="err" id="scErr"></span>
+      <div class="r"><button class="btn" type="button" id="scCancel">${ro?'닫기':'취소'}</button>${ro?'':`<button class="btn primary" type="submit" id="scSave">${isNew?'등록':'저장'}</button>`}</div></footer>
+  </form></div>`;
+  $('#xClose').onclick=$('#scCancel').onclick=askClose;
+  $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
+  $('#scDel')?.addEventListener('click',()=>{
+    $('#scDelZone').innerHTML=`<div class="confirm">이 일정을 삭제할까요? <button class="btn danger" type="button" id="scDelYes">삭제</button><button class="btn ghost" type="button" id="scDelNo">취소</button></div>`;
+    $('#scDelNo').onclick=()=>openSched(ev);
+    $('#scDelYes').onclick=async()=>{try{await db.collection('events').doc(ev.id).delete();logChange('event','delete',ev.id,ev.title);closeModal();toast('삭제했습니다');}catch(err){handleWriteError(err,'#scErr');}};
+  });
+  $('#scForm').addEventListener('submit',async e=>{
+    e.preventDefault();if(ro)return;
+    const s=$('#scStart').value, en=$('#scEnd').value;
+    const data={kind:'event',title:$('#scTitle').value.trim(),start:s,end:en&&en>=s?en:s,color:document.querySelector('#scForm [name="scColor"]:checked')?.value||PCOLORS[0],note:$('#scNote').value.trim(),updatedAt:new Date().toISOString()};
+    const err=!data.title?'제목을 입력해 주세요.':!data.start?'시작일을 입력해 주세요.':'';
+    if(err){$('#scErr').textContent=err;return;}
+    $('#scSave').disabled=true;
+    try{
+      if(isNew){data.createdAt=data.updatedAt;data.createdBy=actorId||'';const ref=await db.collection('events').add(data);logChange('event','create',ref.id,data.title,null,data);}
+      else{await db.collection('events').doc(ev.id).update(data);logChange('event','update',ev.id,data.title,ev,{...ev,...data});}
+      closeModal();toast(isNew?'등록했습니다':'저장했습니다');
+    }catch(er){$('#scSave').disabled=false;handleWriteError(er,'#scErr');}
+  });
+  setTimeout(()=>{if(!ro)$('#scTitle').focus();},0);
+}
 function openEvent(kind,ev,date,endDate){
   if(!projects.length){openProject(null);return;}
   const isNew=!ev, ro=!canWrite, dep=kind==='deploy';
@@ -1761,7 +1800,6 @@ function openEvent(kind,ev,date,endDate){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="evForm" novalidate style="max-width:560px">
     <header><h2>${isNew?'일정 등록':ro?name:name+' 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
-      ${isNew?kindSelect(kind):''}
       <div class="f"><label for="evProj">프로젝트 <b>*</b></label><select id="evProj">${opt(projects.map(p=>[p.id,p.name]),ev.projectId)}</select></div>
       <div class="f"><label for="evTitle">제목 <b>*</b></label><input id="evTitle" maxlength="60" value="${esc(ev.title||'')}" placeholder="${dep?'정기 배포':'예: 2차 오픈, QA 시작'}"></div>
       ${dep?`<div class="f full"><label>요일 <b>*</b></label><div class="wdays">${[1,2,3,4,5,6,0].map(d=>`<label class="cfItem"><input type="checkbox" data-wd="${d}" ${(ev.weekdays||[]).map(Number).includes(d)?'checked':''}>${'일월화수목금토'[d]}</label>`).join('')}</div></div>
@@ -1778,7 +1816,6 @@ function openEvent(kind,ev,date,endDate){
     </footer></form></div>`;
   $('#xClose').onclick=$('#evCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  if(isNew)bindKind(date,endDate);
   $('#evSkip')?.addEventListener('click',async()=>{try{const skip=[...new Set([...(ev.skip||[]),date])].sort();await db.collection('events').doc(ev.id).update({skip});logChange('event','update',ev.id,ev.title,ev,{...ev,skip},`${date} 빼기`);closeModal();toast('그날만 뺐어요');}catch(err){handleWriteError(err,'#evErr');}});
   $('#evDel')?.addEventListener('click',()=>{
     $('#evDelZone').innerHTML=`<div class="confirm">이 일정을 삭제할까요? <button class="btn danger" type="button" id="evDelYes">삭제</button><button class="btn ghost" type="button" id="evDelNo">취소</button></div>`;
@@ -1810,7 +1847,7 @@ function openDayList(k){
 }
 function calItemOpen(it,k){
   if(it.dataset.lid){openLeave(leaves.find(l=>l.id===it.dataset.lid));return true;}
-  if(it.dataset.eid){const ev=events.find(x=>x.id===it.dataset.eid);if(ev)openEvent(ev.kind,ev,it.dataset.date||k);return true;}
+  if(it.dataset.eid){const ev=events.find(x=>x.id===it.dataset.eid);if(ev)ev.kind==='event'?openSched(ev):openEvent(ev.kind,ev,it.dataset.date||k);return true;}
   return false;
 }
 
@@ -1821,9 +1858,8 @@ function openLeave(l,date,endDate,only){
   let daysTouched=!isNew&&l.days!==''&&l.days!=null&&+l.days!==autoDays(l.type,l.date,l.endDate);
   const opt=(arr,cur)=>arr.map(([k,v])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(v)}</option>`).join('');
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="leaveForm" novalidate>
-    <header><h2>${isNew?(only?'연차 신청':'일정 등록'):ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <header><h2>${isNew?'연차 신청':ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
-      ${isNew&&!only?kindSelect('leave'):''}
       <div class="f"><label for="lvMember">구성원 <b>*</b></label><select id="lvMember"><option value="">선택</option>${opt(members.map(m=>[m.id,m.name]),l.memberId)}</select></div>
       <div class="f"><label for="lvType">종류 <b>*</b></label><select id="lvType">${opt(LEAVE_TYPES.filter(t=>!t.legacy||t.k===l.type).map(t=>[t.k,t.label+(t.deduct?` (${t.multi?'1일':fmtDays(t.days)+'일'} 차감)`:' (미차감)')]),l.type)}</select></div>
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
@@ -1858,7 +1894,6 @@ function openLeave(l,date,endDate,only){
   ['lvType','lvDate','lvEnd'].forEach(id=>$('#'+id).addEventListener('change',()=>{if(id==='lvType')daysTouched=false;sync();}));
   $('#lvDays').addEventListener('input',()=>{daysTouched=true;sync();});
   $('#xClose').onclick=$('#lvCancel').onclick=askClose;
-  if(isNew)bindKind(date,endDate);
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#lvDel')?.addEventListener('click',()=>{
     $('#lvDelZone').innerHTML=`<div class="confirm">이 연차 신청을 삭제할까요? <button class="btn danger" type="button" id="lvDelYes">삭제</button><button class="btn ghost" type="button" id="lvDelNo">취소</button></div>`;

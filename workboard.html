@@ -726,6 +726,15 @@ a.rms:hover{text-decoration:underline}
 .cpFields[hidden]{display:none}
 @media (max-width:900px){.pnRow{flex-wrap:wrap}.pnRow #pnTitle{flex-basis:100%}}
 .pPicks{display:inline-flex;gap:8px}
+/* ---------- 관리자/일반 뱃지 · 메뉴 관리 ---------- */
+.roleBadge{display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font-size:11px;font-weight:700;background:var(--sunk);color:var(--ink-soft);white-space:nowrap;vertical-align:middle}
+.roleBadge.adm{background:var(--accent-soft);color:var(--accent-dark)}
+.mnGrp{padding:12px 14px;display:flex;flex-direction:column;gap:8px;overflow:visible}
+.mnHead{display:flex;align-items:center;gap:8px}
+.mnList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.mnList li{display:flex;align-items:center;gap:8px}
+.mnList .ico{width:18px;height:18px;flex:none;color:var(--ink-soft)}
+.mnName{width:220px;max-width:100%;min-width:0}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -734,21 +743,6 @@ a.rms:hover{text-decoration:underline}
   <aside class="side" id="side" aria-label="메뉴">
     <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button></div>
     <nav class="sideNav" id="modeTabs" role="tablist" aria-orientation="vertical" aria-label="화면">
-      <section class="gnbGroup" data-grp="work">
-        <button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-work"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg><span class="lbl">업무 관리</span><span class="chev" aria-hidden="true">▾</span></button>
-        <div class="gnbBody" id="grp-work">
-          <button type="button" role="tab" class="navItem" title="업무 관리" data-mode="tasks"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></svg><span class="lbl">업무 관리</span></button>
-          <button type="button" role="tab" class="navItem" title="주간 보고" data-mode="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="lbl">주간 보고</span></button>
-          <button type="button" role="tab" class="navItem" title="변경 이력" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button>
-        </div>
-      </section>
-      <section class="gnbGroup" data-grp="people">
-        <button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-people"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">인사</span><span class="chev" aria-hidden="true">▾</span></button>
-        <div class="gnbBody" id="grp-people">
-          <button type="button" role="tab" class="navItem" title="인력 관리" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">인력 관리</span></button>
-          <button type="button" role="tab" class="navItem" title="일정 관리" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">일정 관리</span></button>
-        </div>
-      </section>
     </nav>
   </aside>
   <div class="sideBackdrop" id="sideBackdrop" aria-hidden="true"></div>
@@ -798,6 +792,9 @@ a.rms:hover{text-decoration:underline}
   <div class="area" id="historyArea" hidden></div>
   <div class="area" id="hoursArea" hidden></div>
   <div class="area" id="staffArea" hidden></div>
+  <div class="area" id="annualArea" hidden></div>
+  <div class="area" id="menusArea" hidden></div>
+  <div class="area" id="permsArea" hidden></div>
 </div>
   </div>
 </div>
@@ -827,13 +824,36 @@ let projects=[], tasks=[], wlogs=[], comments=[], templates=[], wlRefresh=null;
 const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',project:'all',part:'all',status:'all',assignee:'all',q:'',late:false,sort:{key:'dueDate',dir:1}};
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,s);state.pAnchor=null;state.pBasis='active';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history'].includes(h))state.mode=h;}
+{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms'].includes(h))state.mode=h;}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold}));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
+const MENU_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
+const MENU_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['leave','people','일정 관리'],['annual','people','연차 관리'],
+  ['staff','admin','인력 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리'],['perms','admin','메뉴 권한 관리']];
+const NAV_ICO={"tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
+let menuCfg={}, navKey='', sideDraw=()=>{};
+// 관리자: 서버는 wb_admins(adminUI), 아티팩트는 편집 권한(canWrite)
+const isAdminUser=()=>canWrite&&(typeof adminUI!=='function'||adminUI());
+const roleBadge=()=>isAdminUser()?'<span class="roleBadge adm">관리자</span>':'<span class="roleBadge">일반</span>';
+const defName=k=>k.startsWith('grp:')?MENU_GRPS.find(g=>'grp:'+g[0]===k)?.[1]:MENU_ITEMS.find(x=>x[0]===k)?.[2];
+const menuName=k=>String(menuCfg.names?.[k]||'').trim()||defName(k)||k;
+function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
+// 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
+function menuOpen(k){if(k==='hours')k='report';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;return it[1]==='admin'||menuCfg.access?.[k]==='admin'?isAdminUser():true;}
+const firstMenu=()=>MENU_GRPS.flatMap(([g])=>menuOrder(g)).find(menuOpen)||'tasks';
+function renderNav(){
+  const key=JSON.stringify([isAdminUser(),menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
+  $('#modeTabs').innerHTML=MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
+    return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}">${NAV_ICO['grp:'+g]}<span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true">▾</span></button>
+      <div class="gnbBody" id="grp-${g}">${items.map(k=>`<button type="button" role="tab" class="navItem" title="${esc(menuName(k))}" data-mode="${k}">${NAV_ICO[k]}<span class="lbl">${esc(menuName(k))}</span></button>`).join('')}</div></section>`;}).join('');
+  sideDraw();
+}
 const todayStr=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
 const partOf=k=>PARTS.find(p=>p.k===k)||{k,label:'미지정',c:'var(--muted)'};
 const statusOf=k=>STATUSES.find(s=>s.k===k)||STATUSES[0];
@@ -953,16 +973,16 @@ function sorted(list){
 
 /* ---------- render ---------- */
 function applyMode(){
-  if(state.mode==='history'&&!canWrite&&storeReady)state.mode='tasks';
-  $('#tabHistory').hidden=!canWrite;
-  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea'};
+  renderNav();
+  if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
+  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',perms:'permsArea'};
   if(!AREAS[state.mode])state.mode='tasks';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnLeaveAdd').disabled=!canWrite;
   const navMode=state.mode==='hours'?'report':state.mode; // 업무 시간은 주간 보고 안의 탭
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===navMode));
-  $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${navMode}"] .lbl`)?.textContent||'';
+  $('#pageTitle').textContent=menuName(navMode);
 }
 function render(){
   renderBody();liftTools();
@@ -981,7 +1001,11 @@ document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.cl
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
 function renderBody(){
   renderBrand();applyMode();renderTodayOff();
+  if(state.mode!=='menus')mDraft=null;
   if(state.mode==='leave'){renderLeave();return;}
+  if(state.mode==='annual'){renderAnnual();return;}
+  if(state.mode==='menus'){renderMenus();return;}
+  if(state.mode==='perms'){renderPerms();return;}
   if(state.mode==='hours'){renderHours();return;}
   if(state.mode==='staff'){if(document.activeElement?.id!=='mQ'){renderStaff();applyMQ();}return;}
   if(state.mode==='history'){if(document.activeElement?.id!=='hQ')renderHistory();return;}
@@ -1218,13 +1242,13 @@ async function setReqStatus(id,st){
     document.querySelectorAll('.gnbGroup').forEach(g=>{const c=st.gc.includes(g.dataset.grp);g.classList.toggle('closed',c);g.querySelector('.gnbHead').setAttribute('aria-expanded',String(!c));});
   };
   $('#sideFold').onclick=()=>{st.fold=!st.fold;save();draw();};
-  document.querySelectorAll('.gnbHead').forEach(h=>h.addEventListener('click',()=>{const k=h.closest('.gnbGroup').dataset.grp;st.gc=st.gc.includes(k)?st.gc.filter(x=>x!==k):[...st.gc,k];save();draw();}));
+  $('#modeTabs').addEventListener('click',e=>{const h=e.target.closest('.gnbHead');if(!h)return;const k=h.closest('.gnbGroup').dataset.grp;st.gc=st.gc.includes(k)?st.gc.filter(x=>x!==k):[...st.gc,k];save();draw();});
   const setDrawer=o=>{shell.classList.toggle('drawer',o);$('#sideOpen').setAttribute('aria-expanded',String(o));};
   $('#sideOpen').onclick=()=>setDrawer(!shell.classList.contains('drawer'));
   $('#sideBackdrop').onclick=()=>setDrawer(false);
   $('#side').addEventListener('click',e=>{if(e.target.closest('.navItem'))setDrawer(false);});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&shell.classList.contains('drawer'))setDrawer(false);});
-  draw();
+  draw();sideDraw=draw;
 })();
 
 /* ---------- events ---------- */
@@ -1594,7 +1618,7 @@ function renderLeave(){
   const area=$('#leaveArea');
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>일정을 불러오는 중입니다</h2></div>`;return;}
   if(!members.length){
-    area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>사람별로 연간 연차 일수를 정해 두면, 연차·반차·반반차를 등록할 때마다 사용·예정·잔여 일수가 자동으로 계산됩니다.</p>${canWrite?'<button class="btn primary" type="button" id="lEmptyAdd">구성원 추가</button>':''}</div>`;
+    area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>사람별로 연간 연차 일수를 정해 두면, 연차·반차·반반차를 등록할 때마다 사용·예정·잔여 일수가 자동으로 계산됩니다.</p>${isAdminUser()?'<button class="btn primary" type="button" id="lEmptyAdd">구성원 추가</button>':''}</div>`;
     $('#lEmptyAdd')?.addEventListener('click',openMembers);return;
   }
   const Y=lstate.year, T=todayStr();
@@ -1647,6 +1671,64 @@ onArea('#leaveArea','click',e=>{
   const day=e.target.closest('.day');if(day&&canWrite)openLeave(null,day.dataset.date);
 });
 onArea('#leaveArea','keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+
+
+/* ---------- 연차 관리: 연차 현황 + 연차 신청 목록 ---------- */
+const astate={year:+todayStr().slice(0,4)};
+function renderAnnual(){
+  const area=$('#annualArea');
+  if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
+  const Y=astate.year, ys=[...new Set([Y,+todayStr().slice(0,4),...leaves.map(l=>+(l.date||'').slice(0,4)).filter(Boolean)])].sort((a,b)=>b-a);
+  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
+    return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
+  const list=leaves.filter(l=>memOf(l.memberId)&&(l.date||'').startsWith(String(Y))).sort((a,b)=>b.date.localeCompare(a.date));
+  const lrows=list.map(l=>`<tr data-lid="${esc(l.id)}" tabindex="0"><td class="nowrap num">${fmtDate(l.date)}${l.endDate&&l.endDate!==l.date?' ~ '+fmtDate(l.endDate):''}</td><td class="nowrap"><b>${esc(memOf(l.memberId).name)}</b></td><td class="nowrap">${esc(leaveLabel(l))}</td><td class="r num">${fmtDays(leaveDays(l))}일</td><td>${esc(l.note||'')}</td></tr>`).join('');
+  area.innerHTML=`<div class="rtool"><select class="sel" id="aYear" aria-label="연도">${ys.map(y=>`<option value="${y}" ${y===Y?'selected':''}>${y}년</option>`).join('')}</select><span class="spacer"></span>${canWrite&&members.length?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
+    ${members.length?`<div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>
+    <div class="panel"><h3><span>연차 신청 목록 <span class="legend">${list.length}건</span></span></h3>${list.length?`<div class="tablebox"><table class="stable aList"><thead><tr><th>날짜</th><th>이름</th><th>종류</th><th class="r">일수</th><th>메모</th></tr></thead><tbody>${lrows}</tbody></table></div>`:'<p class="legend" style="margin:0;padding:14px">이 연도에 신청된 연차가 없어요.</p>'}</div>`
+    :`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>인력 관리에서 구성원과 연간 연차 일수를 정하면 여기에 현황이 보여요.</p></div>`}`;
+}
+onArea('#annualArea','change',e=>{if(e.target.id==='aYear'){astate.year=+e.target.value;render();}});
+onArea('#annualArea','click',e=>{if(e.target.id==='aAdd'){openLeave();return;}const r=e.target.closest('[data-lid]');if(r)openLeave(leaves.find(l=>l.id===r.dataset.lid));});
+onArea('#annualArea','keydown',e=>{if(e.key!=='Enter')return;const r=e.target.closest('[data-lid]');if(r)r.click();});
+
+/* ---------- 메뉴 관리(관리자): 이름·순서. 저장 전까지는 mDraft에서만 바꿈 ---------- */
+let mDraft=null;
+const mDraftOf=cfg=>({order:Object.fromEntries(MENU_GRPS.map(([g])=>[g,menuOrder(g,cfg)])),names:{...(cfg.names||{})}});
+function renderMenus(){
+  const area=$('#menusArea');if(!isAdminUser()){area.innerHTML='';return;}if(document.activeElement?.classList?.contains('mnName'))return; // 이름 입력 중엔 다시 그리지 않음
+  const d=mDraft||(mDraft=mDraftOf(menuCfg)), inp=(k,lab)=>`<input class="sel mnName" data-k="${k}" value="${esc(d.names[k]||'')}" placeholder="${esc(defName(k))}" aria-label="${esc(lab)}" maxlength="20">`;
+  area.innerHTML=`<div class="rtool"><span class="spacer"></span><button class="btn" type="button" id="mnReset">기본값으로 되돌리기</button><button class="btn primary" type="button" id="mnSave">저장</button></div>
+    <p class="legend" style="margin:0">이름을 비우면 기본 이름을 써요. 순서는 같은 묶음 안에서 ▲▼로 바꿔요. 저장해야 메뉴에 반영돼요.</p>
+    ${MENU_GRPS.map(([g])=>`<div class="panel mnGrp"><div class="mnHead"><span class="legend">묶음</span>${inp('grp:'+g,defName('grp:'+g)+' 묶음 이름')}</div>
+      <ul class="mnList">${d.order[g].map((k,i,a)=>`<li>${NAV_ICO[k]}${inp(k,defName(k)+' 메뉴 이름')}<span class="spacer"></span><button class="btn ghost sm" type="button" data-mv="${g}:${i}:-1" ${i?'':'disabled'} aria-label="${esc(defName(k))} 위로">▲</button><button class="btn ghost sm" type="button" data-mv="${g}:${i}:1" ${i<a.length-1?'':'disabled'} aria-label="${esc(defName(k))} 아래로">▼</button></li>`).join('')}</ul></div>`).join('')}
+    <span class="err" id="mnErr"></span>`;
+}
+async function saveMenus(patch,btn){
+  if(btn)btn.disabled=true;
+  try{const before={...menuCfg},next={order:menuCfg.order||{},names:menuCfg.names||{},access:menuCfg.access||{},...patch,updatedAt:new Date().toISOString()};
+    await db.doc('settings/menus').set(next);menuCfg=next;mDraft=null;logChange('site','update','menus','메뉴 설정',before,next);toast('저장했어요');render();}
+  catch(err){handleWriteError(err,'#mnErr');render();}finally{if(btn)btn.disabled=false;}
+}
+onArea('#menusArea','input',e=>{const k=e.target.dataset.k;if(k&&mDraft)mDraft.names[k]=e.target.value;});
+onArea('#menusArea','click',e=>{
+  const mv=e.target.closest('[data-mv]');
+  if(mv){const [g,i,dd]=mv.dataset.mv.split(':'),o=mDraft.order[g],a=+i,b=a+(+dd);[o[a],o[b]]=[o[b],o[a]];render();
+    (document.querySelector(`#menusArea [data-mv="${g}:${b}:${dd}"]:not(:disabled)`)||document.querySelector(`#menusArea [data-mv="${g}:${b}:${-dd}"]`))?.focus();return;}
+  if(e.target.id==='mnReset'){mDraft=mDraftOf({});render();return;}
+  if(e.target.id==='mnSave')saveMenus({order:mDraft.order,names:Object.fromEntries(Object.entries(mDraft.names).map(([k,v])=>[k,String(v).trim()]).filter(([,v])=>v))},e.target);
+});
+
+/* ---------- 메뉴 권한 관리(관리자): 메뉴별 공개 범위(모두/관리자만) ---------- */
+function renderPerms(){
+  const acc=menuCfg.access||{};
+  if(!isAdminUser()){$('#permsArea').innerHTML='';return;}
+  $('#permsArea').innerHTML=`<p class="legend" style="margin:0">'관리자만'으로 둔 메뉴는 일반 사용자의 메뉴에서 숨겨져요. 메뉴를 숨겨도 데이터 권한은 바뀌지 않아요.</p>
+    <div class="tablebox"><table class="stable"><thead><tr><th>묶음</th><th>메뉴</th><th>공개 범위</th></tr></thead><tbody>${MENU_GRPS.flatMap(([g])=>menuOrder(g).map(k=>{const lock=g==='admin',v=lock||acc[k]==='admin'?'admin':'all';
+      return `<tr><td class="nowrap">${esc(menuName('grp:'+g))}</td><td class="nowrap"><b>${esc(menuName(k))}</b></td><td><select class="sel" data-acc="${k}" aria-label="${esc(menuName(k))} 공개 범위" ${lock?'disabled':''}><option value="all" ${v==='all'?'selected':''}>모두</option><option value="admin" ${v==='admin'?'selected':''}>관리자만</option></select>${lock?'<span class="legend"> 관리자 전용 메뉴</span>':''}</td></tr>`;})).join('')}</tbody></table></div>
+    <span class="err" id="mnErr"></span>`;
+}
+onArea('#permsArea','change',e=>{const k=e.target.dataset.acc;if(k)saveMenus({access:{...(menuCfg.access||{}),[k]:e.target.value}});});
 
 /* ---------- 일정 관리: 프로젝트 일정 · 정기 배포(events) ---------- */
 let events=[], lvDayItems={};
@@ -2430,7 +2512,7 @@ function openAssign(a,pid){
 const SITE_DEFAULT={title:'업무 관리 대시보드'};
 let site={...SITE_DEFAULT};
 // 사이트 제목은 화면에 보이지 않고 브라우저 탭 제목으로만 써요(저장된 settings/site 값)
-function renderBrand(){document.title=site.title||SITE_DEFAULT.title;}
+function renderBrand(){document.title=`${menuName(state.mode==='hours'?'report':state.mode)} · ${site.title||SITE_DEFAULT.title}`;}
 
 /* ---------- history (변경 이력) ---------- */
 // 누가·언제·무엇을 바꿨는지 history 컬렉션에 1건씩 기록. 편집 권한(Contributor 이상)만 읽고 쓸 수 있으며 180일이 지난 기록은 자동 정리
@@ -2602,6 +2684,7 @@ render();
   db.collection('assignments').onSnapshot(s=>{assigns=s.docs.map(x=>({id:x.id,...x.data()}));if(!sr){sr=true;ready();}render();},onErr);
   startHistory();
   db.doc('settings/site').onSnapshot(s=>{site=s.exists?{...SITE_DEFAULT,...s.data()}:{...SITE_DEFAULT};renderBrand();},()=>{});
+  db.doc('settings/menus').onSnapshot(s=>{menuCfg=s.exists?s.data()||{}:{};navKey='';if(storeReady)render();},()=>{});
   db.collection('reports').onSnapshot(s=>{reports=s.docs.map(x=>({id:x.id,...x.data()}));if(!rr){rr=true;ready();}render();},onErr);
   db.collection('members').onSnapshot(s=>{members=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));if(!mr){mr=true;ready();}render();},onErr);
   db.collection('leaves').onSnapshot(s=>{leaves=s.docs.map(x=>({id:x.id,...x.data()}));if(!lr){lr=true;ready();}render();},onErr);

@@ -1588,12 +1588,17 @@ function renderLeave(){
     area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>사람별로 연간 연차 일수를 정해 두면, 연차·반차·반반차를 등록할 때마다 사용·예정·잔여 일수가 자동으로 계산됩니다.</p>${isAdminUser()?'<button class="btn primary" type="button" id="lEmptyAdd">구성원 추가</button>':''}</div>`;
     $('#lEmptyAdd')?.addEventListener('click',openMembers);return;
   }
-  const Y=lstate.year, T=todayStr();
-  // 달력: 연차 → 프로젝트 일정 → 정기 배포 → 업무 마감 (보기 필터는 state.cf, wb-ui에 기억)
-  const [cy,cm]=lstate.month.split('-').map(Number);
+  const Y=lstate.year;
+  area.innerHTML=`
+    <div class="rtool"><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
+    ${calPanel(lstate,calFilter(),true)}`;
+}
+// 월 달력 하나: 일정 관리(lstate, 보기 필터 state.cf)와 연차 관리(astate, 연차만)가 같이 씀
+function calPanel(st,cf,withFilters){
+  const T=todayStr(), [cy,cm]=st.month.split('-').map(Number);
   const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
   const last=new Date(cy,cm,0), end=new Date(last);end.setDate(last.getDate()+(7-((last.getDay()+6)%7)-1));
-  const cf=calFilter(), a0=ymd(start), b0=ymd(end);
+  const a0=ymd(start), b0=ymd(end);
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
   if(cf.leave)for(const l of [...leaves].filter(l=>memOf(l.memberId)).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
     push(d,`<div class="lv ${ltype(l.type).cls}" data-lid="${esc(l.id)}" tabindex="0" title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
@@ -1610,11 +1615,9 @@ function renderLeave(){
     cells+=`<div class="${cls}" data-date="${k}"><span class="dn">${d.getDate()}</span>${items.slice(0,4).join('')}${items.length>4?`<button type="button" class="more" data-more="${k}">+${items.length-4}건</button>`:''}</div>`;
   }
   lvDayItems=byDay;
-  area.innerHTML=`
-    <div class="rtool"><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
-    <div class="panel">
+  return `<div class="panel">
         <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달">◀</button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달">▶</button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
-          <span class="calFilters">${[['leave','연차'],['project','프로젝트 일정'],['deploy','정기 배포'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span></h3>
+          ${withFilters?`<span class="calFilters">${[['leave','연차'],['project','프로젝트 일정'],['deploy','정기 배포'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
         <div class="cal">${['월','화','수','목','금','토','일'].map((d,i)=>`<div class="dow ${i>4?'we':''}">${d}</div>`).join('')}${cells}</div>
     </div>`;
 }
@@ -1622,42 +1625,41 @@ function renderLeave(){
 onArea('#leaveArea','change',e=>{const c=e.target.dataset.cf;if(c){state.cf={...calFilter(),[c]:e.target.checked};persistUI();render();return;}if(e.target.id==='lYear'){lstate.year=+e.target.value;lstate.month=`${lstate.year}-${lstate.month.slice(5)}`;render();}});
 // 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
 let lvDrag=null, lvDragDone=false;
-const lvMark=(a,b)=>document.querySelectorAll('#leaveArea .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
-onArea('#leaveArea','pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date};});
-onArea('#leaveArea','pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(lvDrag.a,lvDrag.b);});
-document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b}=lvDrag;lvDrag=null;lvMark();if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a);}});
-onArea('#leaveArea','click',e=>{
-  if(lvDragDone){lvDragDone=false;return;}
-  const id=e.target.id;
-  if(id==='lPrev'||id==='lNext'){const [y,m]=lstate.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);lstate.month=ymd(d).slice(0,7);lstate.year=d.getFullYear();render();return;}
-  if(id==='lThis'){lstate.month=todayStr().slice(0,7);lstate.year=+todayStr().slice(0,4);render();return;}
-  if(id==='lAll'){lstate.member='all';render();return;}
-  const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
-  const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
-  if(e.target.closest('.evdue'))return; // 업무 마감은 표시만
-  const day=e.target.closest('.day');if(day&&canWrite)openLeave(null,day.dataset.date);
-});
-onArea('#leaveArea','keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+const lvMark=(sel,a,b)=>document.querySelectorAll(sel+' .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
+document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b,sel,only}=lvDrag;lvDrag=null;lvMark(sel);if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a,only);}});
+function bindCal(sel,st,only){
+  onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
+  onArea(sel,'pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(sel,lvDrag.a,lvDrag.b);});
+  onArea(sel,'click',e=>{
+    if(lvDragDone){lvDragDone=false;return;}
+    const id=e.target.id;
+    if(id==='lPrev'||id==='lNext'){const [y,m]=st.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);st.month=ymd(d).slice(0,7);st.year=d.getFullYear();render();return;}
+    if(id==='lThis'){st.month=todayStr().slice(0,7);st.year=+todayStr().slice(0,4);render();return;}
+    const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
+    const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
+    if(e.target.closest('.evdue'))return; // 업무 마감은 표시만
+    const day=e.target.closest('.day');if(day&&canWrite)openLeave(null,day.dataset.date,undefined,only);
+  });
+  onArea(sel,'keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+}
+bindCal('#leaveArea',lstate,false);
 
 
 /* ---------- 연차 관리: 연차 현황 + 연차 신청 목록 ---------- */
-const astate={year:+todayStr().slice(0,4)};
+const astate={month:todayStr().slice(0,7),year:+todayStr().slice(0,4)};
 function renderAnnual(){
   const area=$('#annualArea');
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
-  const Y=astate.year, ys=[...new Set([Y,+todayStr().slice(0,4),...leaves.map(l=>+(l.date||'').slice(0,4)).filter(Boolean)])].sort((a,b)=>b-a);
+  if(!members.length){area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>인력 관리에서 구성원과 연간 연차 일수를 정하면 여기에 달력과 현황이 보여요.</p></div>`;return;}
+  const Y=+astate.month.slice(0,4);
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
     return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
-  const list=leaves.filter(l=>memOf(l.memberId)&&(l.date||'').startsWith(String(Y))).sort((a,b)=>b.date.localeCompare(a.date));
-  const lrows=list.map(l=>`<tr data-lid="${esc(l.id)}" tabindex="0"><td class="nowrap num">${fmtDate(l.date)}${l.endDate&&l.endDate!==l.date?' ~ '+fmtDate(l.endDate):''}</td><td class="nowrap"><b>${esc(memOf(l.memberId).name)}</b></td><td class="nowrap">${esc(leaveLabel(l))}</td><td class="r num">${fmtDays(leaveDays(l))}일</td><td>${esc(l.note||'')}</td></tr>`).join('');
-  area.innerHTML=`<div class="rtool"><select class="sel" id="aYear" aria-label="연도">${ys.map(y=>`<option value="${y}" ${y===Y?'selected':''}>${y}년</option>`).join('')}</select><span class="spacer"></span>${canWrite&&members.length?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
-    ${members.length?`<div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>
-    <div class="panel"><h3><span>연차 신청 목록 <span class="legend">${list.length}건</span></span></h3>${list.length?`<div class="tablebox"><table class="stable aList"><thead><tr><th>날짜</th><th>이름</th><th>종류</th><th class="r">일수</th><th>메모</th></tr></thead><tbody>${lrows}</tbody></table></div>`:'<p class="legend" style="margin:0;padding:14px">이 연도에 신청된 연차가 없어요.</p>'}</div>`
-    :`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>인력 관리에서 구성원과 연간 연차 일수를 정하면 여기에 현황이 보여요.</p></div>`}`;
+  area.innerHTML=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
+    ${calPanel(astate,{leave:true},false)}
+    <div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
-onArea('#annualArea','change',e=>{if(e.target.id==='aYear'){astate.year=+e.target.value;render();}});
-onArea('#annualArea','click',e=>{if(e.target.id==='aAdd'){openLeave();return;}const r=e.target.closest('[data-lid]');if(r)openLeave(leaves.find(l=>l.id===r.dataset.lid));});
-onArea('#annualArea','keydown',e=>{if(e.key!=='Enter')return;const r=e.target.closest('[data-lid]');if(r)r.click();});
+bindCal('#annualArea',astate,true);
+onArea('#annualArea','click',e=>{if(e.target.id==='aAdd')openLeave(null,undefined,undefined,true);});
 
 /* ---------- 메뉴 관리(관리자): 이름·순서. 저장 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
@@ -1771,16 +1773,16 @@ function calItemOpen(it,k){
   return false;
 }
 
-function openLeave(l,date,endDate){
+function openLeave(l,date,endDate,only){
   if(!members.length){openMembers();return;}
   const isNew=!l, ro=!canWrite;
   l=l||{memberId:lstate.member!=='all'?lstate.member:'',type:'annual',date:date||todayStr(),endDate:endDate||date||todayStr()};
   let daysTouched=!isNew&&l.days!==''&&l.days!=null&&+l.days!==autoDays(l.type,l.date,l.endDate);
   const opt=(arr,cur)=>arr.map(([k,v])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(v)}</option>`).join('');
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="leaveForm" novalidate>
-    <header><h2>${isNew?'일정 등록':ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <header><h2>${isNew?(only?'연차 신청':'일정 등록'):ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
-      ${isNew?kindSelect('leave'):''}
+      ${isNew&&!only?kindSelect('leave'):''}
       <div class="f"><label for="lvMember">구성원 <b>*</b></label><select id="lvMember"><option value="">선택</option>${opt(members.map(m=>[m.id,m.name]),l.memberId)}</select></div>
       <div class="f"><label for="lvType">종류 <b>*</b></label><select id="lvType">${opt(LEAVE_TYPES.filter(t=>!t.legacy||t.k===l.type).map(t=>[t.k,t.label+(t.deduct?` (${t.multi?'1일':fmtDays(t.days)+'일'} 차감)`:' (미차감)')]),l.type)}</select></div>
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
@@ -2303,7 +2305,7 @@ function peopleStats(a,b,pid,withItems){
   }
   return {work,people:Object.values(ppl).map(p=>{const o={...p,projects:[...p.pj].map(id=>projOf(id).name),avail:Math.max(0,work-p.leaveH),total:p.doneH+p.doingH};delete o.pj;if(!withItems)delete o.items;return o;}).sort((x,y)=>y.total-x.total||x.name.localeCompare(y.name,'ko'))};
 }
-const hrState={period:'week',anchor:null,project:'all',open:new Set()};
+const hrState={period:'month',anchor:null,project:'all',open:new Set()};
 function hrRange(){
   const t=todayStr();
   if(!hrState.anchor)hrState.anchor=hrState.period==='week'?mondayOf(t):t.slice(0,7)+'-01';
@@ -2334,7 +2336,6 @@ function renderHours(){
     <div class="vbar">${staffTabs()}</div>
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
-      <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
       ${periodSelects(hrState.period,hrState.anchor,'hrPick')}
       <span class="spacer"></span>
       ${exportMenu(downloads&&people.length?[['hrCsv','CSV']]:[])}
@@ -2356,7 +2357,7 @@ onArea('#hoursArea','click',async e=>{
   }
   const row=e.target.closest('[data-person]');if(row){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}
 });
-onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}if(e.target.id==='hrPer'){hrState.period=e.target.value;hrState.anchor=null;render();}if(e.target.id==='hrPick'){hrState.anchor=e.target.value;render();}if(e.target.id==='hrPickY'){hrState.anchor=latestIn(hrState.period,+e.target.value);render();}});
+onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}if(e.target.id==='hrPick'){hrState.anchor=e.target.value;render();}if(e.target.id==='hrPickY'){hrState.anchor=latestIn(hrState.period,+e.target.value);render();}});
 onArea('#hoursArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.closest('[data-person]');if(row&&!e.target.closest('[data-task]')){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}});
 
 /* ---------- staffing (투입 인력) ---------- */

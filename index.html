@@ -705,7 +705,7 @@ a.rms:hover{text-decoration:underline}
 .evp{background:var(--sunk);color:var(--fg);border-left:3px solid var(--muted)}
 .evd{color:var(--warn);background:var(--warn-soft);display:flex;align-items:center;gap:4px}
 .evtag{font-weight:700}
-.evdue{color:var(--ink-soft);padding-left:2px}
+.evdue{color:var(--ink-soft);padding-left:2px;cursor:default}
 .day .more{border:0;background:none;cursor:pointer;text-align:left}
 .day .more:hover{color:var(--accent-dark)}
 .dayList .body{display:flex;flex-direction:column;gap:4px}
@@ -1137,6 +1137,10 @@ function weekLabel(mon){
   return `${th.slice(2,4)}년 ${+th.slice(5,7)}월 ${n}주`;
 }
 const mdot=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
+// 그 기간에 등록된 내용이 있는지: 요청·마감·완료일, 업무 시간 기록, 저장된 보고서, 연차·프로젝트 일정(진행 중이라는 이유만으로는 넣지 않음)
+function hasContent(a,b){const inR=d=>!!d&&d>=a&&d<=b;
+  return tasks.some(t=>inR(t.requestDate)||inR(t.dueDate)||inR(t.doneDate))||wlogs.some(l=>inR(l.date))||reports.some(r=>inR(r.week))
+    ||leaves.some(l=>l.date<=b&&(l.endDate||l.date)>=a)||events.some(e=>e.kind==='project'&&e.start<=b&&(e.end||e.start)>=a);}
 // 선택지: 주는 과거 26주~미래 8주, 월은 과거 12개월~미래 3개월. 현재 값이 범위 밖이면 끼워 넣음
 function periodOptions(kind,cur,has){
   const t=todayStr(),out=[];
@@ -1144,7 +1148,8 @@ function periodOptions(kind,cur,has){
   else{const d=new Date(t.slice(0,7)+'-01T00:00:00');for(let i=-12;i<=3;i++)out.push(ymd(new Date(d.getFullYear(),d.getMonth()+i,1)));}
   if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
   const keep=kind==='week'?mondayOf(t):t.slice(0,7)+'-01', endOf=v=>kind==='week'?addDays(v,6):ymd(new Date(+v.slice(0,4),+v.slice(5,7),0));
-  return out.filter(v=>v===keep||v===cur||!has||has(v,endOf(v))).map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
+  let list=out.filter(v=>v===cur||!has||has(v,endOf(v)));if(!list.length)list=[keep];
+  return list.map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
 }
 function periodRange(){
   if(state.period==='all')return null;
@@ -1171,7 +1176,7 @@ function periodLabel(r){
 function renderPeriodBar(){
   const on=state.period!=='all';if(on)periodRange();
   $('#periodSel').value=state.period;$('#pPick').hidden=!on;
-  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor,(a,b)=>tasks.some(x=>inPeriod(x,[a,b])));
+  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor,hasContent);
 }
 $('#periodSel').addEventListener('change',e=>{state.period=e.target.value;state.pAnchor=null;persistUI();render();});
 $('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.value;render();});
@@ -1845,7 +1850,7 @@ function renderLeave(){
   if(cf.deploy)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
     push(d,`<div class="ev evd" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" title="${esc((p?p.name+' · ':'')+ev.title)}"><span class="evtag">배포</span>${esc(p?.name||ev.title)}</div>`);}
   if(cf.due)for(const t of tasks.filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
-    push(t.dueDate,`<div class="ev evdue" data-task="${esc(t.id)}" tabindex="0" title="${esc('마감 · '+t.title)}">마감 · ${esc(t.title)}</div>`);
+    push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(t.assignee||'미지정'))}">마감 · ${esc(t.title)}</div>`);
   let cells='';
   for(const d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
     const k=ymd(d), items=byDay[k]||[];
@@ -1866,7 +1871,7 @@ onArea('#leaveArea','change',e=>{const c=e.target.dataset.cf;if(c){state.cf={...
 // 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
 let lvDrag=null, lvDragDone=false;
 const lvMark=(a,b)=>document.querySelectorAll('#leaveArea .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
-onArea('#leaveArea','pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-task],[data-more]')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date};});
+onArea('#leaveArea','pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date};});
 onArea('#leaveArea','pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(lvDrag.a,lvDrag.b);});
 document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b}=lvDrag;lvDrag=null;lvMark();if(a!==b){lvDragDone=true;openLeave(null,a<b?a:b,a<b?b:a);}});
 onArea('#leaveArea','click',e=>{
@@ -1876,10 +1881,11 @@ onArea('#leaveArea','click',e=>{
   if(id==='lThis'){lstate.month=todayStr().slice(0,7);lstate.year=+todayStr().slice(0,4);render();return;}
   if(id==='lAll'){lstate.member='all';render();return;}
   const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
-  const it=e.target.closest('[data-lid],[data-eid],[data-task]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
+  const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
+  if(e.target.closest('.evdue'))return; // 업무 마감은 표시만
   const day=e.target.closest('.day');if(day&&canWrite)openLeave(null,day.dataset.date);
 });
-onArea('#leaveArea','keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid],[data-task]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+onArea('#leaveArea','keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
 
 /* ---------- 일정 관리: 프로젝트 일정 · 정기 배포(events) ---------- */
 let events=[], lvDayItems={};
@@ -1947,12 +1953,11 @@ function openDayList(k){
     <header><h2>${fmtDate(k)} 일정</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr">${(lvDayItems[k]||[]).join('')}</div></div></div>`;
   $('#xClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
-  $('#ov').addEventListener('click',e=>{const it=e.target.closest('[data-lid],[data-eid],[data-task]');if(!it)return;closeModal();calItemOpen(it,k);});
+  $('#ov').addEventListener('click',e=>{const it=e.target.closest('[data-lid],[data-eid]');if(!it)return;closeModal();calItemOpen(it,k);});
 }
 function calItemOpen(it,k){
   if(it.dataset.lid){openLeave(leaves.find(l=>l.id===it.dataset.lid));return true;}
   if(it.dataset.eid){const ev=events.find(x=>x.id===it.dataset.eid);if(ev)openEvent(ev.kind,ev,it.dataset.date||k);return true;}
-  if(it.dataset.task){openTask(tasks.find(t=>t.id===it.dataset.task));return true;}
   return false;
 }
 
@@ -2252,8 +2257,8 @@ function rWeekLabel(thu){const wed=addDays(thu,6),firstMon=mondayOf(wed.slice(0,
   return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(mondayOf(wed)+'T00:00:00')-new Date(firstMon+'T00:00:00'))/(7*864e5))+1}주`;}
 const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
 function rWeekOptions(cur){const base=thursdayOf(todayStr()),out=[];for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
-  const has=(a,b)=>reports.some(r=>r.week===a)||tasks.some(x=>inPeriod(x,[a,b]));
-  return out.filter(v=>v===base||v===cur||has(v,addDays(v,6))).map(v=>`<option value="${v}" ${v===cur?'selected':''}>${rWeekLabel(v)} (${rRange(v)})</option>`).join('');}
+  let list=out.filter(v=>v===cur||hasContent(v,addDays(v,6)));if(!list.length)list=[base];
+  return list.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${rWeekLabel(v)} (${rRange(v)})</option>`).join('');}
 const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['report','sum','주간보고'],['report','detail','주간보고(상세)'],['hours','','업무 시간']].map(([m,v,l])=>`<button type="button" class="vtab" role="tab" data-goto="${m}" ${v?`data-rview="${v}"`:''} aria-selected="${m==='hours'?cur==='hours':cur===v}">${l}</button>`).join('')}</div></div>`;
 const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];
 const v3Id=thu=>`w_${thu}`;
@@ -2536,7 +2541,7 @@ function renderHours(){
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
-      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor,(a,b)=>wlogs.some(l=>l.date>=a&&l.date<=b)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
+      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor,hasContent)}</select>
       <span class="spacer"></span>
       ${downloads&&people.length?'<button class="btn" type="button" id="hrCsv">내보내기</button>':''}
     </div>

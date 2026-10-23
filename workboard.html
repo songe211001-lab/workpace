@@ -767,6 +767,16 @@ a.rms:hover{text-decoration:underline}
 /* ---------- 계정 관리 ---------- */
 #acTable tbody tr[data-mid]{cursor:pointer}
 #acTable .mEmpty td{color:var(--muted);text-align:center;padding:16px}
+.avatar{border-radius:50%;object-fit:cover;flex:none;display:inline-block;vertical-align:middle;background:var(--sunk);max-width:none}
+.avatarInit{display:inline-flex;align-items:center;justify-content:center;font-weight:700;color:var(--ink-soft);border:1px solid var(--line)}
+/* ---------- 이름 앞 프로필 원 · 헤더 내 프로필 ---------- */
+.who{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;min-width:0}
+.who>span:last-child{overflow:hidden;text-overflow:ellipsis}
+.lv .avatar{margin-right:3px;vertical-align:-2px;font-size:8px!important}
+.meChip{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:700;white-space:nowrap}
+.meChip .avatar{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent);margin:4px}
+.meChip[hidden]{display:none}
+@media (max-width:600px){.meChip .meName{display:none}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1087,13 +1097,24 @@ function renderBoard(list){
       return `<div class="card${late?' is-late':''}" draggable="${canWrite}" data-id="${esc(t.id)}" tabindex="0">
         ${state.project==='all'&&p?`<div class="proj"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</div>`:''}
         <div class="t">${t.jiraKey?`<span class="jira">${esc(t.jiraKey)}</span>`:''}${rmsBadge(t)}${esc(t.title)}</div>
-        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${esc(t.assignee||'미지정')}</span>
+        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${who(t.assignee,t.assigneeId,16)}</span>
         <span class="num ${late?'late':''}">${t.dueDate?fmtDate(t.dueDate)+' '+(t.status==='done'?'':dday(t.dueDate)):''}</span></div>
       </div>`;}).join('')}
     </div>`;}).join('')}</div><p class="legend">카드를 다른 열로 끌어 놓으면 진행 현황이 바뀝니다</p>`;
 }
 
 
+// 프로필 사진: 가운데를 정사각형으로 잘라 160px JPEG로 줄여 구성원 문서(avatar)에 저장하고, 화면에서는 원으로 보여 줌
+const AVATAR_RE=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+function avatarHtml(m,size=28){
+  const st=`width:${size}px;height:${size}px`;
+  return m?.avatar&&AVATAR_RE.test(m.avatar)?`<img class="avatar" src="${m.avatar}" alt="" style="${st}">`
+    :`<span class="avatar avatarInit" style="${st};font-size:${Math.round(size*.42)}px" aria-hidden="true">${esc((m?.name||'?').trim().slice(0,1)||'?')}</span>`;
+}
+// 이름 앞에 프로필 원: 구성원(id·이름)으로 찾고, 없으면 첫 글자 원
+const personOf=(name,id)=>(id&&memOf(id))||members.find(m=>m.name===name)||(name?{name}:null);
+const who=(name,id,size=20,fallback='미지정')=>name?`<span class="who">${avatarHtml(personOf(name,id),size)}<span>${esc(name)}</span></span>`:esc(fallback);
+const whoBy=(uid,size=20)=>avatarHtml(members.find(m=>m.userId===uid)||{name:actorName(uid)},size);
 /* ---------- 게시물(최상위 업무) · 요청(parentId로 게시물에 붙은 하위 업무) ---------- */
 const isPost=t=>!t.parentId||!tasks.some(x=>x.id===t.parentId);
 function rootOf(t){for(let i=0;i<20&&t.parentId;i++){const p=tasks.find(x=>x.id===t.parentId);if(!p)break;t=p;}return t;}
@@ -1159,7 +1180,7 @@ function postRow(p){
     ${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}
     <span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>
     <span class="pMeta num">${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>
-    <span class="pMeta">${esc(p.assignee||'담당 미지정')}</span>
+    <span class="pMeta">${who(p.assignee,p.assigneeId,22,'담당 미지정')}</span>
     <span class="pMeta">${k.length?`요청 ${k.length}건${doing?` · 진행 ${doing}`:''}`:'요청 없음'}</span>
     <span class="pill s-${st.k}">${st.label}</span></li>`;
 }
@@ -1178,15 +1199,15 @@ function renderPost(p){
   const k=kidsOf(p), pj=projOf(p.projectId), st=statusOf(postStatus(p,k)), cms=comments.filter(c=>c.taskId===p.id);
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
-  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead"><b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
-    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${esc(t.assignee||'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
+  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
+    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${who(t.assignee,t.assigneeId,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select>${canWrite?`<button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">수정</button>`:''}</div>
-      <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${esc(t.requester||'')}${t.requester?' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
+      <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   const html=`<div class="postView">
     <div class="postHead"><button class="btn ghost" type="button" id="postBack">← 목록</button>${canWrite?'<button class="btn" type="button" id="postEdit">수정</button>':''}</div>
     <div class="panel postCard"><div class="pcTop">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pill s-${st.k}">${st.label}</span>${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}</div>
       <h2 class="pcTitle">${esc(p.title)}</h2>
-      <div class="pcMeta"><span>요청자 ${esc(p.requester||'—')}</span><span>담당자 ${esc(p.assignee||'미지정')} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
+      <div class="pcMeta"><span>요청자 ${who(p.requester,'',22,'—')}</span><span>담당자 ${who(p.assignee,p.assigneeId,22)} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
       ${p.note?`<p class="pcNote">${esc(p.note)}</p>`:''}</div>
     <h3 class="tlTitle">댓글 · 업무 요청 <span class="legend">${items.length}</span></h3>
     <ul class="cmList">${tl||'<li class="legend">아직 댓글이나 업무 요청이 없어요</li>'}</ul>
@@ -1398,7 +1419,7 @@ function openTask(t,prefill){
       $('#tAct').disabled=list.length>0;
       const keep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||taskMember(t)?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
       box.innerHTML=`<label>작업 시간 기록 <span class="legend">${list.length?`합계 ${hrs(wlSum(list))}h`:'아직 없음'}</span></label>
-        ${list.length?`<ul class="hitems">${list.map(w=>`<li><span class="num">${md(w.date)}</span><b>${esc(memOf(w.memberId)?.name||w.member||'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
+        ${list.length?`<ul class="hitems">${list.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
         ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(keep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.map(m=>`<option value="${esc(m.id)}" ${keep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(keep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(keep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
         <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span>`;
     };
@@ -1429,7 +1450,7 @@ function openTask(t,prefill){
     resolveNames(list.map(c=>c.by)).then(()=>{if($('#cmList'))$('#cmList').querySelectorAll('[data-by]').forEach(el=>el.textContent=actorName(el.dataset.by));});
     const draft=$('#cmText')?.value||'';
     box.innerHTML=`<label>댓글 <span class="legend">${list.length?list.length+'개':''}</span></label>
-      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead"><b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`).join('')}</ul>
+      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`).join('')}</ul>
       ${canWrite&&actorId?`<div class="cmAdd"><textarea id="cmText" rows="2" placeholder="진행 상황, 확인 요청 등을 남겨 주세요" maxlength="1000">${esc(draft)}</textarea><button type="button" class="btn" id="cmAddBtn">댓글 등록</button></div>`:''}<span class="err" id="cmErr"></span>`;
   };
   if(!isNew){
@@ -1602,7 +1623,7 @@ function renderTodayOff(){
   if(!storeReady||!members.length){el.textContent='';return;}
   const t=todayStr();
   const off=leaves.filter(l=>leaveDates(l).includes(t)&&memOf(l.memberId));
-  el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${esc(memOf(l.memberId).name)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
+  el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${who(memOf(l.memberId).name,l.memberId,20)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
 }
 
 function renderLeave(){
@@ -1624,7 +1645,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   const a0=ymd(start), b0=ymd(end);
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
   if(cf.leave)for(const l of [...leaves].filter(l=>memOf(l.memberId)).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
-    push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
+    push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${avatarHtml(memOf(l.memberId),14)}${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
   if(cf.event)for(const ev of events.filter(e=>e.kind==='project'||e.kind==='event')){const p=ev.kind==='project'?projOf(ev.projectId):null;for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
     push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
   if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
@@ -1677,7 +1698,7 @@ function renderAnnual(){
   if(!members.length){area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>계정 관리에서 구성원과 연간 연차 일수를 정하면 여기에 달력과 현황이 보여요.</p></div>`;return;}
   const Y=+astate.month.slice(0,4);
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
-    return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
+    return `<tr><td class="nowrap"><b>${who(m.name,m.id,24)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
     ${calPanel(astate,{leave:true},false,false)}
     <div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
@@ -1932,7 +1953,7 @@ function renderAccounts(){
   if(hasAdminApi()&&acctAdmins===null){acctAdmins=new Set();loadAdmins();}
   const Y=+todayStr().slice(0,4), adm=hasAdminApi();
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=PARTS.find(x=>x.k===m.part),pj=projOf(m.projectId),q=quotaOf(m,Y);
-    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${esc(m.name)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
+    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
       <td class="nowrap">${m.userId?'<span class="pill s-done">연결됨</span>':'<span class="pill s-wait">미연결</span>'}</td>
       <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td>
       <td>${roleBadgeOf(adm&&m.userId&&acctAdmins.has(m.userId)?'admin':m.role||'')}</td></tr>`;}).join('');
@@ -2432,7 +2453,7 @@ function renderHours(){
     const detail=open?`<tr class="hdet"><td colspan="9">${p.items.length?`<ul class="hitems">${p.items.sort((x,y)=>({done:0,doing:1,leave:2}[x.kind]-{done:0,doing:1,leave:2}[y.kind])).map(it=>it.kind==='leave'
       ?`<li><span class="pill lt-o">휴가</span>${esc(leaveLabel(it.leave))} · ${it.ds.map(md).join(', ')}<span class="num hh">${hrs(it.h)}h</span></li>`
       :`<li><span class="pill ${it.kind==='done'?'s-done':'s-doing'}">${it.kind==='done'?'완료 '+md(it.t.doneDate):statusOf(it.t.status).label}</span>${hrState.project==='all'&&projOf(it.t.projectId)?`<span class="legend">${esc(projOf(it.t.projectId).name)} · </span>`:''}<span class="legend">${esc(partOf(it.t.part).label)}</span> <button type="button" class="hlink" data-task="${esc(it.t.id)}">${esc(it.t.title)}</button><span class="num hh">${hrs(it.h)}h${it.est?' <span class="legend">(예상)</span>':it.logged?' <span class="legend">(기록)</span>':''}</span></li>`).join('')}</ul>`:'<p class="legend" style="margin:0">이 기간에 집계된 업무나 휴가가 없습니다.</p>'}</td></tr>`:'';
-    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'▾':'▸'}</span><b>${esc(p.name)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
+    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'▾':'▸'}</span><b>${who(p.name,'',24)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
       <td class="r num"><b class="${over?'late':''}">${hrs(p.total)}h</b></td><td class="r num">${hrs(p.avail)}h</td><td class="r num ${over?'late':''}">${r}%</td>
       <td><div class="hbar" title="가용 ${hrs(p.avail)}h 대비 ${r}%"><i class="d" style="width:${p.doneH/max*100}%"></i><i class="g" style="width:${p.doingH/max*100}%"></i><span class="cap" style="left:${Math.min(100,p.avail/max*100)}%"></span></div></td>
       <td class="r num">${p.doneN}건 · ${hrs(p.doneH)}h${p.noAct?`<span class="legend" title="실제 소요가 비어 예상 소요로 계산"> *${p.noAct}</span>`:''}</td>

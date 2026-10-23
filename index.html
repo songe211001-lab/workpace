@@ -812,6 +812,14 @@ a.rms:hover{text-decoration:underline}
 /* ---------- 계정 관리 ---------- */
 #acTable tbody tr[data-mid]{cursor:pointer}
 #acTable .mEmpty td{color:var(--muted);text-align:center;padding:16px}
+/* ---------- 이름 앞 프로필 원 · 헤더 내 프로필 ---------- */
+.who{display:inline-flex;align-items:center;gap:6px;vertical-align:middle;min-width:0}
+.who>span:last-child{overflow:hidden;text-overflow:ellipsis}
+.lv .avatar{margin-right:3px;vertical-align:-2px;font-size:8px!important}
+.meChip{display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:700;white-space:nowrap}
+.meChip .avatar{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--accent);margin:4px}
+.meChip[hidden]{display:none}
+@media (max-width:600px){.meChip .meName{display:none}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -844,7 +852,7 @@ a.rms:hover{text-decoration:underline}
     <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
-      <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
+      <span class="meChip" id="btnProfile" hidden></span><button class="btn ghost" type="button" id="btnNotify" hidden>알림 설정</button>
       <button class="btn ghost" type="button" id="btnLogout" hidden>로그아웃</button>
     </div>
   </header>
@@ -1309,7 +1317,7 @@ function applyMode(){
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnLeaveAdd').disabled=!canWrite;
-  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>${roleBadge()}`:'내 프로필'+roleBadge();$('#btnProfile').title='내 프로필';
+  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnNotify').hidden=$('#btnProfile').hidden;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),40)}<span class="meName">${esc(myMember().name)}</span>${roleBadge()}`:roleBadge();
   const navMode=state.mode==='hours'?'staff':state.mode; // 업무 시간은 인력 관리 안의 탭
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===navMode));
   $('#pageTitle').textContent=menuName(navMode);
@@ -1391,7 +1399,7 @@ function renderBoard(list){
       return `<div class="card${late?' is-late':''}" draggable="${canWrite}" data-id="${esc(t.id)}" tabindex="0">
         ${state.project==='all'&&p?`<div class="proj"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</div>`:''}
         <div class="t">${t.jiraKey?`<span class="jira">${esc(t.jiraKey)}</span>`:''}${rmsBadge(t)}${esc(t.title)}</div>
-        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${esc(t.assignee||'미지정')}</span>
+        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${who(t.assignee,t.assigneeId,16)}</span>
         <span class="num ${late?'late':''}">${t.dueDate?fmtDate(t.dueDate)+' '+(t.status==='done'?'':dday(t.dueDate)):''}</span></div>
       </div>`;}).join('')}
     </div>`;}).join('')}</div><p class="legend">카드를 다른 열로 끌어 놓으면 진행 현황이 바뀝니다</p>`;
@@ -1463,7 +1471,7 @@ function postRow(p){
     ${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}
     <span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>
     <span class="pMeta num">${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>
-    <span class="pMeta">${esc(p.assignee||'담당 미지정')}</span>
+    <span class="pMeta">${who(p.assignee,p.assigneeId,22,'담당 미지정')}</span>
     <span class="pMeta">${k.length?`요청 ${k.length}건${doing?` · 진행 ${doing}`:''}`:'요청 없음'}</span>
     <span class="pill s-${st.k}">${st.label}</span></li>`;
 }
@@ -1482,15 +1490,15 @@ function renderPost(p){
   const k=kidsOf(p), pj=projOf(p.projectId), st=statusOf(postStatus(p,k)), cms=comments.filter(c=>c.taskId===p.id);
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
-  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead"><b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
-    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${esc(t.assignee||'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
+  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
+    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${who(t.assignee,t.assigneeId,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select>${canWrite?`<button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">수정</button>`:''}</div>
-      <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${esc(t.requester||'')}${t.requester?' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
+      <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   const html=`<div class="postView">
     <div class="postHead"><button class="btn ghost" type="button" id="postBack">← 목록</button>${canWrite?'<button class="btn" type="button" id="postEdit">수정</button>':''}</div>
     <div class="panel postCard"><div class="pcTop">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pill s-${st.k}">${st.label}</span>${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}</div>
       <h2 class="pcTitle">${esc(p.title)}</h2>
-      <div class="pcMeta"><span>요청자 ${esc(p.requester||'—')}</span><span>담당자 ${esc(p.assignee||'미지정')} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
+      <div class="pcMeta"><span>요청자 ${who(p.requester,'',22,'—')}</span><span>담당자 ${who(p.assignee,p.assigneeId,22)} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
       ${p.note?`<p class="pcNote">${esc(p.note)}</p>`:''}</div>
     <h3 class="tlTitle">댓글 · 업무 요청 <span class="legend">${items.length}</span></h3>
     <ul class="cmList">${tl||'<li class="legend">아직 댓글이나 업무 요청이 없어요</li>'}</ul>
@@ -1556,7 +1564,7 @@ $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMembe
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
-$('#btnProfile').addEventListener('click',openProfile);
+$('#btnNotify').addEventListener('click',openNotify);
 $('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
 $('#btnLeaveAdd').addEventListener('click',()=>openSched());
 $('#main').addEventListener('click',async e=>{
@@ -1632,43 +1640,35 @@ function avatarHtml(m,size=28){
   return m?.avatar&&AVATAR_RE.test(m.avatar)?`<img class="avatar" src="${m.avatar}" alt="" style="${st}">`
     :`<span class="avatar avatarInit" style="${st};font-size:${Math.round(size*.42)}px" aria-hidden="true">${esc((m?.name||'?').trim().slice(0,1)||'?')}</span>`;
 }
+// 이름 앞에 프로필 원: 구성원(id·이름)으로 찾고, 없으면 첫 글자 원
+const personOf=(name,id)=>(id&&memOf(id))||members.find(m=>m.name===name)||(name?{name}:null);
+const who=(name,id,size=20,fallback='미지정')=>name?`<span class="who">${avatarHtml(personOf(name,id),size)}<span>${esc(name)}</span></span>`:esc(fallback);
+const whoBy=(uid,size=20)=>avatarHtml(members.find(m=>m.userId===uid)||{name:actorName(uid)},size);
 async function toAvatar(file){
   const img=await createImageBitmap(file);
   const n=Math.min(img.width,img.height), c=document.createElement('canvas');c.width=c.height=160;
   c.getContext('2d').drawImage(img,(img.width-n)/2,(img.height-n)/2,n,n,0,0,160,160);img.close?.();
   return c.toDataURL('image/jpeg',.85);
 }
-function openProfile(){
+function openNotify(){
   const m=myMember();if(!m){openWhoAmI();return;}
   const nf={task:true,comment:true,leave:true,digest:true,...(m.notify||{})};
-  const NF=[['task','내 업무 변동','담당자로 지정됨, 내 업무의 상태·완료 일정·우선순위 변경'],['comment','내 업무 댓글','내가 담당하거나 요청한 업무에 달린 댓글'],['digest','아침 요약','평일 08:30 오늘·내일 마감과 지연된 내 업무'],['leave','내 휴가·투입 변동','다른 사람이 내 휴가나 투입 기록을 바꿨을 때']];
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="profForm" style="max-width:520px" novalidate>
-    <header><h2>내 프로필${roleBadge()}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body">
-      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,96)}</div><div class="pfPhotoBtns"><span class="hint">프로필 사진은 관리자가 계정 관리에서 바꿔요.</span></div></div>
-      <div class="f full"><label>로그인 메일</label><span>${esc(window.wbAuth?.email||'')}</span><span class="hint">알림 메일은 이 주소로 가요.</span></div>
-      <div class="f full"><label for="pfName">이름</label><input id="pfName" maxlength="20" value="${esc(m.name||'')}"></div>
-      <div class="f"><label for="pfPart">파트</label><select id="pfPart">${PARTS.map(p=>`<option value="${esc(p.k)}" ${m.part===p.k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
-      <div class="f"><label for="pfProj">소속 프로젝트</label><select id="pfProj"><option value="">없음</option>${projects.map(p=>`<option value="${esc(p.id)}" ${m.projectId===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
-      <div class="f full"><label>알림 메일</label><div class="nfList">${NF.map(([k,l,d])=>`<label class="nfItem"><input type="checkbox" data-nf="${k}" ${nf[k]!==false?'checked':''}><span><span class="nfName">${l}</span><span class="hint">${d}</span></span></label>`).join('')}</div>
+  const NF=[['task','내 업무 변동','담당자로 지정됨, 내 업무의 상태·완료 일정·우선순위 변경'],['comment','내 업무 댓글','내가 담당하거나 요청한 업무에 달린 댓글'],['digest','아침 요약','평일 08:30 오늘·내일 마감과 지연된 내 업무'],['leave','내 휴가 변동','다른 사람이 내 휴가 기록을 바꿨을 때']];
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="nfForm" style="max-width:480px" novalidate>
+    <header><h2>이메일 알림 설정</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr">
+      <div class="f full"><label>받는 메일</label><span>${esc(window.wbAuth?.email||m.email||'')}</span></div>
+      <div class="f full"><div class="nfList">${NF.map(([k,l,d])=>`<label class="nfItem"><input type="checkbox" data-nf="${k}" ${nf[k]!==false?'checked':''}><span><span class="nfName">${l}</span><span class="hint">${d}</span></span></label>`).join('')}</div>
         <span class="hint">내가 한 변경은 나에게 보내지 않아요. 몇 분 안에 생긴 변경은 한 통으로 묶어 보내요.</span></div>
     </div>
-    <footer><span class="err" id="pfErr"></span><div class="r"><button class="btn" type="button" id="pfCancel">취소</button><button class="btn primary" type="submit" id="pfSave">저장</button></div></footer>
+    <footer><span class="err" id="nfErr"></span><div class="r"><button class="btn" type="button" id="nfCancel">취소</button><button class="btn primary" type="submit" id="nfSave">저장</button></div></footer>
   </form></div>`;
-  $('#xClose').onclick=$('#pfCancel').onclick=askClose;
+  $('#xClose').onclick=$('#nfCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  $('#profForm').addEventListener('submit',async e=>{
-    e.preventDefault();
-    const name=$('#pfName').value.trim();if(!name){$('#pfErr').textContent='이름을 입력해 주세요.';return;}
-    if(members.some(x=>x.id!==m.id&&x.name===name)){$('#pfErr').textContent='같은 이름이 있어요. 이름 뒤에 구분을 붙여 주세요.';return;}
-    const notify={};document.querySelectorAll('#profForm [data-nf]').forEach(c=>notify[c.dataset.nf]=c.checked);
-    $('#pfSave').disabled=true;
-    try{
-      await db.collection('members').doc(m.id).update({name,part:$('#pfPart').value,projectId:$('#pfProj').value,notify});
-      if(m.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===m.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});
-      logChange('member','update',m.id,name,{name:m.name,projectId:m.projectId||'',part:m.part||''},{name,projectId:$('#pfProj').value,part:$('#pfPart').value},'내 프로필');
-      closeModal();toast('프로필을 저장했어요');render();
-    }catch(err){$('#pfSave').disabled=false;handleWriteError(err,'#pfErr');}
+  $('#nfForm').addEventListener('submit',async e=>{
+    e.preventDefault();const notify={};document.querySelectorAll('#nfForm [data-nf]').forEach(c=>notify[c.dataset.nf]=c.checked);
+    $('#nfSave').disabled=true;
+    try{await db.collection('members').doc(m.id).update({notify});closeModal();toast('알림 설정을 저장했어요');}catch(err){$('#nfSave').disabled=false;handleWriteError(err,'#nfErr');}
   });
 }
 
@@ -1754,7 +1754,7 @@ function openTask(t,prefill){
       $('#tAct').disabled=list.length>0;
       const keep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||taskMember(t)?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
       box.innerHTML=`<label>작업 시간 기록 <span class="legend">${list.length?`합계 ${hrs(wlSum(list))}h`:'아직 없음'}</span></label>
-        ${list.length?`<ul class="hitems">${list.map(w=>`<li><span class="num">${md(w.date)}</span><b>${esc(memOf(w.memberId)?.name||w.member||'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
+        ${list.length?`<ul class="hitems">${list.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
         ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(keep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.map(m=>`<option value="${esc(m.id)}" ${keep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(keep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(keep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
         <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span>`;
     };
@@ -1785,7 +1785,7 @@ function openTask(t,prefill){
     resolveNames(list.map(c=>c.by)).then(()=>{if($('#cmList'))$('#cmList').querySelectorAll('[data-by]').forEach(el=>el.textContent=actorName(el.dataset.by));});
     const draft=$('#cmText')?.value||'';
     box.innerHTML=`<label>댓글 <span class="legend">${list.length?list.length+'개':''}</span></label>
-      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead"><b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`).join('')}</ul>
+      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`).join('')}</ul>
       ${canWrite&&actorId?`<div class="cmAdd"><textarea id="cmText" rows="2" placeholder="진행 상황, 확인 요청 등을 남겨 주세요" maxlength="1000">${esc(draft)}</textarea><button type="button" class="btn" id="cmAddBtn">댓글 등록</button></div>`:''}<span class="err" id="cmErr"></span>`;
   };
   if(!isNew){
@@ -1958,7 +1958,7 @@ function renderTodayOff(){
   if(!storeReady||!members.length){el.textContent='';return;}
   const t=todayStr();
   const off=leaves.filter(l=>leaveDates(l).includes(t)&&memOf(l.memberId));
-  el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${esc(memOf(l.memberId).name)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
+  el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${who(memOf(l.memberId).name,l.memberId,20)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
 }
 
 function renderLeave(){
@@ -1980,7 +1980,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   const a0=ymd(start), b0=ymd(end);
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
   if(cf.leave)for(const l of [...leaves].filter(l=>memOf(l.memberId)).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
-    push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
+    push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${avatarHtml(memOf(l.memberId),14)}${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
   if(cf.event)for(const ev of events.filter(e=>e.kind==='project'||e.kind==='event')){const p=ev.kind==='project'?projOf(ev.projectId):null;for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
     push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
   if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
@@ -2033,7 +2033,7 @@ function renderAnnual(){
   if(!members.length){area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>계정 관리에서 구성원과 연간 연차 일수를 정하면 여기에 달력과 현황이 보여요.</p></div>`;return;}
   const Y=+astate.month.slice(0,4);
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
-    return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
+    return `<tr><td class="nowrap"><b>${who(m.name,m.id,24)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
     ${calPanel(astate,{leave:true},false,false)}
     <div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
@@ -2288,7 +2288,7 @@ function renderAccounts(){
   if(hasAdminApi()&&acctAdmins===null){acctAdmins=new Set();loadAdmins();}
   const Y=+todayStr().slice(0,4), adm=hasAdminApi();
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=PARTS.find(x=>x.k===m.part),pj=projOf(m.projectId),q=quotaOf(m,Y);
-    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${esc(m.name)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
+    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
       <td class="nowrap">${m.userId?'<span class="pill s-done">연결됨</span>':'<span class="pill s-wait">미연결</span>'}</td>
       <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td>
       <td>${roleBadgeOf(adm&&m.userId&&acctAdmins.has(m.userId)?'admin':m.role||'')}</td></tr>`;}).join('');
@@ -2803,7 +2803,7 @@ function renderHours(){
     const detail=open?`<tr class="hdet"><td colspan="9">${p.items.length?`<ul class="hitems">${p.items.sort((x,y)=>({done:0,doing:1,leave:2}[x.kind]-{done:0,doing:1,leave:2}[y.kind])).map(it=>it.kind==='leave'
       ?`<li><span class="pill lt-o">휴가</span>${esc(leaveLabel(it.leave))} · ${it.ds.map(md).join(', ')}<span class="num hh">${hrs(it.h)}h</span></li>`
       :`<li><span class="pill ${it.kind==='done'?'s-done':'s-doing'}">${it.kind==='done'?'완료 '+md(it.t.doneDate):statusOf(it.t.status).label}</span>${hrState.project==='all'&&projOf(it.t.projectId)?`<span class="legend">${esc(projOf(it.t.projectId).name)} · </span>`:''}<span class="legend">${esc(partOf(it.t.part).label)}</span> <button type="button" class="hlink" data-task="${esc(it.t.id)}">${esc(it.t.title)}</button><span class="num hh">${hrs(it.h)}h${it.est?' <span class="legend">(예상)</span>':it.logged?' <span class="legend">(기록)</span>':''}</span></li>`).join('')}</ul>`:'<p class="legend" style="margin:0">이 기간에 집계된 업무나 휴가가 없습니다.</p>'}</td></tr>`:'';
-    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'▾':'▸'}</span><b>${esc(p.name)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
+    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'▾':'▸'}</span><b>${who(p.name,'',24)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
       <td class="r num"><b class="${over?'late':''}">${hrs(p.total)}h</b></td><td class="r num">${hrs(p.avail)}h</td><td class="r num ${over?'late':''}">${r}%</td>
       <td><div class="hbar" title="가용 ${hrs(p.avail)}h 대비 ${r}%"><i class="d" style="width:${p.doneH/max*100}%"></i><i class="g" style="width:${p.doingH/max*100}%"></i><span class="cap" style="left:${Math.min(100,p.avail/max*100)}%"></span></div></td>
       <td class="r num">${p.doneN}건 · ${hrs(p.doneH)}h${p.noAct?`<span class="legend" title="실제 소요가 비어 예상 소요로 계산"> *${p.noAct}</span>`:''}</td>

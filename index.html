@@ -1169,16 +1169,22 @@ const NAV_ICO={"accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\
 let menuCfg={}, navKey='', sideDraw=()=>{};
 // 관리자: 서버는 wb_admins(adminUI), 아티팩트는 편집 권한(canWrite)
 const isAdminUser=()=>canWrite&&(typeof adminUI!=='function'||adminUI());
-const roleBadge=()=>isAdminUser()?'<span class="roleBadge adm">관리자</span>':'<span class="roleBadge">일반</span>';
+const ROLES=[['admin','관리자'],['plan','기획'],['dev','개발'],['biz','사업'],['design','디자이너'],['pub','퍼블리셔'],['qa','QA']];
+const roleLabel=k=>ROLES.find(r=>r[0]===k)?.[1]||'일반';
+const myRole=()=>isAdminUser()?'admin':(myMember()?.role||'');
+const roleBadgeOf=k=>`<span class="roleBadge${k==='admin'?' adm':''}">${esc(roleLabel(k))}</span>`;
+const roleBadge=()=>roleBadgeOf(myRole());
+// 메뉴 공개: settings/menus.access[mode]는 볼 수 있는 역할 키 배열(없거나 빈 배열 = 모두). 예전 'admin'은 관리자만, 'all'은 모두로 읽음
+const accOf=v=>Array.isArray(v)?v:v==='admin'?['admin']:[];
 const defName=k=>k.startsWith('grp:')?MENU_GRPS.find(g=>'grp:'+g[0]===k)?.[1]:MENU_ITEMS.find(x=>x[0]===k)?.[2];
 const isAdmKey=k=>k==='grp:admin'||MENU_ITEMS.find(x=>x[0]===k)?.[1]==='admin';
 const menuName=k=>(isAdmKey(k)?'':String(menuCfg.names?.[k]||'').trim())||defName(k)||k;
 function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(g==='admin'?[]:cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
 // 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
-function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;return it[1]==='admin'||menuCfg.access?.[k]==='admin'?isAdminUser():true;}
+function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
 const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:MENU_GRPS.flatMap(([g])=>menuOrder(g)).find(menuOpen)||'tasks';
 function renderNav(){
-  const key=JSON.stringify([isAdminUser(),menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
+  const key=JSON.stringify([isAdminUser(),myRole(),menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
   $('#modeTabs').innerHTML=MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
     return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}">${NAV_ICO['grp:'+g]}<span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true">▾</span></button>
       <div class="gnbBody" id="grp-${g}">${items.map(k=>`<button type="button" role="tab" class="navItem" title="${esc(menuName(k))}" data-mode="${k}">${NAV_ICO[k]}<span class="lbl">${esc(menuName(k))}</span></button>`).join('')}</div></section>`;}).join('');
@@ -2038,21 +2044,21 @@ onArea('#annualArea','click',e=>{if(e.target.id==='aAdd')openLeave(null,undefine
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
 const mstate={sel:'tasks'};
-const mDraftOf=cfg=>({order:Object.fromEntries(MENU_GRPS.map(([g])=>[g,menuOrder(g,cfg)])),names:{...(cfg.names||{})},access:{...(cfg.access||{})},home:cfg.home||''});
+const mDraftOf=cfg=>({order:Object.fromEntries(MENU_GRPS.map(([g])=>[g,menuOrder(g,cfg)])),names:{...(cfg.names||{})},access:Object.fromEntries(Object.entries(cfg.access||{}).map(([k,v])=>[k,accOf(v)])),home:cfg.home||''});
 const mNodes=d=>MENU_GRPS.filter(([g])=>g!=='admin').flatMap(([g])=>['grp:'+g,...d.order[g]]);
 const mLabel=(d,k)=>String(d.names[k]||'').trim()||defName(k);
 function renderMenus(){
   const area=$('#menusArea');if(!isAdminUser()){area.innerHTML='';return;}if(document.activeElement?.id==='mnName')return; // 이름 입력 중엔 다시 그리지 않음
   const d=mDraft||(mDraft=mDraftOf(menuCfg)), nodes=mNodes(d);if(!nodes.includes(mstate.sel))mstate.sel=nodes[1];
   const k=mstate.sel, isGrp=k.startsWith('grp:'), g=isGrp?k.slice(4):MENU_ITEMS.find(x=>x[0]===k)[1], o=d.order[g]||[], i=o.indexOf(k), lock=g==='admin';
-  const node=n=>{const grp=n.startsWith('grp:'),adm=!grp&&(n.startsWith('grp:')||MENU_ITEMS.find(x=>x[0]===n)[1]==='admin'||d.access[n]==='admin');
-    return `<div class="mnNode ${grp?'grp':'item'}" role="treeitem" data-sel="${n}" tabindex="${n===k?0:-1}" aria-selected="${n===k}">${NAV_ICO[n]||''}<span class="lbl">${esc(mLabel(d,n))}</span>${grp?'':`${d.home===n?'<span class="tag">기본</span>':''}${adm?'<span class="tag">관리자만</span>':''}`}</div>`;};
+  const node=n=>{const grp=n.startsWith('grp:'),adm=!grp&&(d.access[n]||[]).length>0;
+    return `<div class="mnNode ${grp?'grp':'item'}" role="treeitem" data-sel="${n}" tabindex="${n===k?0:-1}" aria-selected="${n===k}">${NAV_ICO[n]||''}<span class="lbl">${esc(mLabel(d,n))}</span>${grp?'':`${d.home===n?'<span class="tag">기본</span>':''}${adm?'<span class="tag">일부 공개</span>':''}`}</div>`;};
   const row=(lab,ctl)=>`<div class="mnRow"><span class="mnLab">${lab}</span><div class="mnCtl">${ctl}</div></div>`;
   const mv=(dir,lab,off)=>`<button class="btn sm" type="button" data-mv="${dir}" ${off?'disabled':''}>${lab}</button>`;
   const form=isGrp?row('묶음명',`<input class="sel" id="mnName" data-k="${k}" value="${esc(d.names[k]||'')}" placeholder="${esc(defName(k))}" maxlength="20" aria-label="묶음 이름"><span class="legend">기본: ${esc(defName(k))}</span>`)
     +`<p class="legend" style="margin:0">묶음 안 메뉴의 순서·공개설정은 메뉴를 골라 바꿔요.</p>`
     :row('메뉴명',`<input class="sel" id="mnName" data-k="${k}" value="${esc(d.names[k]||'')}" placeholder="${esc(defName(k))}" maxlength="20" aria-label="메뉴 이름"><span class="legend">기본: ${esc(defName(k))}</span>`)
-    +row('공개설정',['all','admin'].map(v=>`<label class="cfItem"><input type="radio" name="mnAcc" value="${v}" ${(lock?'admin':d.access[k]==='admin'?'admin':'all')===v?'checked':''} ${lock?'disabled':''}>${v==='all'?'모두':'관리자만'}</label>`).join('')+(lock?'<span class="legend">관리자 묶음 메뉴라 관리자만 볼 수 있어요</span>':''))
+    +row('공개설정',(()=>{const sel=d.access[k]||[],full=!sel.length;return `<label class="cfItem"><input type="checkbox" id="mnAll" ${full?'checked':''}>전체</label>`+ROLES.map(([r,l])=>`<label class="cfItem"><input type="checkbox" name="mnRole" value="${r}" ${r==='admin'||full||sel.includes(r)?'checked':''} ${r==='admin'?'disabled':''}>${l}</label>`).join('')+'<span class="legend">관리자는 항상 볼 수 있어요</span>';})())
     +'<div class="mnSep"></div>'
     +row('메뉴 정렬',mv('top','맨위',i<=0)+mv('up','위',i<=0)+mv('down','아래',i>=o.length-1)+mv('bottom','맨아래',i>=o.length-1))
     +'<div class="mnSep"></div>'
@@ -2063,7 +2069,7 @@ function renderMenus(){
       <div class="panel mnRight">${form}</div>
     </div>
     <div class="mnFoot"><span class="err" id="mnErr"></span><button class="btn" type="button" id="mnReset">기본값으로 되돌리기</button><button class="btn primary" type="button" id="mnSave">확인</button></div>
-    <div class="mnTip"><b>도움말</b><ul><li>메뉴를 '관리자만'으로 숨겨도 데이터 권한은 바뀌지 않아요.</li><li>메뉴 순서는 같은 묶음 안에서만 바꿀 수 있어요.</li><li>기본 화면은 이 브라우저에서 처음 열 때(이전에 보던 화면이 없을 때) 먼저 보여 줘요.</li></ul></div>`;
+    <div class="mnTip"><b>도움말</b><ul><li>메뉴를 일부 역할에만 공개해도 화면에서만 숨겨질 뿐, 데이터 권한은 바뀌지 않아요.</li><li>메뉴 순서는 같은 묶음 안에서만 바꿀 수 있어요.</li><li>기본 화면은 이 브라우저에서 처음 열 때(이전에 보던 화면이 없을 때) 먼저 보여 줘요.</li></ul></div>`;
 }
 async function saveMenus(patch,btn){
   if(btn)btn.disabled=true;
@@ -2075,7 +2081,8 @@ const mFocus=()=>document.querySelector('#menusArea .mnNode[tabindex="0"]')?.foc
 onArea('#menusArea','input',e=>{if(e.target.id!=='mnName'||!mDraft)return;const k=e.target.dataset.k;mDraft.names[k]=e.target.value;const l=document.querySelector(`#menusArea .mnNode[data-sel="${k}"] .lbl`);if(l)l.textContent=mLabel(mDraft,k);});
 onArea('#menusArea','change',e=>{
   if(!mDraft)return;const k=mstate.sel;
-  if(e.target.name==='mnAcc'){mDraft.access[k]=e.target.value;render();return;}
+  if(e.target.id==='mnAll'){mDraft.access[k]=e.target.checked?[]:['admin'];render();return;}
+  if(e.target.name==='mnRole'){const on=[...document.querySelectorAll('#menusArea [name="mnRole"]:checked:not(:disabled)')].map(x=>x.value);mDraft.access[k]=on.length===ROLES.length-1?[]:on.length?on:['admin'];render();return;}
   if(e.target.id==='mnHome'){mDraft.home=e.target.checked?k:'';render();}
 });
 onArea('#menusArea','keydown',e=>{
@@ -2284,10 +2291,10 @@ function renderAccounts(){
     return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${esc(m.name)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
       <td class="nowrap">${m.userId?'<span class="pill s-done">연결됨</span>':'<span class="pill s-wait">미연결</span>'}</td>
       <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td>
-      ${adm?`<td>${m.userId&&acctAdmins.has(m.userId)?'<span class="roleBadge adm">관리자</span>':'<span class="roleBadge">일반</span>'}</td>`:''}</tr>`;}).join('');
+      <td>${roleBadgeOf(adm&&m.userId&&acctAdmins.has(m.userId)?'admin':m.role||'')}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="acQ" type="search" placeholder="이름·메일·파트·프로젝트 검색" aria-label="계정 검색" value="${esc(acstate.q)}"></label><span class="spacer"></span><button class="btn primary" type="button" id="acAdd">+ 계정 추가</button></div>
-    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th class="r">${Y}년 연차</th>${adm?'<th>권한</th>':''}</tr></thead><tbody>${rows}
-      <tr class="mEmpty" ${members.length?'hidden':''}><td colspan="${adm?7:6}">${members.length?'검색 결과가 없어요':'아직 계정이 없어요. 「+ 계정 추가」로 추가하세요.'}</td></tr></tbody></table></div>
+    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th class="r">${Y}년 연차</th><th>역할</th></tr></thead><tbody>${rows}
+      <tr class="mEmpty" ${members.length?'hidden':''}><td colspan="7">${members.length?'검색 결과가 없어요':'아직 계정이 없어요. 「+ 계정 추가」로 추가하세요.'}</td></tr></tbody></table></div>
     <p class="legend" style="margin:0">회사 메일을 적어 두면 그 메일로 처음 로그인한 사람이 이 계정에 자동으로 연결돼요.${adm?' 관리자는 로그인이 연결된 계정만 지정할 수 있어요.':''}</p>`;
   acFilter();
 }
@@ -2312,8 +2319,7 @@ function openAccount(m){
       <div class="f"><label for="acProj">주 프로젝트</label><select id="acProj"><option value="">없음</option>${opt(projects.map(p=>[p.id,p.name]),m.projectId)}</select></div>
       <div class="f"><label for="acQuota">${Y}년 연차 (일)</label><input id="acQuota" type="number" min="0" step="0.5" inputmode="decimal" value="${esc(quotaOf(m,Y)??'')}"></div>
       <div class="f"><label>로그인</label><span>${m.userId?'연결됨':'아직 로그인하지 않음'}</span></div>
-      ${canAdm?`<div class="f full"><label class="cfItem"><input type="checkbox" id="acAdmin" ${wasAdm?'checked':''}>관리자로 지정</label><span class="hint">관리자는 관리자 메뉴(인력 관리·계정 관리·변경 이력·메뉴 관리)를 쓸 수 있어요. 마지막 관리자는 해제할 수 없어요.</span></div>`
-        :hasAdminApi()&&!isNew?'<div class="f full"><span class="hint">로그인이 연결되면 관리자로 지정할 수 있어요.</span></div>':''}
+      <div class="f"><label for="acRole">역할</label><select id="acRole"><option value="">역할 없음</option>${hasAdminApi()?`<option value="admin" ${wasAdm?'selected':''} ${m.userId?'':'disabled'}>관리자${m.userId?'':' (로그인 연결 후)'}</option>`:''}${ROLES.slice(1).map(([k,l])=>`<option value="${k}" ${!wasAdm&&m.role===k?'selected':''}>${l}</option>`).join('')}</select>${hasAdminApi()?'<span class="hint">관리자는 모든 메뉴와 관리자 메뉴를 쓸 수 있어요. 마지막 관리자는 해제할 수 없어요.</span>':''}</div>
     </div>
     <footer><div id="acDelZone">${isNew?'':'<button class="btn danger" type="button" id="acDel">삭제</button>'}</div><span class="err" id="acErr"></span>
       <div class="r"><button class="btn" type="button" id="acCancel">취소</button><button class="btn primary" type="submit" id="acSave">${isNew?'추가':'저장'}</button></div></footer>
@@ -2340,7 +2346,7 @@ function openAccount(m){
   });
   $('#acForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, projectId=$('#acProj').value, qv=$('#acQuota').value, q=qv===''?'':Math.max(0,+qv);
+    const roleSel=$('#acRole').value, name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, projectId=$('#acProj').value, qv=$('#acQuota').value, q=qv===''?'':Math.max(0,+qv);
     if(!name){$('#acErr').textContent='이름을 입력해 주세요.';$('#acName').focus();return;}
     if(members.some(x=>x.id!==m.id&&x.name===name)){$('#acErr').textContent='같은 이름이 있어요. 동명이인은 이름 뒤에 구분을 붙여 주세요.';return;}
     const staffOk=typeof isStaffEmail==='function'?isStaffEmail:()=>true;
@@ -2348,16 +2354,18 @@ function openAccount(m){
     if(email&&members.some(x=>x.id!==m.id&&(x.email||'').toLowerCase()===email)){$('#acErr').textContent='이미 다른 계정에 쓰인 메일이에요.';return;}
     $('#acSave').disabled=true;
     try{
-      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,quotas:{[Y]:q},...(typeof avatar==='string'&&avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
+      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,role:roleSel==='admin'?'':roleSel,quotas:{[Y]:q},...(typeof avatar==='string'&&avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
       else{
-        const old={...m}, avCh=typeof avatar==='string'&&avatar!==(old.avatar||''), ch=avCh||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
-        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,quotas:{[Y]:q},...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
+        // 관리자 지정·해제를 먼저(마지막 관리자 해제 오류면 아무것도 저장하지 않음)
+        const on=roleSel==='admin';
+        if(canAdm&&on!==wasAdm){await window.wbAuth.setAdmin(m.userId,on);acctAdmins[on?'add':'delete'](m.userId);navKey='';}
+        const role=on?(m.role||''):roleSel;
+        const old={...m}, avCh=typeof avatar==='string'&&avatar!==(old.avatar||''), ch=avCh||(old.role||'')!==role||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
+        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,role,quotas:{[Y]:q},...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
           // 이름을 바꾸면 이 사람이 담당한 업무의 담당자 이름도 함께 바꿈(집계·필터가 이름 기준이라)
           if(old.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===old.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});}
-        const on=$('#acAdmin')?.checked;
-        if(canAdm&&on!==wasAdm){await window.wbAuth.setAdmin(m.userId,on);acctAdmins[on?'add':'delete'](m.userId);navKey='';}
       }
-      closeModal();toast(isNew?'계정을 추가했어요':'저장했어요');render();
+      closeModal();toast(isNew?'계정을 추가했어요':'저장했어요');navKey='';render();
     }catch(err){$('#acSave').disabled=false;$('#acErr').textContent=err?.code==='admin'?(err.message||'관리자 지정을 바꾸지 못했어요.'):'';if(err?.code!=='admin')handleWriteError(err,'#acErr');}
   });
   setTimeout(()=>$('#acName')?.focus(),0);

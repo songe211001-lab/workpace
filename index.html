@@ -737,7 +737,7 @@ a.rms:hover{text-decoration:underline}
 .svcTag{--c:var(--muted);font-size:12px;font-weight:700;color:var(--c);background:color-mix(in srgb,var(--c) 10%,transparent);border:1px solid color-mix(in srgb,var(--c) 35%,transparent);border-radius:999px;padding:1px 9px;white-space:nowrap}
 .pTitle{flex:1 1 220px;min-width:0;font-size:14px;font-weight:700;overflow-wrap:anywhere}
 .pMeta{font-size:12.5px;color:var(--ink-soft);white-space:nowrap}
-.postOpen>#summary,.postOpen>.ptRow,.postOpen>#postNew,.postOpen>.filters{display:none}
+.postOpen>.ptRow,.postOpen>#postNew,.postOpen>.filters{display:none}
 .postHead{display:flex;justify-content:space-between;gap:8px}
 .postCard{padding:16px 18px;display:flex;flex-direction:column;gap:8px}
 .pcTop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -841,7 +841,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label><button class="btn" id="btnAdd" type="button">프로젝트 등록하기</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
@@ -852,7 +852,6 @@ a.rms:hover{text-decoration:underline}
   <div class="banner" id="banner" hidden></div>
 
   <div class="area" id="taskArea">
-  <div id="summary"></div>
 
   <div id="postNew" hidden></div>
 
@@ -1335,9 +1334,8 @@ function renderBody(){
   if(state.mode==='accounts'){if(document.activeElement?.id!=='acQ')renderAccounts();return;}
   if(state.mode==='history'){if(document.activeElement?.id!=='hQ')renderHistory();return;}
   if(state.mode==='report'){if(!document.activeElement?.dataset?.note)renderReport();return;}
-  renderSummary();renderTabs();renderFilters();
+  renderTabs();renderFilters();
   const main=$('#main');
-  $('#btnAdd').hidden=!canWrite;
   renderPostNew();
   if(state.post&&storeReady&&!tasks.some(x=>x.id===state.post))state.post=null;
   const post=state.post&&tasks.find(x=>x.id===state.post);
@@ -1358,18 +1356,6 @@ function renderBody(){
 
 // 상단 요약 표: [항목, 값 HTML, 칸 class] 목록 → 한 줄 표(좁은 화면은 가로 스크롤)
 const statTable=list=>`<div class="statWrap"><table class="statTable"><thead><tr>${list.map(([k,,c])=>`<th class="${c}">${k}</th>`).join('')}</tr></thead><tbody><tr>${list.map(([,v,c])=>`<td class="${c}">${v}</td>`).join('')}</tr></tbody></table></div>`;
-function renderSummary(){
-  const s=scoped(), t=todayStr();
-  const done=s.filter(x=>x.status==='done').length;
-  const doing=s.filter(x=>x.status==='doing'||x.status==='review').length;
-  const late=s.filter(isLate).length;
-  const pr=periodRange(), wS=pr?pr[0]:mondayOf(t), wE=pr?pr[1]:addDays(wS,6);
-  const doneWeek=s.filter(x=>x.status==='done'&&x.doneDate&&x.doneDate>=wS&&x.doneDate<=wE).length;
-  const doneLabel=!pr?'이번 주 완료':state.period==='month'?'이 달 완료':'이 주 완료';
-  const est=s.reduce((a,x)=>a+(+x.estHours||0),0), act=s.reduce((a,x)=>a+(+x.actHours||0),0);
-  const rate=s.length?Math.round(done/s.length*100):0;
-  $('#summary').innerHTML=statTable([[`전체 업무`,`${s.length}<small>건</small>`,``],[`진행·검토중`,`${doing}<small>건</small>`,``],[`일정 지연`,`${late}<small>건</small>`,`${late?'alert':''}`],[`${doneLabel} <span class="num" style="font-size:11px">${md(wS)}~${md(wE)}</span>`,`${doneWeek}<small>건</small>`,``],[`완료율`,`${rate}<small>%</small><div class="bar"><i style="width:${rate}%"></i></div>`,``],[`소요시간 실제/예상`,`${hrs(act)}<small>/ ${hrs(est)}h</small>`,``]]);
-}
 
 function renderTabs(){
   const pt=periodTasks(), count=id=>pt.filter(t=>(id==='all'||t.projectId===id)&&(state.period!=='all'||t.status!=='done')).length;
@@ -1563,7 +1549,6 @@ $('#fStatus').addEventListener('change',e=>{state.status=e.target.value;persistU
 $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMember()){e.target.value=state.assignee;openWhoAmI();return;}state.assignee=e.target.value;persistUI();render();});
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
-$('#btnAdd').addEventListener('click',()=>{if(state.post){state.post=null;persistUI();render();}const t=$('#pnTitle');if(t){t.scrollIntoView({block:'center',behavior:'smooth'});t.focus({preventScroll:true});}});
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnProfile').addEventListener('click',openProfile);
 $('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
@@ -1650,15 +1635,11 @@ async function toAvatar(file){
 function openProfile(){
   const m=myMember();if(!m){openWhoAmI();return;}
   const nf={task:true,comment:true,leave:true,digest:true,...(m.notify||{})};
-  let avatar=m.avatar||'';
   const NF=[['task','내 업무 변동','담당자로 지정됨, 내 업무의 상태·완료 일정·우선순위 변경'],['comment','내 업무 댓글','내가 담당하거나 요청한 업무에 달린 댓글'],['digest','아침 요약','평일 08:30 오늘·내일 마감과 지연된 내 업무'],['leave','내 휴가·투입 변동','다른 사람이 내 휴가나 투입 기록을 바꿨을 때']];
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="profForm" style="max-width:520px" novalidate>
     <header><h2>내 프로필${roleBadge()}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body">
-      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,96)}</div><div class="pfPhotoBtns">
-        <button class="btn" type="button" id="pfPick">사진 바꾸기</button><button class="btn ghost" type="button" id="pfDel" ${avatar?'':'hidden'}>사진 지우기</button>
-        <input type="file" id="pfFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="프로필 사진 파일">
-        <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
+      <div class="f full pfPhoto"><div id="pfAvatar">${avatarHtml(m,96)}</div><div class="pfPhotoBtns"><span class="hint">프로필 사진은 관리자가 계정 관리에서 바꿔요.</span></div></div>
       <div class="f full"><label>로그인 메일</label><span>${esc(window.wbAuth?.email||'')}</span><span class="hint">알림 메일은 이 주소로 가요.</span></div>
       <div class="f full"><label for="pfName">이름</label><input id="pfName" maxlength="20" value="${esc(m.name||'')}"></div>
       <div class="f"><label for="pfPart">파트</label><select id="pfPart">${PARTS.map(p=>`<option value="${esc(p.k)}" ${m.part===p.k?'selected':''}>${esc(p.label)}</option>`).join('')}</select></div>
@@ -1670,16 +1651,6 @@ function openProfile(){
   </form></div>`;
   $('#xClose').onclick=$('#pfCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
-  const showAvatar=()=>{$('#pfAvatar').innerHTML=avatarHtml({...m,name:$('#pfName').value||m.name,avatar},96);$('#pfDel').hidden=!avatar;};
-  $('#pfPick').onclick=()=>$('#pfFile').click();
-  $('#pfFile').addEventListener('change',async e=>{
-    const f=e.target.files[0];e.target.value='';if(!f)return;
-    if(!/^image\/(jpeg|png|webp)$/.test(f.type)){$('#pfErr').textContent='JPG·PNG·WEBP 사진만 쓸 수 있어요.';return;}
-    if(f.size>15*1024*1024){$('#pfErr').textContent='15MB 이하 사진을 골라 주세요.';return;}
-    try{avatar=await toAvatar(f);$('#pfErr').textContent='';modalDirty=true;showAvatar();}
-    catch(err){$('#pfErr').textContent='사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.';}
-  });
-  $('#pfDel').onclick=()=>{avatar='';modalDirty=true;showAvatar();};
   $('#profForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const name=$('#pfName').value.trim();if(!name){$('#pfErr').textContent='이름을 입력해 주세요.';return;}
@@ -1687,7 +1658,7 @@ function openProfile(){
     const notify={};document.querySelectorAll('#profForm [data-nf]').forEach(c=>notify[c.dataset.nf]=c.checked);
     $('#pfSave').disabled=true;
     try{
-      await db.collection('members').doc(m.id).update({name,part:$('#pfPart').value,projectId:$('#pfProj').value,notify,...(avatar!==(m.avatar||'')?{avatar}:{})});
+      await db.collection('members').doc(m.id).update({name,part:$('#pfPart').value,projectId:$('#pfProj').value,notify});
       if(m.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===m.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});
       logChange('member','update',m.id,name,{name:m.name,projectId:m.projectId||'',part:m.part||''},{name,projectId:$('#pfProj').value,part:$('#pfPart').value},'내 프로필');
       closeModal();toast('프로필을 저장했어요');render();
@@ -1993,7 +1964,6 @@ function renderLeave(){
   }
   const Y=lstate.year;
   area.innerHTML=`
-    <div class="rtool"><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
     ${calPanel(lstate,calFilter(),true,true)}`;
 }
 // 월 달력 하나: 일정 관리(lstate, 보기 필터 state.cf)와 연차 관리(astate, 연차만)가 같이 씀
@@ -2025,7 +1995,7 @@ function calPanel(st,cf,withFilters,leaveRo){
     </div>`;
 }
 
-onArea('#leaveArea','change',e=>{const c=e.target.dataset.cf;if(c){state.cf={...calFilter(),[c]:e.target.checked};persistUI();render();return;}if(e.target.id==='lYear'){lstate.year=+e.target.value;lstate.month=`${lstate.year}-${lstate.month.slice(5)}`;render();}});
+onArea('#leaveArea','change',e=>{const c=e.target.dataset.cf;if(c){state.cf={...calFilter(),[c]:e.target.checked};persistUI();render();return;}});
 // 달력에서 시작일을 누른 채 끌어 종료일에서 놓으면 그 기간으로 휴가 등록 창을 엶
 let lvDrag=null, lvDragDone=false;
 const lvMark=(sel,a,b)=>document.querySelectorAll(sel+' .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
@@ -2055,8 +2025,12 @@ function renderAnnual(){
   const area=$('#annualArea');
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
   if(!members.length){area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>계정 관리에서 구성원과 연간 연차 일수를 정하면 여기에 달력과 현황이 보여요.</p></div>`;return;}
+  const Y=+astate.month.slice(0,4);
+  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
+    return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn primary" type="button" id="aAdd">+ 연차 신청</button>':''}</div>
-    ${calPanel(astate,{leave:true},false,false)}`;
+    ${calPanel(astate,{leave:true},false,false)}
+    <div class="panel"><h3><span>${Y}년 연차 현황</span></h3><div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 bindCal('#annualArea',astate,true);
 onArea('#annualArea','click',e=>{if(e.target.id==='aAdd')openLeave(null,undefined,undefined,true);});
@@ -2236,7 +2210,7 @@ function openLeave(l,date,endDate,only){
     <header><h2>${isNew?'연차 신청':ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
       <div class="f"><label for="lvMember">구성원 <b>*</b></label><select id="lvMember"><option value="">선택</option>${opt(members.map(m=>[m.id,m.name]),l.memberId)}</select></div>
-      <div class="f"><label for="lvType">종류 <b>*</b></label><select id="lvType">${opt(LEAVE_TYPES.filter(t=>!t.legacy||t.k===l.type).map(t=>[t.k,t.label+(t.deduct?` (${t.multi?'1일':fmtDays(t.days)+'일'} 차감)`:' (미차감)')]),l.type)}</select></div>
+      <input type="hidden" id="lvType" value="${esc(l.type||'annual')}">${l.type&&l.type!=='annual'?`<div class="f"><label>종류</label><span>${esc(ltype(l.type).label)}</span></div>`:''}
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
       <div class="f" id="lvEndWrap"><label for="lvEnd">종료일</label><input type="date" id="lvEnd" value="${esc(l.endDate||l.date||'')}"></div>
       <div class="f full lvRange" id="lvRange" aria-live="polite"></div>
@@ -2328,6 +2302,10 @@ function openAccount(m){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="acForm" novalidate style="max-width:560px">
     <header><h2>${isNew?'계정 추가':'계정 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body">
+      <div class="f full pfPhoto"><div id="acAvatar">${avatarHtml(m,72)}</div><div class="pfPhotoBtns">
+        <button class="btn" type="button" id="acPick">사진 바꾸기</button><button class="btn ghost" type="button" id="acPhotoDel" ${m.avatar?'':'hidden'}>사진 지우기</button>
+        <input type="file" id="acFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="프로필 사진 파일">
+        <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
       <div class="f"><label for="acName">이름 <b>*</b></label><input id="acName" maxlength="20" value="${esc(m.name)}"></div>
       <div class="f"><label for="acEmail">회사 메일</label><input id="acEmail" type="email" spellcheck="false" value="${esc(m.email||'')}" placeholder="${m.userId?'로그인 연결됨':'로그인 연결용 (선택)'}"></div>
       <div class="f"><label for="acPart">파트</label><select id="acPart"><option value="">파트 없음</option>${opt(PARTS.map(p=>[p.k,p.label]),m.part)}</select></div>
@@ -2342,6 +2320,17 @@ function openAccount(m){
   </form></div>`;
   $('#xClose').onclick=$('#acCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
+  // 프로필 사진은 관리자가 계정 관리에서만 바꿈
+  let avatar=m.avatar||'';
+  const showAv=()=>{$('#acAvatar').innerHTML=avatarHtml({...m,name:$('#acName').value||m.name,avatar},72);$('#acPhotoDel').hidden=!avatar;};
+  $('#acPick').onclick=()=>$('#acFile').click();
+  $('#acFile').addEventListener('change',async e=>{
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    if(!/^image\/(jpeg|png|webp)$/.test(f.type)){$('#acErr').textContent='JPG·PNG·WEBP 사진만 쓸 수 있어요.';return;}
+    if(f.size>15*1024*1024){$('#acErr').textContent='15MB 이하 사진을 골라 주세요.';return;}
+    try{avatar=await toAvatar(f);$('#acErr').textContent='';modalDirty=true;showAv();}catch(err){$('#acErr').textContent='사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.';}
+  });
+  $('#acPhotoDel').onclick=()=>{avatar='';modalDirty=true;showAv();};
   $('#acDel')?.addEventListener('click',()=>{
     const id=m.id, nl=leaves.filter(l=>l.memberId===id).length, na=assigns.filter(a=>a.memberId===id).length, nw=wlogs.filter(w=>w.memberId===id).length;
     $('#acDelZone').innerHTML=`<div class="confirm">'${esc(m.name)}' 계정을 삭제할까요?${nl||na?` 연차 ${nl}건·투입 기록 ${na}건도 함께 지워져요.`:''}${nw?` 업무 시간 기록 ${nw}건은 이름만 남아요.`:''} <button class="btn danger" type="button" id="acDelYes">삭제</button><button class="btn ghost" type="button" id="acDelNo">취소</button></div>`;
@@ -2359,10 +2348,10 @@ function openAccount(m){
     if(email&&members.some(x=>x.id!==m.id&&(x.email||'').toLowerCase()===email)){$('#acErr').textContent='이미 다른 계정에 쓰인 메일이에요.';return;}
     $('#acSave').disabled=true;
     try{
-      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,quotas:{[Y]:q}});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
+      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,quotas:{[Y]:q},...(typeof avatar==='string'&&avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
       else{
-        const old={...m}, ch=old.name!==name||(old.email||'')!==email||(old.part||'')!==part||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
-        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,quotas:{[Y]:q}});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
+        const old={...m}, avCh=typeof avatar==='string'&&avatar!==(old.avatar||''), ch=avCh||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
+        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,quotas:{[Y]:q},...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
           // 이름을 바꾸면 이 사람이 담당한 업무의 담당자 이름도 함께 바꿈(집계·필터가 이름 기준이라)
           if(old.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===old.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});}
         const on=$('#acAdmin')?.checked;

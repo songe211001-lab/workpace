@@ -770,6 +770,7 @@ a.rms:hover{text-decoration:underline}
 .cpRow,.cpFields{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cpFields[hidden]{display:none}
 @media (max-width:900px){.pnRow{flex-wrap:wrap}.pnRow #pnTitle{flex-basis:100%}}
+.pPicks{display:inline-flex;gap:8px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -814,7 +815,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><select class="sel" id="pPick" aria-label="기간" hidden></select><button class="btn" id="btnAdd" type="button">프로젝트 등록하기</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><span class="pPicks" id="pPick" hidden></span><button class="btn" id="btnAdd" type="button">프로젝트 등록하기</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
@@ -1177,16 +1178,26 @@ const mdot=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`;
 function hasContent(a,b){const inR=d=>!!d&&d>=a&&d<=b;
   return tasks.some(t=>inR(t.requestDate)||inR(t.dueDate)||inR(t.doneDate))||wlogs.some(l=>inR(l.date))||reports.some(r=>inR(r.week))
     ||leaves.some(l=>l.date<=b&&(l.endDate||l.date)>=a)||events.some(e=>e.kind==='project'&&e.start<=b&&(e.end||e.start)>=a);}
-// 선택지: 주는 과거 26주~미래 8주, 월은 과거 12개월~미래 3개월. 현재 값이 범위 밖이면 끼워 넣음
-function periodOptions(kind,cur,has){
-  const t=todayStr(),out=[];
-  if(kind==='week'){const base=mondayOf(t);for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));}
-  else{const d=new Date(t.slice(0,7)+'-01T00:00:00');for(let i=-12;i<=3;i++)out.push(ymd(new Date(d.getFullYear(),d.getMonth()+i,1)));}
-  if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
-  const keep=kind==='week'?mondayOf(t):t.slice(0,7)+'-01', endOf=v=>kind==='week'?addDays(v,6):ymd(new Date(+v.slice(0,4),+v.slice(5,7),0));
-  let list=out.filter(v=>v===cur||!has||has(v,endOf(v)));if(!list.length)list=[keep];
-  return list.map(v=>kind==='week'?`<option value="${v}" title="${mdot(v)}~${mdot(addDays(v,6))}" ${v===cur?'selected':''}>${weekLabel(v)}</option>`:`<option value="${v}" ${v===cur?'selected':''}>${v.slice(2,4)}년 ${+v.slice(5,7)}월</option>`).join('');
+// 기간 종류: week=월요일 시작 주(목요일의 연도), rweek=주간 보고 목~수 주(수요일의 연도), month=월
+const PKIND={
+  week:{start:s=>mondayOf(s),next:v=>addDays(v,7),end:v=>addDays(v,6),year:v=>addDays(v,3).slice(0,4),label:v=>weekLabel(v).slice(4),title:v=>`${mdot(v)}~${mdot(addDays(v,6))}`},
+  rweek:{start:s=>thursdayOf(s),next:v=>addDays(v,7),end:v=>addDays(v,6),year:v=>addDays(v,6).slice(0,4),label:v=>`${rWeekLabel(v).slice(4)} (${rRange(v)})`},
+  month:{start:s=>s.slice(0,7)+'-01',next:v=>ymd(new Date(+v.slice(0,4),+v.slice(5,7),1)),end:v=>ymd(new Date(+v.slice(0,4),+v.slice(5,7),0)),year:v=>v.slice(0,4),label:v=>`${+v.slice(5,7)}월`}
+};
+// 그 연도의 기간 중 등록된 내용이 있는 것(cur는 항상 포함)
+function periodsOf(kind,y,cur){const K=PKIND[kind],out=[];for(let v=K.start(`${y}-01-01`);v<=`${y}-12-31`;v=K.next(v))if(K.year(v)===String(y)&&(v===cur||hasContent(v,K.end(v))))out.push(v);return out;}
+// 헤더 기간 선택: 연도 select(id+'Y') + 주/월 select(id). 연도·기간 모두 내용이 있는 것만, 올해와 현재 값은 항상
+function periodSelects(kind,cur,id){
+  const K=PKIND[kind],T=todayStr(),cy=+T.slice(0,4);cur=cur||K.start(T);const sy=+K.year(cur);
+  const ds=[...tasks.flatMap(t=>[t.requestDate,t.dueDate,t.doneDate]),...wlogs.map(l=>l.date),...reports.map(r=>r.week),...leaves.map(l=>l.date),...events.map(e=>e.start)].filter(d=>/^\d{4}-/.test(d||'')).map(d=>+d.slice(0,4)).filter(y=>y>=cy-10&&y<=cy+2);
+  const years=[];for(let y=Math.max(cy,sy,...ds);y>=Math.min(cy,sy,...ds);y--)if(y===cy||y===sy||periodsOf(kind,y).length)years.push(y);
+  let list=periodsOf(kind,sy,cur);
+  return `<select class="sel" id="${id}Y" aria-label="연도">${years.map(y=>`<option value="${y}" ${y===sy?'selected':''}>${y}년</option>`).join('')}</select><select class="sel" id="${id}" aria-label="${kind==='month'?'월':'주'}">${list.map(v=>`<option value="${v}" ${v===cur?'selected':''}${K.title?` title="${K.title(v)}"`:''}>${esc(K.label(v))}</option>`).join('')}</select>`;
 }
+// 연도를 바꾸면 그 연도에서 오늘 이전의 가장 최근 기간(내용 있는 것) → 없으면 그 연도의 마지막 기간 → 그것도 없으면 이번 기간
+function latestIn(kind,y){const K=PKIND[kind],T=K.start(todayStr()),l=periodsOf(kind,y);return l.filter(v=>v<=T).pop()||l.pop()||T;}
+// 내보내기 메뉴: 화면마다 같은 모양, 헤더 도구 줄 맨 오른쪽. items=[[id,label,title]] 없으면 메뉴도 숨김
+const exportMenu=items=>items.length?`<details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">${items.map(([id,l,t])=>`<button class="btn" type="button" id="${id}"${t?` title="${t}"`:''}>${l}</button>`).join('')}</div></details>`:'';
 function periodRange(){
   if(state.period==='all')return null;
   const t=todayStr();
@@ -1212,10 +1223,10 @@ function periodLabel(r){
 function renderPeriodBar(){
   const on=state.period!=='all';if(on)periodRange();
   $('#periodSel').value=state.period;$('#pPick').hidden=!on;
-  if(on)$('#pPick').innerHTML=periodOptions(state.period,state.pAnchor,hasContent);
+  if(on)$('#pPick').innerHTML=periodSelects(state.period,state.pAnchor,'pPickV');
 }
 $('#periodSel').addEventListener('change',e=>{state.period=e.target.value;state.pAnchor=null;persistUI();render();});
-$('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.value;render();});
+$('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.id==='pPickVY'?latestIn(state.period,+e.target.value):e.target.value;render();});
 
 /* ---------- filtering ---------- */
 function scoped(){return periodTasks().filter(t=>state.project==='all'||t.projectId===state.project);}
@@ -2377,9 +2388,6 @@ rstate.week3=thursdayOf(todayStr());
 function rWeekLabel(thu){const wed=addDays(thu,6),firstMon=mondayOf(wed.slice(0,8)+'01');
   return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(mondayOf(wed)+'T00:00:00')-new Date(firstMon+'T00:00:00'))/(7*864e5))+1}주`;}
 const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
-function rWeekOptions(cur){const base=thursdayOf(todayStr()),out=[];for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
-  let list=out.filter(v=>v===cur||hasContent(v,addDays(v,6)));if(!list.length)list=[base];
-  return list.map(v=>`<option value="${v}" ${v===cur?'selected':''}>${rWeekLabel(v)} (${rRange(v)})</option>`).join('');}
 const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['report','sum','주간보고'],['report','detail','주간보고(상세)'],['hours','','업무 시간']].map(([m,v,l])=>`<button type="button" class="vtab" role="tab" data-goto="${m}" ${v?`data-rview="${v}"`:''} aria-selected="${m==='hours'?cur==='hours':cur===v}">${l}</button>`).join('')}</div></div>`;
 const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];
 const v3Id=thu=>`w_${thu}`;
@@ -2447,11 +2455,9 @@ function renderReport(){
   area.innerHTML=`
     ${rTabs(rstate.view)}
     <div class="rtool">
-      <select class="sel" id="rWeek3" aria-label="주">${rWeekOptions(thu)}</select>
-      <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
-      <button class="btn" type="button" id="rCopy">텍스트 복사</button>
-      ${downloads?'<button class="btn" type="button" id="rXlsx">엑셀 저장</button><button class="btn" type="button" id="rCsv" title="운영 건수 표만">CSV</button><button class="btn" type="button" id="rMd">Markdown</button>':''}
-      </div></details>
+      ${periodSelects('rweek',thu,'rWeek3')}
+      <span class="spacer"></span>
+      ${exportMenu([['rCopy','텍스트 복사'],...(downloads?[['rXlsx','엑셀 저장'],['rCsv','CSV','운영 건수 표만'],['rMd','Markdown']]:[])])}
     </div>
     <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${rRange(thu)}</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
     ${rstate.view==='detail'?secs+(ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`):sum}
@@ -2461,7 +2467,7 @@ onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&
 onArea('#reportArea','paste',e=>{if(!e.target.closest?.('.rEditor'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));});
 onArea('#reportArea','mousedown',e=>{if(e.target.closest('[data-hl],[data-hr]'))e.preventDefault();});
 onArea('#reportArea','change',e=>{const t=e.target;
-  if(t.id==='rWeek3'){v3Flush();rstate.week3=t.value;render();return;}
+  if(t.id==='rWeek3'||t.id==='rWeek3Y'){v3Flush();rstate.week3=t.id==='rWeek3'?t.value:latestIn('rweek',+t.value);render();return;}
   if(t.classList.contains('rcnt')){const sec=t.closest('[data-cid]'),counts={};sec.querySelectorAll('.rcnt').forEach(x=>counts[x.dataset.k]=Math.max(0,Math.round(+x.value||0)));
     v3Save(sec.dataset.cid,{counts,countsEdited:true}).catch(err=>handleWriteError(err));}
 });
@@ -2662,9 +2668,9 @@ function renderHours(){
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
-      <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor,hasContent)}</select>
+      ${periodSelects(hrState.period,hrState.anchor,'hrPick')}
       <span class="spacer"></span>
-      ${downloads&&people.length?'<button class="btn" type="button" id="hrCsv">내보내기</button>':''}
+      ${exportMenu(downloads&&people.length?[['hrCsv','CSV']]:[])}
     </div>
     ${statTable([[`총 집계`,`${hrs(sum.total)}<small>h</small>`,``],[`총 가용`,`${hrs(sum.avail)}<small>h</small>`,``],[`투입률`,`${rate}<small>%</small><div class="bar"><i style="width:${Math.min(100,rate)}%"></i></div>`,`${rate>100?'alert':''}`],[`완료 소요`,`${hrs(sum.done)}<small>h</small>`,``],[`진행 중 소요`,`${hrs(sum.doing)}<small>h</small>`,``],[`휴가`,`${hrs(sum.leave)}<small>h</small>`,``]])}
     ${people.length?`<div class="tablebox"><table class="ptable"><thead><tr><th>담당자</th><th class="r">집계</th><th class="r">가용</th><th class="r">투입률</th><th style="min-width:180px">투입</th><th class="r">완료</th><th class="r">진행 중</th><th class="r">휴가</th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -2683,7 +2689,7 @@ onArea('#hoursArea','click',async e=>{
   }
   const row=e.target.closest('[data-person]');if(row){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}
 });
-onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}if(e.target.id==='hrPer'){hrState.period=e.target.value;hrState.anchor=null;render();}if(e.target.id==='hrPick'){hrState.anchor=e.target.value;render();}});
+onArea('#hoursArea','change',e=>{if(e.target.id==='hrProj'){hrState.project=e.target.value;render();}if(e.target.id==='hrPer'){hrState.period=e.target.value;hrState.anchor=null;render();}if(e.target.id==='hrPick'){hrState.anchor=e.target.value;render();}if(e.target.id==='hrPickY'){hrState.anchor=latestIn(hrState.period,+e.target.value);render();}});
 onArea('#hoursArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.closest('[data-person]');if(row&&!e.target.closest('[data-task]')){const n=row.dataset.person;hrState.open.has(n)?hrState.open.delete(n):hrState.open.add(n);render();}});
 
 /* ---------- staffing (투입 인력) ---------- */

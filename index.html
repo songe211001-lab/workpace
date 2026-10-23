@@ -825,6 +825,8 @@ a.rms:hover{text-decoration:underline}
 .linkUrl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:60%}
 .mnTools{display:flex;gap:6px;flex-wrap:wrap}
 .mnCtl #mnUrl{width:100%;max-width:420px}
+/* ---------- 이벤트 운영(관리대장 끼워 넣기) ---------- */
+.evtFrame{width:100%;height:calc(100vh - 170px);min-height:480px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -892,6 +894,7 @@ a.rms:hover{text-decoration:underline}
   <div class="area" id="staffArea" hidden></div>
   <div class="area" id="accountsArea" hidden></div>
   <div class="area" id="linkArea" hidden></div>
+  <div class="area" id="eventOpsArea" hidden></div>
   <div class="area" id="annualArea" hidden></div>
   <div class="area" id="menusArea" hidden></div>
 </div>
@@ -1167,7 +1170,7 @@ const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',
 let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 화면(settings/menus.home)을 쓰지 않음
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;}}
+{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold}));}catch(e){}}
@@ -1177,14 +1180,14 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const MENU_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
-const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['leave','people','일정 관리'],['annual','people','연차 관리'],
+const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['leave','people','일정 관리'],['annual','people','연차 관리'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
 function syncItems(list=menuCfg.custom){CUSTOM=Array.isArray(list)?list:[];MENU_ITEMS=[...BASE_ITEMS,...CUSTOM.map(c=>[c.id,MENU_GRPS.some(g=>g[0]===c.grp)?c.grp:'work',c.name||'새 메뉴'])];}
 const customOf=k=>CUSTOM.find(c=>c.id===k);
 const safeUrl=u=>/^https?:\/\/[^\s]+$/i.test(String(u||'').trim())?String(u).trim():'';
-const NAV_ICO={"link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
+const NAV_ICO={"eventops":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z\"/><path d=\"M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
 let menuCfg={}, navKey='', sideDraw=()=>{};
 // 관리자: 서버는 wb_admins(adminUI), 아티팩트는 편집 권한(canWrite)
 const isAdminUser=()=>canWrite&&(typeof adminUI!=='function'||adminUI());
@@ -1322,7 +1325,7 @@ function applyMode(){
   renderNav();
   if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea'};
+  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='tasks';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
@@ -1355,6 +1358,7 @@ function renderBody(){
   if(state.mode!=='menus'&&mDraft){mDraft=null;syncItems();}
   if(state.mode==='leave'){renderLeave();return;}
   if(customOf(state.mode)){renderLink(customOf(state.mode));return;}
+  if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
   if(state.mode==='hours'){renderHours();return;}
@@ -2064,6 +2068,28 @@ function renderLink(c){
     <p class="legend" style="margin:0">화면이 비어 보이면 그 사이트가 다른 페이지 안에 열리는 것을 막아 둔 거예요. '새 창에서 열기'를 쓰세요.</p>`
     :`<div class="empty"><h2>연결할 주소가 없어요</h2><p>메뉴 관리에서 이 메뉴의 URL을 입력해 주세요.</p></div>`;
 }
+
+/* ---------- 이벤트 운영: 알닷 이벤트 운영 관리대장(event-ops.html, 자체 Supabase)을 끼워 넣어 4개 탭을 그대로 씀 ---------- */
+const EVT_TABS=[['events','이벤트 관리'],['banner','배너 구좌 관리'],['pm','프리마케팅 관리'],['benefit','혜택 관리']];
+const EVT_URL='event-ops.html';
+let evtTab=(()=>{try{return localStorage.getItem('wb-evtab')||'events';}catch(e){return 'events';}})();
+// 같은 출처 iframe 안의 관리대장 탭 버튼을 눌러 전환(관리대장 자체 탭 줄은 끼워 넣기 모드에서 숨김)
+function evtGo(t){
+  evtTab=t;try{localStorage.setItem('wb-evtab',t);}catch(e){}
+  $('#evtFrame')?.contentDocument?.querySelector(`.maintab-btn[data-tab="${t}"]`)?.click();
+  document.querySelectorAll('#eventOpsArea [data-evtab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.evtab===t)));
+}
+function renderEventOps(){
+  const area=$('#eventOpsArea');
+  // iframe은 처음 한 번만 만들고 다시 그리지 않음(관리대장이 다시 불러와지지 않게). 헤더로 옮겨 간 도구 줄만 다시 붙임
+  if(!area.querySelector(':scope>.rtool'))area.insertAdjacentHTML('afterbegin',`<div class="rtool"><span class="spacer"></span><a class="btn" href="${EVT_URL}" target="_blank" rel="noopener">새 창에서 열기 ↗</a></div>`);
+  if(area.querySelector('#evtFrame'))return;
+  area.insertAdjacentHTML('beforeend',`<div class="vbar"><div class="vtabs" role="tablist">${EVT_TABS.map(([k,l])=>`<button type="button" class="vtab" role="tab" data-evtab="${k}" aria-selected="${k===evtTab}">${l}</button>`).join('')}</div></div>
+    <iframe id="evtFrame" class="evtFrame" src="${EVT_URL}?embed=1" title="이벤트 운영 관리대장"></iframe>`);
+  // 관리대장 화면이 다 뜬 뒤(#appRoot가 보이면) 기억한 탭으로
+  $('#evtFrame').addEventListener('load',()=>{let n=0;const t=setInterval(()=>{const r=$('#evtFrame')?.contentDocument?.getElementById('appRoot');if((r&&!r.classList.contains('hidden'))||++n>40){clearInterval(t);evtGo(evtTab);}},250);});
+}
+onArea('#eventOpsArea','click',e=>{const b=e.target.closest('[data-evtab]');if(b)evtGo(b.dataset.evtab);});
 
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;

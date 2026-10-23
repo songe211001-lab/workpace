@@ -665,6 +665,32 @@ a.rms:hover{text-decoration:underline}
 .day .more:hover{color:var(--accent-dark)}
 .dayList .body{display:flex;flex-direction:column;gap:4px}
 .dayList .lv,.dayList .ev{font-size:12.5px;line-height:1.8;white-space:normal}
+/* ---------- 주간 보고(팀 양식) ---------- */
+.rbar .rtitle{margin:0;font-size:18px;font-weight:800}
+.rbar .rtitle small{font-size:12px;color:var(--muted);font-weight:500;margin-left:8px}
+.rsubt{margin:0;font-size:15px;font-weight:800}
+.rsum th,.rsum td{font-size:13px}
+.rsum td{font-size:15px;font-weight:600}
+.rsum tbody th{font-weight:700;color:var(--fg);border-bottom:0}
+.rsec{border-top:1px solid var(--line);padding-top:16px}
+.rsecHead{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.rsecHead h3{margin:0;font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px}
+.rsecHead .rdot{width:8px;height:8px;border-radius:50%}
+.rlive{color:var(--ok)}
+.rsec.fold .rsecBody{display:none}
+.rsecBody{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.rcounts{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap}
+.rcounts label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--ink-soft)}
+.rcounts input{width:64px;height:32px;border:1px solid var(--line);border-radius:var(--r);padding:0 8px;font-size:13px;background:var(--surface)}
+.rtools{display:flex;gap:6px}
+.rEditor{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-height:160px;font-size:13px;line-height:1.75;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface)}
+.rEditor:focus{border-color:var(--accent)}
+.rEditor[contenteditable="false"]{background:var(--bg)}
+.rEditor .hl{color:var(--bad);font-weight:600}
+.rAddCat{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px}
+.rAddCat .search{max-width:240px;height:32px}
+.rold{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.oldRep{white-space:pre-wrap;font:12.5px/1.7 var(--font-ui);margin:0}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -900,7 +926,7 @@ function liftTools(){
 }
 // 헤더로 옮긴 도구 줄에서도 그 화면의 이벤트 처리가 그대로 동작하게
 // 헤더 도구 줄 안 화면 탭(보고서/업무 시간): 화면 모드만 바꿈
-document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b||b.dataset.goto===state.mode)return;state.mode=b.dataset.goto;persistUI();render();});
+document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;const v=b.dataset.rview;if(b.dataset.goto===state.mode&&(!v||v===rstate.view))return;if(v)rstate.view=v;if(state.mode==='report')v3Flush();state.mode=b.dataset.goto;persistUI();render();});
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
 function renderBody(){
   renderBrand();applyMode();renderTodayOff();
@@ -1683,7 +1709,7 @@ function openMembers(){
 let reports=[];
 const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d);};
 const mondayOf=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return ymd(d);};
-const rstate={week:mondayOf(todayStr()),project:'all'};
+const rstate={week:mondayOf(todayStr()),project:'all',week3:null,view:'sum',fold:new Set()};
 const md=s=>s?`${+s.slice(5,7)}/${+s.slice(8,10)}`:'';
 const DOW=['일','월','화','수','목','금','토'];
 const reportId=(w,p)=>`${w}__${p}`;
@@ -1807,40 +1833,6 @@ function reportBodyHtml(m){
     </div></section>`).join('');
 }
 
-function renderReport(){
-  const area=$('#reportArea');
-  if(!storeReady){area.innerHTML=`<div class="empty"><h2>보고서를 준비하는 중입니다</h2></div>`;return;}
-  if(rstate.project!=='all'&&!projOf(rstate.project))rstate.project='all';
-  const ws=rstate.week, we=addDays(ws,6), id=reportId(ws,rstate.project);
-  const saved=reports.find(r=>r.id===id);
-  const confirmed=!!(saved?.confirmed&&saved.model);
-  const m=dedupModel(confirmed?saved.model:buildReport(ws,rstate.project));
-  const notes=saved?.notes||{};
-  const isThis=ws===mondayOf(todayStr());
-  const kpis=[['완료',m.kpi.done,'건'],['진행 중',m.kpi.doing,'건'],['신규 요청',m.kpi.newReq,'건'],['지연·보류',m.kpi.late,'건'],['완료 소요',hrs(m.kpi.hours),'h'],['휴가·부재',m.kpi.leave,'건']];
-  area.innerHTML=`
-    <div class="vbar"><div class="vtabs" role="tablist"><button type="button" class="vtab" role="tab" data-goto="report" aria-selected="true">보고서</button><button type="button" class="vtab" role="tab" data-goto="hours" aria-selected="false">업무 시간</button></div></div>
-    <div class="rtool">
-      <select class="sel" id="rProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${rstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
-      <select class="sel" id="rWeek" aria-label="주">${periodOptions('week',ws,(a,b)=>reports.some(r=>r.week===a)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
-      <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
-      <button class="btn" type="button" id="rCopy">텍스트 복사</button>
-      ${downloads?'<button class="btn" type="button" id="rXlsx" title="화면과 같은 양식으로 서식이 적용된 엑셀 파일">엑셀 저장</button><button class="btn" type="button" id="rCsv" title="서식 없는 데이터 목록">CSV</button><button class="btn" type="button" id="rMd">Markdown</button>':''}
-      </div></details>
-    </div>
-    <div class="rgrid">
-      <article class="panel report">
-        <div class="rbar"><span class="pill ${confirmed?'s-done':'s-wait'}">${confirmed?'확정됨':'작성 중 · 실시간 집계'}</span>${canWrite?(confirmed?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제 · 다시 집계</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
-        <header class="rhead"><div><div class="legend">주간 업무 보고</div><h2>${esc(m.projectName)}</h2></div><div class="legend num">${m.ws.replace(/-/g,'.')} (월) ~ ${m.we.replace(/-/g,'.')} (일)${confirmed?`<br>확정 ${esc(fmtDate((saved.confirmedAt||'').slice(0,10)))}`:''}</div></header>
-        <div class="rkpi">${kpis.map(([k,v,u])=>`<div><span class="k">${k}</span><span class="v num">${v}<small>${u}</small></span></div>`).join('')}</div>
-        <div class="rnotes">${NOTE_FIELDS.slice(0,1).map(([k,l])=>`<div class="f"><label for="rn_${k}">${l}</label><textarea id="rn_${k}" data-note="${k}" data-base="${esc(notes[k]||'')}" ${canWrite?'':'readonly'} placeholder="이번 주 핵심 내용을 2~3줄로">${esc(notes[k]||'')}</textarea></div>`).join('')}</div>
-        <div class="rbody">${reportBodyHtml(m)}</div>
-        <div class="rnotes three">${NOTE_FIELDS.slice(1).map(([k,l])=>`<div class="f"><label for="rn_${k}">${l}</label><textarea id="rn_${k}" data-note="${k}" data-base="${esc(notes[k]||'')}" ${canWrite?'':'readonly'}>${esc(notes[k]||'')}</textarea></div>`).join('')}</div>
-        <p class="legend rsave" id="rSaveState">${canWrite?(saved?.updatedAt?`메모 저장됨 · ${esc(saved.updatedAt.slice(5,16).replace('T',' '))}`:'메모는 입력을 멈추면 자동 저장됩니다'):'보기 전용'}</p>
-      </article>
-    </div>`;
-}
-
 // 보고서가 이미 있으면 바뀐 필드만 update(메모는 칸별로 합쳐짐), 없을 때만 set으로 새로 만듦.
 // 여러 사람이 같은 주 보고서의 다른 메모 칸을 써도 서로 지우지 않게 하려는 것
 async function saveReport(patch){
@@ -1862,40 +1854,147 @@ function queueNoteSave(){
 }
 function flushNotes(){if(noteTimer){clearTimeout(noteTimer);noteTimer=null;noteBusy=noteBusy.then(saveChangedNotes).catch(()=>{});}}
 
-onArea('#reportArea','input',e=>{if(e.target.dataset.note&&canWrite)queueNoteSave();});
-onArea('#reportArea','change',e=>{if(e.target.id==='rProj'){flushNotes();rstate.project=e.target.value;render();}if(e.target.id==='rWeek'){flushNotes();rstate.week=e.target.value;render();}});
+/* ---------- 주간 보고(팀 양식): 목~수 한 주, 카테고리(프로젝트)별 운영 건수와 본문 ---------- */
+// 주는 목요일 시작·수요일 끝. n주는 끝나는 수요일이 그 달 몇째 주(월요일 시작, 1일이 든 주 = 1주)인지로 셈 — 팀 양식 표기(10/15~10/21 = 10월 4주)와 같게
+const thursdayOf=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()-((d.getDay()+3)%7));return ymd(d);};
+rstate.week3=thursdayOf(todayStr());
+function rWeekLabel(thu){const wed=addDays(thu,6),firstMon=mondayOf(wed.slice(0,8)+'01');
+  return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(mondayOf(wed)+'T00:00:00')-new Date(firstMon+'T00:00:00'))/(7*864e5))+1}주`;}
+const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
+function rWeekOptions(cur){const base=thursdayOf(todayStr()),out=[];for(let i=-26;i<=8;i++)out.push(addDays(base,7*i));if(cur&&!out.includes(cur)){out.push(cur);out.sort();}
+  const has=(a,b)=>reports.some(r=>r.week===a)||tasks.some(x=>inPeriod(x,[a,b]));
+  return out.filter(v=>v===base||v===cur||has(v,addDays(v,6))).map(v=>`<option value="${v}" ${v===cur?'selected':''}>${rWeekLabel(v)} (${rRange(v)})</option>`).join('');}
+const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['report','sum','주간보고'],['report','detail','주간보고(상세)'],['hours','','업무 시간']].map(([m,v,l])=>`<button type="button" class="vtab" role="tab" data-goto="${m}" ${v?`data-rview="${v}"`:''} aria-selected="${m==='hours'?cur==='hours':cur===v}">${l}</button>`).join('')}</div></div>`;
+const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];
+const v3Id=thu=>`w_${thu}`;
+const v3Doc=()=>reports.find(r=>r.id===v3Id(rstate.week3));
+const fmtDT=s=>{const d=new Date(s);return `${d.getFullYear()}. ${d.getMonth()+1}. ${d.getDate()}. ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+// 카테고리 = 프로젝트 + 사용자가 추가한 것(그 주 문서에 없으면 가장 최근 주의 것을 이어받음)
+function v3Custom(doc){if(doc?.cats)return doc.cats;const prev=reports.filter(r=>r.kind==='v3'&&r.week<rstate.week3&&r.cats).sort((a,b)=>b.week.localeCompare(a.week))[0];return prev?.cats||[];}
+function v3Auto(c,thu){
+  const wed=addDays(thu,6),inR=d=>!!d&&d>=thu&&d<=wed;
+  if(!c.project)return {counts:{done:0,doing:0,recv:0},deploy:0,lists:{done:[],doing:[],recv:[]}};
+  const T=tasks.filter(t=>t.projectId===c.id);
+  const lists={done:T.filter(t=>t.status==='done'&&inR(t.doneDate)),doing:T.filter(t=>t.status==='doing'||t.status==='review'),recv:T.filter(t=>t.status==='wait')};
+  const deploy=events.filter(e=>e.kind==='deploy'&&e.projectId===c.id).reduce((n,e)=>n+deployDates(e,thu,wed).length,0);
+  return {counts:{done:lists.done.length,doing:lists.doing.length,recv:lists.recv.length},deploy,lists};
+}
+// 처음 열 때 그 주 업무로 만드는 본문 초안: ■ 소제목 아래 [파트] 내용(날짜)
+function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `,L=[],ln=t=>L.push({t,hl:false});
+  ln(`■ 반영 ${a.counts.done}건${a.deploy?`(배포 ${a.deploy}건)`:''}`);a.lists.done.forEach(t=>ln(`${pl(t)}${t.title}(${md(t.doneDate)})`));ln('');
+  ln(`■ 진행 ${a.counts.doing}건`);a.lists.doing.forEach(t=>ln(`${pl(t)}${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`));ln('');
+  ln(`■ 접수(검토 중) ${a.counts.recv}건`);a.lists.recv.forEach(t=>ln(`${pl(t)}${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`));ln('');
+  ln('----------');ln('');return L;}
+function v3Data(){
+  const thu=rstate.week3,doc=v3Doc();
+  const cats=[...projects.map(p=>({id:p.id,name:p.name,color:p.color,inCount:true,project:true})),...v3Custom(doc).map(c=>({...c,project:false}))];
+  return {thu,doc,cats:cats.map(c=>{const sec=doc?.sections?.[c.id]||{};
+    return {...c,sec,counts:sec.countsEdited&&sec.counts?sec.counts:v3Auto(c,thu).counts,lines:Array.isArray(sec.lines)?sec.lines:v3Draft(c,thu)};})};
+}
+// 편집칸은 줄 목록(lines: [{t, hl}])으로만 저장하고 다시 그림 — 서식·스크립트가 섞이지 않게
+const linesHtml=L=>L.map(l=>`<div${l.hl?' class="hl"':''}>${l.t?esc(l.t):'<br>'}</div>`).join('');
+function readLines(ed){const out=[];ed.childNodes.forEach(n=>{if(n.nodeType===3){if(n.textContent.trim()||out.length)out.push({t:n.textContent,hl:false});return;}
+  if(n.nodeType===1)out.push({t:n.textContent,hl:n.classList.contains('hl')});});return out;}
+function edLinesInSel(ed){const sel=getSelection();if(!sel.rangeCount)return [];const r=sel.getRangeAt(0);
+  const kids=[...ed.children].filter(c=>r.intersectsNode(c));if(kids.length)return kids;
+  let n=r.startContainer;while(n&&n.parentNode!==ed)n=n.parentNode;return n&&n.nodeType===1?[n]:[];}
+function toggleHl(ed){const ls=edLinesInSel(ed);if(!ls.length)return;const on=!ls.every(l=>l.classList.contains('hl'));
+  ls.forEach(l=>{l.classList.toggle('hl',on);const t=l.textContent;if(on&&!t.startsWith('✔'))l.textContent='✔ '+t;if(!on&&t.startsWith('✔'))l.textContent=t.replace(/^✔\s?/,'');if(!l.textContent)l.innerHTML='<br>';});}
+function insertHr(ed){const ls=edLinesInSel(ed),d=document.createElement('div');d.textContent='----------';(ls.length?ls[ls.length-1]:ed.lastChild)?.after?.(d)||ed.append(d);}
+// 저장: 구역 단위 부분 저장(다른 사람이 다른 구역을 고쳐도 덮어쓰지 않음)
+async function v3SaveDoc(patch){const id=v3Id(rstate.week3),doc=v3Doc(),at=new Date().toISOString();
+  if(doc)return db.collection('reports').doc(id).update({...patch,updatedAt:at});
+  return db.collection('reports').doc(id).set({kind:'v3',week:rstate.week3,sections:{},cats:v3Custom(null),confirmed:false,confirmedAt:'',...patch,updatedAt:at});}
+const v3Save=(cid,patch)=>{const me=myMember();return v3SaveDoc({sections:{[cid]:{...patch,updatedAt:new Date().toISOString(),updatedBy:actorId||'',updatedByName:me?.name||''}}});};
+const v3Timer={};
+function v3SaveLines(cid){const ed=document.querySelector(`#reportArea [data-cid="${CSS.escape(cid)}"] .rEditor`);if(!ed)return;v3Save(cid,{lines:readLines(ed)}).catch(err=>handleWriteError(err));}
+function v3Queue(cid){clearTimeout(v3Timer[cid]);v3Timer[cid]=setTimeout(()=>{delete v3Timer[cid];v3SaveLines(cid);},1000);}
+function v3Flush(){for(const cid of Object.keys(v3Timer)){clearTimeout(v3Timer[cid]);delete v3Timer[cid];v3SaveLines(cid);}}
+
+function renderReport(){
+  const area=$('#reportArea');
+  if(!storeReady){area.innerHTML=`<div class="empty"><h2>보고서를 준비하는 중입니다</h2></div>`;return;}
+  const {thu,doc,cats}=v3Data(),locked=!!doc?.confirmed,ro=!canWrite||locked,inc=cats.filter(c=>c.inCount);
+  const tot=k=>inc.reduce((n,c)=>n+(+c.counts[k]||0),0);
+  const old=reports.filter(r=>r.kind!=='v3'&&r.week&&r.week>=mondayOf(thu)&&r.week<=mondayOf(addDays(thu,6)));
+  const sum=`<h3 class="rsubt">${rWeekLabel(thu).slice(4)} 운영 건수</h3><div class="statWrap"><table class="statTable rsum"><thead><tr><th>구분</th>${inc.map(c=>`<th title="${esc(c.name)}">${esc(c.name)}</th>`).join('')}<th>합계</th></tr></thead><tbody>
+    ${R_KINDS.map(([k,l])=>`<tr><th scope="row">${l}</th>${inc.map(c=>`<td class="num">${+c.counts[k]||0}</td>`).join('')}<td class="num"><b>${tot(k)}</b></td></tr>`).join('')}</tbody></table></div>`;
+  const secs=cats.map(c=>{const fold=rstate.fold.has(c.id),s=c.sec;
+    return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
+      <header class="rsecHead"><h3>${c.color?`<span class="rdot" style="background:${esc(c.color)}"></span>`:''}${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>
+        <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'▼':'▲'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
+      <div class="rsecBody">
+        <div class="rcounts">${R_KINDS.map(([k,l])=>`<label>${l}<input type="number" min="0" class="rcnt" data-k="${k}" data-note="cnt" value="${+c.counts[k]||0}" ${ro?'disabled':''}></label>`).join('')}${!ro&&c.project?'<button class="btn ghost sm" type="button" data-refill>자동 계산으로 다시 채우기</button>':''}${!c.inCount?'<span class="legend">운영 건수 미포함</span>':''}</div>
+        ${ro?'':'<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>'}
+        <div class="rEditor" data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
+      </div></section>`;}).join('');
+  area.innerHTML=`
+    ${rTabs(rstate.view)}
+    <div class="rtool">
+      <select class="sel" id="rWeek3" aria-label="주">${rWeekOptions(thu)}</select>
+      <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
+      <button class="btn" type="button" id="rCopy">텍스트 복사</button>
+      ${downloads?'<button class="btn" type="button" id="rXlsx">엑셀 저장</button><button class="btn" type="button" id="rCsv" title="운영 건수 표만">CSV</button><button class="btn" type="button" id="rMd">Markdown</button>':''}
+      </div></details>
+    </div>
+    <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${rRange(thu)}</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
+    ${rstate.view==='detail'?secs+(ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`):sum}
+    ${!doc&&old.length?`<div class="rold"><span class="legend">이전 형식 보고서 보기:</span>${old.map(r=>`<button class="btn ghost sm" type="button" data-oldrep="${esc(r.id)}">${esc(projOf(r.projectId)?.name||'전체 프로젝트')} · ${esc(md(r.week))} 주</button>`).join('')}</div>`:''}`;
+}
+onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&canWrite)v3Queue(ed.closest('[data-cid]').dataset.cid);});
+onArea('#reportArea','paste',e=>{if(!e.target.closest?.('.rEditor'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));});
+onArea('#reportArea','mousedown',e=>{if(e.target.closest('[data-hl],[data-hr]'))e.preventDefault();});
+onArea('#reportArea','change',e=>{const t=e.target;
+  if(t.id==='rWeek3'){v3Flush();rstate.week3=t.value;render();return;}
+  if(t.classList.contains('rcnt')){const sec=t.closest('[data-cid]'),counts={};sec.querySelectorAll('.rcnt').forEach(x=>counts[x.dataset.k]=Math.max(0,Math.round(+x.value||0)));
+    v3Save(sec.dataset.cid,{counts,countsEdited:true}).catch(err=>handleWriteError(err));}
+});
+// 보고서 내보내기용 텍스트 줄(강조 줄은 ✔ 유지)
+function v3Text(d){const L=[`■ ${rWeekLabel(d.thu)} 주간 업무 보고 (${rRange(d.thu)})`,'','[운영 건수]'],inc=d.cats.filter(c=>c.inCount);
+  L.push(['구분',...inc.map(c=>c.name),'합계'].join(' | '));R_KINDS.forEach(([k,l])=>L.push([l,...inc.map(c=>+c.counts[k]||0),inc.reduce((n,c)=>n+(+c.counts[k]||0),0)].join(' | ')));
+  d.cats.forEach(c=>{L.push('',`[${c.name}] 반영 ${+c.counts.done||0} · 진행 ${+c.counts.doing||0} · 접수 ${+c.counts.recv||0}`,...c.lines.map(l=>l.t));});return L.join('\n');}
+function v3Md(d){const inc=d.cats.filter(c=>c.inCount),L=[`# ${rWeekLabel(d.thu)} 주간 업무 보고`,'',`${rRange(d.thu)}`,'','## 운영 건수','',`| 구분 | ${inc.map(c=>c.name).join(' | ')} | 합계 |`,`|---|${inc.map(()=>'---:').join('|')}|---:|`];
+  R_KINDS.forEach(([k,l])=>L.push(`| ${l} | ${inc.map(c=>+c.counts[k]||0).join(' | ')} | **${inc.reduce((n,c)=>n+(+c.counts[k]||0),0)}** |`));
+  d.cats.forEach(c=>{L.push('',`## ${c.name}`,'',`반영 ${+c.counts.done||0} · 진행 ${+c.counts.doing||0} · 접수 ${+c.counts.recv||0}`,'');c.lines.forEach(l=>L.push(l.hl?`**✔ ${l.t.replace(/^✔\s?/,'')}**  `:l.t?`${l.t}  `:''));});return L.join('\n');}
+function v3Csv(d){const cell=v=>{v=String(v??'');return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;},inc=d.cats.filter(c=>c.inCount);
+  const rows=[['구분',...inc.map(c=>c.name),'합계'],...R_KINDS.map(([k,l])=>[l,...inc.map(c=>+c.counts[k]||0),inc.reduce((n,c)=>n+(+c.counts[k]||0),0)])];
+  return '﻿'+rows.map(r=>r.map(cell).join(',')).join('\r\n');}
+async function v3Xlsx(X,d){const wb=new X.Workbook(),ws=wb.addWorksheet('주간보고'),inc=d.cats.filter(c=>c.inCount),n=inc.length+2;
+  ws.columns=[{width:14},...inc.map(()=>({width:16})),{width:10}];
+  ws.addRow([`${rWeekLabel(d.thu)} 주간 업무 보고 (${rRange(d.thu)})`]).font={bold:true,size:14};ws.addRow([]);
+  const h=ws.addRow(['구분',...inc.map(c=>c.name),'합계']);h.font={bold:true};h.eachCell(c=>{c.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFEEF1F4'}};c.border={bottom:{style:'thin'}};});
+  R_KINDS.forEach(([k,l])=>{const r=ws.addRow([l,...inc.map(c=>+c.counts[k]||0),inc.reduce((m,c)=>m+(+c.counts[k]||0),0)]);r.getCell(n).font={bold:true};});
+  d.cats.forEach(c=>{ws.addRow([]);const t=ws.addRow([c.name]);t.font={bold:true,size:12};ws.mergeCells(t.number,1,t.number,n);
+    const cr=ws.addRow([`반영 ${+c.counts.done||0} · 진행 ${+c.counts.doing||0} · 접수 ${+c.counts.recv||0}`]);ws.mergeCells(cr.number,1,cr.number,n);cr.font={color:{argb:'FF4B5765'}};
+    c.lines.forEach(l=>{const r=ws.addRow([l.t]);ws.mergeCells(r.number,1,r.number,n);if(l.hl)r.font={color:{argb:'FFB00727'}};});});
+  return wb.xlsx.writeBuffer();}
 onArea('#reportArea','click',async e=>{
-  const t=e.target.closest('button');if(!t)return;
-  if(t.dataset.week){flushNotes();rstate.week=t.dataset.week;render();return;}
-  const id=reportId(rstate.week,rstate.project), saved=reports.find(r=>r.id===id);
-  const model=dedupModel(saved?.confirmed&&saved.model?saved.model:buildReport(rstate.week,rstate.project));
-  const notes={};document.querySelectorAll('#reportArea [data-note]').forEach(x=>notes[x.dataset.note]=x.value);
-  const text=reportText(model,notes);
-  if(t.id==='rCopy'){
-    try{await navigator.clipboard.writeText(text);toast('보고서 텍스트를 복사했습니다');}
-    catch(err){$('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal"><header><h2>보고서 텍스트</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header><div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">자동 복사가 막혀 있어요. 아래 내용을 전체 선택해 복사해 주세요.</p><textarea id="copyBox" style="min-height:320px;font-family:var(--font-num);font-size:12px;border:1px solid var(--line);border-radius:6px;padding:10px;background:var(--bg)">${esc(text)}</textarea></div></div></div>`;
-      $('#xClose').onclick=closeModal;const b=$('#copyBox');b.focus();b.select();}
-    return;
-  }
-  if(t.id==='rXlsx'){
-    const label=t.textContent;t.disabled=true;t.textContent='만드는 중…';
-    try{const X=await loadExcel();const buf=await buildReportXlsx(X,model,notes);
-      await downloads.save({filename:`주간보고_${rstate.week.replace(/-/g,'')}_${model.projectName.replace(/[\\/:*?"<>|\s]+/g,'_')}.xlsx`,data:new Blob([buf])});}
-    catch(err){if(err?.code==='declined'){}else if(err?.message==='load')toast('엑셀 변환 도구를 불러오지 못했습니다. 잠시 후 다시 눌러 주세요');else toast('엑셀 파일을 만들지 못했습니다');}
-    finally{t.disabled=false;t.textContent=label;}
-    return;
-  }
-  if(t.id==='rCsv'){
-    try{await downloads.save({filename:`주간보고_${rstate.week.replace(/-/g,'')}_${model.projectName.replace(/[\\/:*?"<>|\s]+/g,'_')}.csv`,data:reportCsv(model,notes)});}catch(err){if(err?.code!=='declined')toast('파일을 저장하지 못했습니다');}
-    return;
-  }
-  if(t.id==='rMd'){
-    const mdText=reportMarkdown(model,notes);
-    try{await downloads.save({filename:`주간보고_${rstate.week.replace(/-/g,'')}_${model.projectName.replace(/[\\/:*?"<>|\s]+/g,'_')}.md`,data:mdText});}catch(err){if(err?.code!=='declined')toast('파일을 저장하지 못했습니다');}
-    return;
-  }
-  if(t.id==='rConfirm'){t.disabled=true;try{clearTimeout(noteTimer);await noteBusy;await saveChangedNotes();await saveReport({confirmed:true,model:buildReport(rstate.week,rstate.project),confirmedAt:new Date().toISOString()});logChange('report','confirm',reportId(rstate.week,rstate.project),`${rstate.week.slice(2).replace(/-/g,'.')} 주 · ${projOf(rstate.project)?.name||'전체 프로젝트'}`);toast('이 주 보고서를 확정했습니다');}catch(err){t.disabled=false;handleWriteError(err);}return;}
-  if(t.id==='rUnconfirm'){t.disabled=true;try{clearTimeout(noteTimer);await noteBusy;await saveChangedNotes();await saveReport({confirmed:false,model:null,confirmedAt:''});logChange('report','unconfirm',reportId(rstate.week,rstate.project),`${rstate.week.slice(2).replace(/-/g,'.')} 주 · ${projOf(rstate.project)?.name||'전체 프로젝트'}`);toast('확정을 해제했습니다. 최신 업무 기준으로 다시 집계합니다');}catch(err){t.disabled=false;handleWriteError(err);}return;}
+  const sec=e.target.closest('[data-cid]'),cid=sec?.dataset.cid;
+  if(e.target.closest('[data-fold]')){rstate.fold.has(cid)?rstate.fold.delete(cid):rstate.fold.add(cid);render();return;}
+  if(e.target.closest('[data-hl]')){toggleHl(sec.querySelector('.rEditor'));v3Queue(cid);return;}
+  if(e.target.closest('[data-hr]')){insertHr(sec.querySelector('.rEditor'));v3Queue(cid);return;}
+  if(e.target.closest('[data-refill]')){const c=v3Data().cats.find(x=>x.id===cid);try{await v3Save(cid,{counts:v3Auto(c,rstate.week3).counts,countsEdited:false});}catch(err){handleWriteError(err);}return;}
+  if(e.target.closest('[data-cdel]')){const c=v3Data().cats.find(x=>x.id===cid);if(!confirm(`'${c?.name}' 카테고리를 이 주 보고서에서 삭제할까요?`))return;
+    try{await v3SaveDoc({cats:v3Custom(v3Doc()).filter(x=>x.id!==cid)});}catch(err){handleWriteError(err);}return;}
+  const ob=e.target.closest('[data-oldrep]');if(ob){const r=reports.find(x=>x.id===ob.dataset.oldrep);if(!r)return;
+    const txt=reportText(dedupModel(r.confirmed&&r.model?r.model:buildReport(r.week,r.projectId)),r.notes||{});
+    $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal"><header><h2>이전 형식 보고서 (읽기 전용)</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header><div class="body" style="grid-template-columns:1fr"><pre class="oldRep">${esc(txt)}</pre></div></div></div>`;
+    $('#xClose').onclick=closeModal;$('#ov').addEventListener('mousedown',ev=>{if(ev.target.id==='ov')closeModal();});return;}
+  const id=e.target.closest('button')?.id;if(!id)return;
+  if(id==='rCatAdd'){const name=$('#rCatName').value.trim();if(!name){$('#rCatName').focus();return;}
+    try{await v3SaveDoc({cats:[...v3Custom(v3Doc()),{id:'c_'+Date.now().toString(36),name,inCount:$('#rCatIn').checked}]});}catch(err){handleWriteError(err);}return;}
+  if(id==='rConfirm'||id==='rUnconfirm'){e.target.disabled=true;v3Flush();const on=id==='rConfirm';
+    try{await v3SaveDoc(on?{confirmed:true,confirmedAt:new Date().toISOString()}:{confirmed:false,confirmedAt:''});logChange('report',on?'confirm':'unconfirm',v3Id(rstate.week3),rWeekLabel(rstate.week3));toast(on?'보고서를 확정했어요':'확정을 해제했어요');}
+    catch(err){e.target.disabled=false;handleWriteError(err);}return;}
+  v3Flush();const d=v3Data(),fn=`주간보고_${d.thu.replace(/-/g,'')}`;
+  if(id==='rCopy'){const text=v3Text(d);try{await navigator.clipboard.writeText(text);toast('보고서 텍스트를 복사했습니다');}
+    catch(err){$('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal"><header><h2>보고서 텍스트</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header><div class="body" style="grid-template-columns:1fr"><textarea id="copyBox" rows="18" style="width:100%">${esc(text)}</textarea></div></div></div>`;$('#xClose').onclick=closeModal;$('#copyBox').select();}return;}
+  if(id==='rXlsx'){const t=e.target,label=t.textContent;t.disabled=true;t.textContent='만드는 중…';
+    try{const X=await loadExcel();const buf=await v3Xlsx(X,d);await downloads.save({filename:`${fn}.xlsx`,data:new Blob([buf])});}
+    catch(err){if(err?.code!=='declined')toast(err?.message==='load'?'엑셀 변환 도구를 불러오지 못했습니다. 잠시 후 다시 눌러 주세요':'엑셀 파일을 만들지 못했습니다');}
+    finally{t.disabled=false;t.textContent=label;}return;}
+  if(id==='rCsv'){try{await downloads.save({filename:`${fn}.csv`,data:v3Csv(d)});}catch(err){if(err?.code!=='declined')toast('파일을 저장하지 못했습니다');}return;}
+  if(id==='rMd'){try{await downloads.save({filename:`${fn}.md`,data:v3Md(d)});}catch(err){if(err?.code!=='declined')toast('파일을 저장하지 못했습니다');}return;}
 });
 
 /* 주간 보고 엑셀(.xlsx) — 화면과 같은 '프로젝트 → 파트 → 구분' 양식으로 서식을 입혀 저장. ExcelJS는 버튼을 누를 때 한 번만 불러옴 */
@@ -2043,7 +2142,7 @@ function renderHours(){
       <td class="r num">${p.doneN}건 · ${hrs(p.doneH)}h${p.noAct?`<span class="legend" title="실제 소요가 비어 예상 소요로 계산"> *${p.noAct}</span>`:''}</td>
       <td class="r num">${p.doingN}건 · ${hrs(p.doingH)}h</td><td class="r num">${p.leaveH?hrs(p.leaveH)+'h':'—'}</td></tr>${detail}`;}).join('');
   area.innerHTML=`
-    <div class="vbar"><div class="vtabs" role="tablist"><button type="button" class="vtab" role="tab" data-goto="report" aria-selected="false">보고서</button><button type="button" class="vtab" role="tab" data-goto="hours" aria-selected="true">업무 시간</button></div></div>
+    ${rTabs('hours')}
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>

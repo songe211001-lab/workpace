@@ -850,6 +850,19 @@ a.rms:hover{text-decoration:underline}
 .evHist{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:8px}
 .evHistHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .req{color:var(--accent-dark)}
+/* ---------- 이벤트 운영: 배너 구좌 · 프리마케팅 ---------- */
+.bnTable .bnf{width:100%;min-width:110px;height:30px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 6px;font-size:13px;color:var(--fg)}
+.pmTable .pmf{width:100%;min-width:110px;height:30px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 6px;font-size:13px;color:var(--fg)}
+.bnTable .bnf:hover:not(:disabled),.pmTable .pmf:hover:not(:disabled){border-color:var(--line)}
+.bnTable .bnf:focus,.pmTable .pmf:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.bnTable tr[draggable="true"]{cursor:grab}
+.pmStat{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;border:1px solid var(--line);border-radius:var(--r-lg);padding:12px;background:var(--bg)}
+.pmItem{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--ink-soft);min-width:0}
+.pmItem b{font-size:14px;color:var(--fg)}
+.pmItem .sel{width:100%;max-width:220px}
+.bcList{display:flex;flex-direction:column;gap:6px}
+.bcRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.bcRow .sel{flex:1 1 140px;min-width:0}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2153,8 +2166,9 @@ const evHead=cur=>`<thead><tr>${cur?`<th class="selCell"><input type="checkbox" 
 
 function renderEventOps(){
   const area=$('#eventOpsArea');
-  if(area.contains(document.activeElement)&&document.activeElement.matches('.evf'))return; // 칸 입력 중엔 다시 그리지 않음
+  if(area.contains(document.activeElement)&&document.activeElement.matches('.evf,.bnf,.pmf,.pmSet'))return; // 칸 입력 중엔 다시 그리지 않음
   const tabs=`<div class="vbar"><div class="vtabs" role="tablist">${EVT_TABS.map(([k,l])=>`<button type="button" class="vtab" role="tab" data-evtab="${k}" aria-selected="${k===evtTab}">${l}</button>`).join('')}</div></div>`;
+  if(evtTab==='banner'||evtTab==='pm'){bnRender(area,tabs);return;}
   if(evtTab!=='events'){
     area.innerHTML=`<div class="rtool"><span class="spacer"></span></div>${tabs}<div class="empty"><h2>${esc(EVT_TABS.find(t=>t[0]===evtTab)[1])} 탭은 다음 단계에서 옮겨요</h2><p>그때까지는 기존 관리대장에서 관리해 주세요.</p><a class="btn" href="${EVT_URL}" target="_blank" rel="noopener">기존 관리대장 열기 ↗</a></div>`;return;}
   const L=evMonthList();
@@ -2294,7 +2308,7 @@ onArea('#eventOpsArea','dragend',()=>{evDrag=null;});
 // 원본 JSON 백업과 같은 모양으로 되돌림(이번 단계는 이벤트만, 나머지는 빈 배열)
 function evToState(){
   return {eventMonths:evMonthList().map(m=>({key:m.key,label:m.label,events:evRowsOf(m.id).map(r=>{const o={_uid:r.id};EV_FIELDS.forEach(f=>o[f]=r[f]??'');o.id=r.eid??'';(evSettings().customEventColumns||[]).forEach(c=>o[c.key]=r[c.key]??'');return o;})})),
-    bannerMonths:[],benefitBlocks:[],customEventColumns:evSettings().customEventColumns||[],partnerNameMap:evSettings().partnerNameMap||{}};
+    bannerMonths:bnToState(),benefitBlocks:[],customEventColumns:evSettings().customEventColumns||[],partnerNameMap:evSettings().partnerNameMap||{}};
 }
 async function evExport(id){
   const d=new Date().toISOString().slice(0,10),S=evToState();
@@ -2303,6 +2317,10 @@ async function evExport(id){
     const X=await loadExcel(),wb=new X.Workbook(),cc=S.customEventColumns;
     if(id==='evXlsx'){
       S.eventMonths.forEach(mo=>{const ws=wb.addWorksheet((mo.label+' 이벤트 관리').slice(0,31));ws.addRow([...EV_FIELDS.map(f=>EV_LABEL[f]),'이벤트ID',...cc.map(c=>c.label)]).font={bold:true};mo.events.forEach(ev=>ws.addRow([...EV_FIELDS.map(f=>ev[f]??''),ev.id??'',...cc.map(c=>ev[c.key]??'')]));});
+      const nf=S.bannerMonths.slice().sort((a,b)=>a.key<b.key?1:-1);
+      if(nf.length){const ws=wb.addWorksheet('알닷 배너 구좌');nf.forEach(mo=>{ws.addRow([`■ 알닷 배너 구좌 (${mo.label})`]);ws.addRow(['노출순위',...mo.columns]);mo.ranks.forEach((r,i)=>ws.addRow([i+1,...mo.columns.map(c=>r.values[c]??'')]));ws.addRow([]);});}
+      const pmm=nf.filter(mo=>mo.preMarketingPartners.length);
+      if(pmm.length){const ws=wb.addWorksheet('프리마케팅');pmm.forEach(mo=>{ws.addRow([`■ 프리마케팅 (${mo.label})`,'배치 주기',mo.cycleWeeks||4,'기준일시',mo.weekAnchor||'']);ws.addRow(['주차','순위','파트너사']);mo.preMarketingPartners.forEach(x=>ws.addRow([x.week,x.rankInWeek,x.name??'']));ws.addRow([]);});}
       await downloads.save({filename:`알닷_이벤트_운영_${d}.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});return;}
     // 이 달 요약(원본 buildMonthSummaryWorkbook). 배너·혜택은 다음 단계에서 옮김
     const mo=S.eventMonths.find(m=>m.key===est.month);if(!mo)return;const ws=wb.addWorksheet('요약'),add=r=>ws.addRow(r);
@@ -2310,7 +2328,9 @@ async function evExport(id){
     add(['■ 이벤트 상태별']).font={bold:true};add(['상태','건수']);EV_STATUS.forEach(s=>add([s,mo.events.filter(e=>e.status===s).length]));add(['합계',mo.events.length]);add([]);
     add(['■ 마감 지연·임박 (오늘 기준)']).font={bold:true};add(['구분','이벤트명','이벤트ID','기준일','D-day']);
     const {over,near}=evDeadlines(evRowsOf(evMid(mo.key)));[...over,...near].forEach(r=>add([r.d<0?'지연':'임박',r.name,r.eid||'',r.reflectStatus||r.dueDate,r.d<0?`D+${-r.d}`:`D-${r.d}`]));if(!over.length&&!near.length)add(['없음']);
-    add([]);add(['■ 배너 구좌 배정 · 이번 달 종료 혜택']).font={bold:true};add(['배너·혜택은 다음 단계에서 옮겨요.']);
+    add([]);add(['■ 배너 구좌 배정']).font={bold:true};const bm=S.bannerMonths.find(b=>b.key===mo.key);
+    if(bm){add(['노출순위',...bm.columns]);bm.ranks.forEach((r,i)=>add([i+1,...bm.columns.map(c=>r.values[c]??'')]));}else add(['이 달의 배너 시트가 없어요.']);
+    add([]);add(['■ 이번 달 종료 혜택']).font={bold:true};add(['혜택은 다음 단계에서 옮겨요.']);
     await downloads.save({filename:`알닷_${mo.label.replace(/\s/g,'')}_운영요약.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});
   }catch(err){if(err?.code!=='declined')toast('파일을 만들지 못했어요');}
 }
@@ -2320,7 +2340,7 @@ function evImportFile(file){
   rd.onload=()=>{let S=null;try{S=JSON.parse(rd.result);}catch(e){}
     if(!S||!['eventMonths','bannerMonths','benefitBlocks'].every(k=>Array.isArray(S[k]))){toast('관리대장 JSON 백업 파일이 아니에요. (eventMonths·bannerMonths·benefitBlocks가 있어야 해요)');return;}
     const ev=S.eventMonths.reduce((n,m)=>n+(m.events||[]).length,0),rk=S.bannerMonths.reduce((n,m)=>n+(m.ranks||[]).length,0),pm=S.bannerMonths.reduce((n,m)=>n+(m.preMarketingPartners||[]).length,0),bi=S.benefitBlocks.reduce((n,b)=>n+(b.items||[]).length,0);
-    evConfirm(`이 파일을 가져올까요?\n\n· 이벤트: ${S.eventMonths.length}개 달 · ${ev}건 → 지금 가져와요\n· 배너 구좌: ${S.bannerMonths.length}개 달 · 순위 ${rk}건 / 프리마케팅 ${pm}건 → 다음 단계에서\n· 혜택: ${S.benefitBlocks.length}개 블록 · ${bi}건 → 다음 단계에서\n\n같은 행이 이미 있으면 파일 내용으로 덮어써요.`,async()=>{
+    evConfirm(`이 파일을 가져올까요?\n\n· 이벤트: ${S.eventMonths.length}개 달 · ${ev}건 → 지금 가져와요\n· 배너 구좌: ${S.bannerMonths.length}개 달 · 순위 ${rk}건 / 프리마케팅 ${pm}건 → 지금 가져와요\n· 혜택: ${S.benefitBlocks.length}개 블록 · ${bi}건 → 다음 단계에서\n\n같은 행이 이미 있으면 파일 내용으로 덮어써요.`,async()=>{
       const seen=new Set();let n=0;$('#ecYes').textContent='가져오는 중…';
       await db.collection('evt_months').doc('settings').set({kind:'settings',customEventColumns:S.customEventColumns||[],partnerNameMap:S.partnerNameMap||{}});
       for(const mo of S.eventMonths){if(!/^\d{4}-\d{2}$/.test(mo.key||''))continue;
@@ -2328,12 +2348,271 @@ function evImportFile(file){
         for(const [i,e] of (mo.events||[]).entries()){let u=String(e._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
           const {_uid,id:eid,...f}=e;await db.collection('evt_rows').doc(u).set({...f,eid:eid??'',monthId:evMid(mo.key),kind:'event',sortOrder:i,updatedAt:new Date().toISOString()});n++;
           if(n%20===0)$('#ecYes').textContent=`가져오는 중… ${n}/${ev}`;}}
-      logChange('evt','create','import','관리대장 데이터 가져오기',null,null,`이벤트 ${S.eventMonths.length}개 달 · ${n}건`);
-      est.month=null;toast(`이벤트 ${n}건을 가져왔어요.`);render();
+      // 배너 달·순위·프리마케팅(파일의 파트너명 매핑 적용). 다시 가져올 때는 같은 이름 칸의 id를 그대로 써서 값이 흩어지지 않게
+      const pmap=S.partnerNameMap||{},mapN=v=>pmap[String(v??'').trim()]||v;let nb=0;
+      for(const mo of S.bannerMonths){if(!/^\d{4}-\d{2}$/.test(mo.key||''))continue;const mid=bnMid(mo.key),ex=evtMonths.find(m=>m.id===mid);
+        const cols=(mo.columns||[]).map(nm=>({id:(ex?.cols||[]).find(x=>x.name===nm)?.id||bnColId(),name:nm}));
+        await db.collection('evt_months').doc(mid).set({kind:'banner_month',sortKey:mo.key,key:mo.key,label:mo.label||evLabelOf(mo.key),cols,hidden:cols.filter(c=>(mo.hiddenColumns||[]).includes(c.name)).map(c=>c.id),
+          cycleWeeks:mo.cycleWeeks||4,weekAnchor:mo.weekAnchor||bnAnchor(mo.key),partners:mo.partners||[],changeLog:mo.changeLog||[],...(mo.pmRankCount?{pmRankCount:mo.pmRankCount}:{})});
+        for(const [i,r] of (mo.ranks||[]).entries()){let u=String(r._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
+          const d={monthId:mid,kind:'banner_rank',sortOrder:i};cols.forEach(c=>{const v=r.values?.[c.name];if(v!=null&&v!=='')d['v_'+c.id]=mapN(v);});await db.collection('evt_rows').doc(u).set(d);nb++;}
+        for(const x of (mo.preMarketingPartners||[])){let u=String(x._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
+          await db.collection('evt_rows').doc(u).set({monthId:mid,kind:'pm_partner',sortOrder:0,name:mapN(x.name||''),week:x.week,rankInWeek:x.rankInWeek});nb++;}
+        if(nb%20===0)$('#ecYes').textContent=`가져오는 중… 배너 ${nb}건`;}
+      logChange('evt','create','import','관리대장 데이터 가져오기',null,null,`이벤트 ${S.eventMonths.length}개 달 · ${n}건, 배너 ${S.bannerMonths.length}개 달 · ${nb}건`);
+      est.month=null;bst.month=null;toast(`이벤트 ${n}건, 배너·프리마케팅 ${nb}건을 가져왔어요.`);render();
     },'가져오기');
   };
   rd.readAsText(file);
 }
+
+/* ---------- 이벤트 운영 2단계: 배너 구좌 관리 · 프리마케팅 관리(같은 배너 달을 함께 씀) ----------
+   evt_months 'banner_YYYY-MM' = {kind:'banner_month', sortKey, key, label, cols:[{id,name}], hidden:[칸 id], cycleWeeks, weekAnchor, partners, changeLog, pmRankCount}
+   evt_rows kind 'banner_rank' = {monthId, sortOrder, 'v_<칸 id>': 파트너} — 칸 id로 저장해 이름을 바꿔도 값은 그대로, 칸마다 따로 update
+   evt_rows kind 'pm_partner' = {monthId, sortOrder, name, week, rankInWeek} */
+const BN_DEF_COLS=['메인 팝업','메인 상단','메인 하단','이벤트/썸네일'];
+const bnMid=k=>'banner_'+k;
+const bnColId=()=>'c'+Math.random().toString(36).slice(2,8);
+const bnMonthList=()=>evtMonths.filter(m=>m.kind==='banner_month').sort((a,b)=>(a.sortKey||'')<(b.sortKey||'')?-1:1);
+const bnRanks=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='banner_rank').sort((a,b)=>(a.sortOrder-b.sortOrder)||(a.id<b.id?-1:1));
+const bnPms=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='pm_partner');
+const bnVisCols=mo=>(mo.cols||[]).filter(c=>!(mo.hidden||[]).includes(c.id));
+// 파트너명 매핑(원본 이름 → 표시 이름), 원본 applyPartnerNameMap과 같은 규칙
+const bnMap=v=>{if(!v)return v;const m=evSettings().partnerNameMap||{};return m[String(v).trim()]||v;};
+// 매달 1일 이후 첫 목요일 오전 10시(원본 defaultWeekAnchor)
+function bnAnchor(key){const [y,m]=key.split('-').map(Number),dow=new Date(y,m-1,1).getDay();return `${key}-${String(1+(4-dow+7)%7).padStart(2,'0')}T10:00`;}
+// 현재 관리 주차(원본 computeCurrentWeek)
+function bnWeek(mo){const a=new Date(String(mo.weekAnchor||'').replace(' ','T'));if(isNaN(a))return 1;const c=mo.cycleWeeks||4;return Math.max(1,Math.min(c,1+Math.floor((Date.now()-a)/864e5/7)));}
+const bnMaxRank=(mo,pms)=>Math.max(6,pms.length?Math.max(...pms.map(p=>p.rankInWeek||1)):0,mo.pmRankCount||0);
+const bst={month:null,open:new Set(),popen:new Set()};
+function bnDefaultMonth(){const L=bnMonthList();if(!L.length)return null;const d=new Date(),n=`${d.getMonth()===11?d.getFullYear()+1:d.getFullYear()}-${String(d.getMonth()===11?1:d.getMonth()+2).padStart(2,'0')}`;return L.some(m=>m.key===n)?n:L[L.length-1].key;}
+
+function bnRankRow(mo,r,i,cur){
+  const cols=bnVisCols(mo),ro=canWrite?'':'disabled';
+  return `<tr data-buid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-bmv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-bmv="1" aria-label="아래로">▼</button></span>`:''}</td>
+    ${cols.map(c=>`<td><input class="bnf" data-col="${esc(c.id)}" value="${esc(r['v_'+c.id]||'')}" aria-label="${esc(c.name)}" ${ro}></td>`).join('')}<td>${canWrite?'<button type="button" class="btn ghost sm bnDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
+}
+function bnRankTable(mo,cur){
+  const rs=bnRanks(mo.id),cols=bnVisCols(mo);
+  return `<div class="tablebox"><table class="stable evTable bnTable" data-mid="${esc(mo.id)}"><thead><tr><th>순서</th>${cols.map(c=>`<th>${esc(c.name)}</th>`).join('')}<th></th></tr></thead><tbody>
+    ${rs.length?rs.map((r,i)=>bnRankRow(mo,r,i,cur)).join(''):`<tr class="mEmpty"><td colspan="${cols.length+2}">등록된 순위가 없어요.${cur&&canWrite?" '+ 행 추가'로 시작하세요.":''}</td></tr>`}</tbody></table></div>`;
+}
+function bnPmGrid(mo,cur){
+  const pms=bnPms(mo.id),cyc=mo.cycleWeeks||4,max=bnMaxRank(mo,pms),wk=bnWeek(mo),ro=canWrite?'':'disabled';
+  let h=`<div class="tablebox"><table class="stable evTable pmTable" data-mid="${esc(mo.id)}"><thead><tr><th>순위</th>`;
+  for(let w=1;w<=cyc;w++)h+=`<th>${w}주차${w===wk?' · 진행중':''}</th>`;
+  h+='</tr></thead><tbody>';
+  for(let rk=1;rk<=max;rk++){h+=`<tr><td class="num">${rk}</td>`;for(let w=1;w<=cyc;w++){const e=pms.find(p=>p.week===w&&p.rankInWeek===rk);h+=`<td><input class="pmf" data-week="${w}" data-rank="${rk}" value="${esc(e?.name||'')}" placeholder="파트너사명" aria-label="${w}주차 ${rk}위" ${ro}></td>`;}h+='</tr>';}
+  return h+`</tbody></table></div>${cur&&canWrite?`<div class="evHead"><button type="button" class="btn sm" id="pmAddRank">+ 순위 추가</button><button type="button" class="btn sm" id="pmDelRank" ${max<=6?'disabled':''}>마지막 순위 지우기</button></div>`:''}`;
+}
+function bnPmStatus(mo){
+  const wk=bnWeek(mo),a=new Date(String(mo.weekAnchor||'').replace(' ','T')),dl=isNaN(a)?null:new Date(a.getTime()+wk*7*864e5),past=!!dl&&Date.now()>=dl;
+  const f=d=>!d?'-':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+  const st=!dl?'-':past?'마감 지남':`마감 전 D-${Math.round((new Date(dl.getFullYear(),dl.getMonth(),dl.getDate())-new Date(new Date().getFullYear(),new Date().getMonth(),new Date().getDate()))/864e5)}`;
+  const ro=canWrite?'':'disabled';
+  return `<div class="pmStat"><label class="pmItem"><span>기준일시</span><input type="datetime-local" class="sel pmSet" data-set="weekAnchor" value="${esc(String(mo.weekAnchor||'').slice(0,16))}" ${ro}></label>
+    <label class="pmItem"><span>배치 주기</span><input type="number" class="sel pmSet" data-set="cycleWeeks" min="1" max="12" value="${mo.cycleWeeks||4}" ${ro}></label>
+    <div class="pmItem"><span>현재 관리 주차</span><b>${wk}주차</b></div><div class="pmItem"><span>게재 마감</span><b class="num">${f(dl)}</b></div>
+    <div class="pmItem"><span>게재 상태</span><b class="pill ${past?'s-done':'s-doing'}">${st}</b></div></div>`;
+}
+// 배너 구좌 · 프리마케팅 탭 그리기(renderEventOps에서 부름)
+function bnRender(area,tabs){
+  const L=bnMonthList(),pm=evtTab==='pm',adm=isAdminUser();
+  if(!bst.month||!L.some(m=>m.key===bst.month))bst.month=bnDefaultMonth();
+  const tools=`${L.length?`<select class="sel" id="bnMonth" aria-label="배너 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===bst.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}<span class="spacer"></span>
+    ${exportMenu(downloads&&(L.length||evMonthList().length)?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장']]:[])}${adm?'<button class="btn" type="button" id="bnMapEdit">파트너명 매핑</button>':''}`;
+  const conv=canWrite?`<button class="btn" type="button" id="bnConvert">사업팀 원본파일 변환</button><input type="file" id="bnRawFile" accept=".xlsx,.xlsm,.xls,.csv" hidden>`:'';
+  if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 배너 달이 없어요</h2><p>관리대장 데이터를 가져오거나, 이번 달 시트를 만들거나, 사업팀 원본파일을 변환해 시작하세요.</p><div class="evHead" style="justify-content:center">${conv}${canWrite?'<button class="btn primary" type="button" id="bnFirst">이번 달 시트 만들기</button>':''}</div></div>`;return;}
+  const mo=L.find(m=>m.key===bst.month),others=L.filter(m=>m.key!==bst.month).reverse();
+  const head=`<div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`${pm?'':'<button class="btn" type="button" id="bnAddRow">+ 행 추가</button><button class="btn" type="button" id="bnCols">구좌 편집</button>'}${conv}<button class="btn primary" type="button" id="bnAddMonth">새 달 만들기</button>`:''}</div>`;
+  const hist=others.length?others.map(m=>{const open=(pm?bst.popen:bst.open).has(m.key),cnt=pm?bnPms(m.id).filter(p=>p.name).length:bnRanks(m.id).length;
+    return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-bopen="${esc(m.key)}" aria-expanded="${open}">${esc(m.label)}<span class="legend">${cnt}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-bcur="${esc(m.key)}">이 달 보기</button>${canWrite&&!pm?`<button type="button" class="btn ghost sm" data-bdelm="${esc(m.key)}">이 달 삭제</button>`:''}</div>
+      ${open?(pm?bnPmGrid(m,false):bnRankTable(m,false)):''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 달 이력이 없어요.</p>';
+  area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
+    <div class="panel evPanel">${head}${pm?bnPmGrid(mo,true)+bnPmStatus(mo):bnRankTable(mo,true)}
+      <p class="legend" style="margin:0">${pm?'배너 구좌와 같은 달을 함께 써요. 새 달을 만들면 배너 구좌에도 같은 달이 생겨요.':'칸을 고친 뒤 다른 곳을 누르면 저장돼요. 파트너명 매핑에 있는 원본 이름은 표시 이름으로 바뀌어요.'}</p></div>
+    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>${hist}</div>`;
+}
+async function bnSetMonthDoc(id,patch){await db.collection('evt_months').doc(id).update(patch);const m=evtMonths.find(x=>x.id===id);if(m)Object.assign(m,patch);}
+async function bnCreateMonth(key,base){ // base가 있으면 이전 달 구성을 복사(원본 addNewBannerMonth)
+  const id=bnMid(key),doc={kind:'banner_month',sortKey:key,key,label:evLabelOf(key),cols:base?(base.cols||[]).map(c=>({...c})):BN_DEF_COLS.map(n=>({id:bnColId(),name:n})),hidden:base?[...(base.hidden||[])]:[],
+    cycleWeeks:base?.cycleWeeks||4,weekAnchor:bnAnchor(key),partners:base?(base.partners||[]).map(p=>({...p})):[],changeLog:[]};
+  await db.collection('evt_months').doc(id).set(doc);evtMonths.push({id,...doc});
+  if(base){let so=0;for(const r of bnRanks(base.id)){const {id:_i,monthId,sortOrder,updatedAt,...v}=r;const nid=evUid(),d={...v,monthId:id,kind:'banner_rank',sortOrder:so++};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});}
+    for(const p of bnPms(base.id)){const nid=evUid(),d={monthId:id,kind:'pm_partner',sortOrder:0,name:p.name||'',week:p.week,rankInWeek:p.rankInWeek};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});}}
+  return id;
+}
+async function bnNewMonth(){
+  const L=bnMonthList(),last=L[L.length-1],key=last?evNextKey(last.key):todayStr().slice(0,7);
+  if(L.some(m=>m.key===key)){toast(`'${evLabelOf(key)}'은 이미 있어요.`);return;}
+  await bnCreateMonth(key,last);logChange('evt','create',bnMid(key),`${evLabelOf(key)} 배너·프리마케팅 시트`,null,null,last?'이전 달 구성 복사':'');
+  bst.month=key;render();toast(`'${evLabelOf(key)}' 달을 만들었어요.${last?' 이전 달의 배너·프리마케팅 구성을 복사했어요.':''}`);
+}
+// 구좌 편집: 이름 변경·순서·숨김·추가·삭제(지운 칸의 값은 함께 지움)
+function bnOpenCols(mo){
+  let rows=(mo.cols||[]).map(c=>({...c,hide:(mo.hidden||[]).includes(c.id)}));
+  const draw=()=>{$('#bcList').innerHTML=rows.length?rows.map((r,i)=>`<div class="bcRow"><input class="sel" data-i="${i}" value="${esc(r.name)}" aria-label="구좌 이름" maxlength="30"><label class="cfItem"><input type="checkbox" data-hide="${i}" ${r.hide?'checked':''}>숨김</label><button type="button" class="btn ghost sm" data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-down="${i}" ${i<rows.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-del="${i}">삭제</button></div>`).join(''):'<p class="legend">구좌가 없어요. 아래에서 추가해 주세요.</p>';};
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:560px"><header><h2>구좌 편집 · ${esc(mo.label)}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">이름을 바꾸면 순위표 값은 그대로 따라가요. 지운 구좌의 값은 함께 사라져요. 숨긴 구좌는 표에서만 안 보여요.</p><div id="bcList" class="bcList"></div>
+      <div class="bcRow"><input class="sel" id="bcNew" placeholder="새 구좌 이름…" maxlength="30" aria-label="새 구좌 이름"><button type="button" class="btn" id="bcAdd">+ 추가</button></div></div>
+    <footer><span class="err" id="bcErr"></span><div class="r"><button class="btn" type="button" id="bcNo">취소</button><button class="btn primary" type="button" id="bcSave">저장</button></div></footer></div></div>`;
+  draw();$('#xClose').onclick=$('#bcNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  const add=()=>{const v=$('#bcNew').value.trim();if(!v)return;rows.push({id:bnColId(),name:v,hide:false,isNew:true});$('#bcNew').value='';draw();};
+  $('#bcAdd').onclick=add;$('#bcNew').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add();}});
+  $('#bcList').addEventListener('input',e=>{const i=e.target.dataset.i;if(i!=null)rows[+i].name=e.target.value;});
+  $('#bcList').addEventListener('change',e=>{const i=e.target.dataset.hide;if(i!=null)rows[+i].hide=e.target.checked;});
+  $('#bcList').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;if(d.up){const i=+d.up;[rows[i-1],rows[i]]=[rows[i],rows[i-1]];}if(d.down){const i=+d.down;[rows[i+1],rows[i]]=[rows[i],rows[i+1]];}if(d.del)rows.splice(+d.del,1);draw();});
+  $('#bcSave').onclick=async()=>{
+    const names=rows.map(r=>r.name.trim());if(names.some(n=>!n)){$('#bcErr').textContent='비어 있는 구좌 이름이 있어요.';return;}if(new Set(names).size!==names.length){$('#bcErr').textContent='같은 이름의 구좌가 있어요.';return;}
+    const removed=(mo.cols||[]).filter(c=>!rows.some(r=>r.id===c.id));
+    if(removed.length&&!$('#bcSave').dataset.ok){$('#bcErr').textContent=`'${removed.map(c=>c.name).join("', '")}' 구좌를 지우면 그 칸의 값도 함께 사라져요. 한 번 더 누르면 저장해요.`;$('#bcSave').dataset.ok='1';return;}
+    $('#bcSave').disabled=true;
+    try{for(const r of bnRanks(mo.id)){const p={};removed.forEach(c=>{if(r['v_'+c.id])p['v_'+c.id]='';});if(Object.keys(p).length){await db.collection('evt_rows').doc(r.id).update(p);Object.assign(r,p);}}
+      await bnSetMonthDoc(mo.id,{cols:rows.map((r,i)=>({id:r.id,name:names[i]})),hidden:rows.filter(r=>r.hide).map(r=>r.id)});
+      logChange('evt','update',mo.id,`${mo.label} 배너 구좌 편집`,null,null,names.join(', '));closeModal();toast('구좌를 바꿨어요.');render();}
+    catch(err){$('#bcSave').disabled=false;handleWriteError(err,'#bcErr');}
+  };
+}
+// 파트너명 매핑 편집(관리자): 저장하면 이미 입력된 배너·프리마케팅 칸에도 적용(원본 openPartnerMapEditor)
+function bnOpenMap(){
+  let rows=Object.entries(evSettings().partnerNameMap||{}).map(([from,to])=>({from,to}));
+  const draw=()=>{$('#pmList').innerHTML=rows.length?rows.map((r,i)=>`<div class="bcRow"><input class="sel" data-i="${i}" data-f="from" value="${esc(r.from)}" placeholder="원본 이름 (예: ○○본부)" aria-label="원본 이름"><span aria-hidden="true">→</span><input class="sel" data-i="${i}" data-f="to" value="${esc(r.to)}" placeholder="표시 이름" aria-label="표시 이름"><button type="button" class="btn ghost sm" data-del="${i}">삭제</button></div>`).join(''):'<p class="legend">매핑이 없어요.</p>';};
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:600px"><header><h2>파트너명 매핑</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">배너 순위·프리마케팅 칸에 원본 이름을 입력하면 표시 이름으로 바뀌어요. 저장하면 이미 입력된 칸에도 적용해요.</p><div id="pmList" class="bcList"></div><div><button type="button" class="btn" id="pmAdd">+ 매핑 추가</button></div></div>
+    <footer><span class="err" id="pmErr"></span><div class="r"><button class="btn" type="button" id="pmNo">취소</button><button class="btn primary" type="button" id="pmSave">저장</button></div></footer></div></div>`;
+  draw();$('#xClose').onclick=$('#pmNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#pmAdd').onclick=()=>{rows.push({from:'',to:''});draw();[...document.querySelectorAll('#pmList input[data-f="from"]')].pop()?.focus();};
+  $('#pmList').addEventListener('input',e=>{const i=e.target.dataset.i;if(i!=null)rows[+i][e.target.dataset.f]=e.target.value;});
+  $('#pmList').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){rows.splice(+d.dataset.del,1);draw();}});
+  $('#pmSave').onclick=async()=>{
+    const map={};rows.forEach(r=>{const f=r.from.trim(),t=r.to.trim();if(f&&t)map[f]=t;});$('#pmSave').disabled=true;
+    try{const {id:_sid,...cur}=evSettings();await db.collection('evt_months').doc('settings').set({...cur,kind:'settings',partnerNameMap:map});const s=evtMonths.find(m=>m.id==='settings');if(s)s.partnerNameMap=map;else evtMonths.push({id:'settings',kind:'settings',partnerNameMap:map});
+      let n=0;for(const r of evtRowsAll){const p={};if(r.kind==='banner_rank')Object.keys(r).forEach(k=>{if(k.startsWith('v_')){const v=String(r[k]??'').trim();if(map[v]&&map[v]!==r[k])p[k]=map[v];}});
+        if(r.kind==='pm_partner'){const v=String(r.name??'').trim();if(map[v]&&map[v]!==r.name)p.name=map[v];}
+        if(Object.keys(p).length){await db.collection('evt_rows').doc(r.id).update(p);Object.assign(r,p);n+=Object.keys(p).length;}}
+      logChange('evt','update','settings','파트너명 매핑',null,null,`${Object.keys(map).length}개 · 기존 칸 ${n}개 적용`);closeModal();toast(n?`매핑을 저장하고 기존 칸 ${n}개에 적용했어요.`:'매핑을 저장했어요.');render();}
+    catch(err){$('#pmSave').disabled=false;handleWriteError(err,'#pmErr');}
+  };
+}
+
+/* 사업팀 원본파일(운영계획) 변환: 원본 parseRawBannerPlan 규칙 그대로. 원본은 SheetJS, 여기서는 ExcelJS로 .xlsx를 읽음 */
+const BN_RAW_RE=/^(\d{4})\.(\d{1,2})월/;
+const BN_SLOT_DEFS=[{key:'이벤트/썸네일',match:['이벤트페이지&썸네일','이벤트페이지']},{key:'메인 팝업',match:['메인팝업']},{key:'메인 상단',match:['메인상단배너','메인상단']},{key:'메인 하단',match:['메인하단배너','메인하단']},{key:'GNB검색배너',match:['GNB검색배너','GNB검색']},{key:'더 받을 수 있는 쿠폰',match:['더받을수있는쿠폰']},{key:'요금제 배너',match:['요금제배너']}];
+const BN_FULL='메인팝업,메인상단,메인하단,이벤트페이지,썸네일';
+const bnNorm=s=>s==null?'':String(s).replace(/\s/g,'');
+// ExcelJS 셀 값 → SheetJS(raw)와 같은 평범한 값
+const bnCellVal=v=>v==null?null:typeof v!=='object'?v:v instanceof Date?v:v.richText?v.richText.map(t=>t.text).join(''):'result' in v?v.result:v.text!=null?v.text:v.hyperlink||null;
+function bnGrid(ws){const g=[];ws.eachRow({includeEmpty:true},(row,rn)=>{const a=[];row.eachCell({includeEmpty:true},(c,cn)=>{a[cn-1]=bnCellVal(c.value);});g[rn-1]=a;});for(let i=0;i<g.length;i++)if(!g[i])g[i]=[];return g;}
+const bnAt=(g,r,c)=>{const row=g[r-1];if(!row)return null;const v=row[c-1];return v===undefined?null:v;};
+function bnColByText(g,row,texts){const a=g[row-1]||[];for(let c=0;c<a.length;c++){const v=bnNorm(a[c]);if(!v)continue;for(const m of texts)if(v.includes(m))return c+1;}return null;}
+function bnRowByB(g,text){for(let r=1;r<=g.length;r++){const v=g[r-1]&&g[r-1][1];if(typeof v==='string'&&v.replace(/\s/g,'').includes(text))return r;}return null;}
+function bnParseRaw(g,info){
+  const target=bnMonthList().find(m=>m.key===`${info.y}-${String(info.mo).padStart(2,'0')}`),cycle=target?.cycleWeeks||4;
+  const slotCols=[];BN_SLOT_DEFS.forEach(d=>{const col=bnColByText(g,4,d.match);if(col)slotCols.push({...d,col});});
+  const changeRow=bnRowByB(g,'변경사항');
+  const criteria=slotCols.map(sc=>({name:sc.key,maxExposure:bnAt(g,5,sc.col)||'-',preMarketing:bnAt(g,6,sc.col)||'-',operation:(changeRow?bnAt(g,changeRow,sc.col):null)||'고정/수시 운영',note:''}));
+  const start=bnRowByB(g,'노출순위')||bnRowByB(g,'노출 순위'),ranks=[];
+  if(start){let r=start,blank=0;while(r<=g.length){const vals={};let any=false;slotCols.forEach(sc=>{const v=bnAt(g,r,sc.col);if(v!==null&&v!==''&&v!=='-'){vals[sc.key]=v;any=true;}});if(!any){blank++;if(blank>=2)break;r++;continue;}blank=0;ranks.push(vals);r++;}}
+  const anchorCol=bnColByText(g,4,['정리']),partners=[];
+  if(anchorCol){const bizCol=bnColByText(g,7,['사업자명'])||anchorCol+1;let r=8,blank=0;while(r<=g.length){const order=bnAt(g,r,anchorCol),biz=bnAt(g,r,bizCol);if(!order&&!biz){blank++;if(blank>=2)break;r++;continue;}if(!biz){r++;continue;}blank=0;
+    const idx=partners.length,week=idx%cycle+1,rankInWeek=Math.floor(idx/cycle)+1;partners.push({bannerOrder:idx+1,perfRank:order,name:biz,weekLabel:`${week}주차 ${rankInWeek}위`,week,rankInWeek,combo:BN_FULL});r++;}}
+  const pms=[],preCol=bnColByText(g,6,['프리마케팅제공순위','프리마케팅제공']);
+  if(preCol){let r=8,blank=0;while(r<=g.length){const order=bnAt(g,r,preCol),biz=bnAt(g,r,preCol+1),has=order!==null&&String(order).trim()!=='';if(!has&&(biz===null||String(biz).trim()==='')){blank++;if(blank>=2)break;r++;continue;}blank=0;
+    const idx=pms.length;pms.push({name:(biz&&String(biz).trim())||'',week:idx%cycle+1,rankInWeek:Math.floor(idx/cycle)+1});r++;}}
+  return {y:info.y,mo:info.mo,monthLabel:`${info.y}년 ${info.mo}월`,criteria,ranks,slotCols,partners,preMarketingPartners:pms};
+}
+async function bnConvertFile(file,mode){
+  if(!/\.xls[xm]$/i.test(file.name)){toast('.xlsx 파일만 변환할 수 있어요. 엑셀에서 \'다른 이름으로 저장 → Excel 통합 문서(.xlsx)\'로 바꾼 뒤 올려 주세요.');return;}
+  let p;
+  try{const X=await loadExcel(),wb=new X.Workbook();await wb.xlsx.load(await file.arrayBuffer());
+    const c=wb.worksheets.map(w=>({w,m:w.name.match(BN_RAW_RE)})).filter(x=>x.m).map(x=>({w:x.w,y:+x.m[1],mo:+x.m[2]})).sort((a,b)=>(a.y-b.y)||(a.mo-b.mo)).pop();
+    if(!c){toast("'YYYY.M월' 형식의 운영계획 시트를 찾지 못했어요. 사업팀에서 받은 원본 파일이 맞는지 확인해 주세요.");return;}
+    p=bnParseRaw(bnGrid(c.w),c);if(!p.criteria.length&&!p.ranks.length){toast('구좌 정보를 찾지 못했어요. 시트 구조가 예상과 달라요.');return;}}
+  catch(err){toast('원본 파일을 읽지 못했어요: '+(err.message||err));return;}
+  const key=`${p.y}-${String(p.mo).padStart(2,'0')}`,label=evLabelOf(key),ex=bnMonthList().find(m=>m.key===key);
+  const sum=mode==='banner'?`구좌 ${p.criteria.length}개 · 순위 ${p.ranks.length}행 · 파트너 ${p.partners.length}명`:`프리마케팅 제공순위 ${p.preMarketingPartners.length}명`;
+  const conflict=ex&&(mode==='banner'?bnRanks(ex.id).length:bnPms(ex.id).length);
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:520px"><header><h2>원본파일 변환</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p style="margin:0"><b>${esc(p.monthLabel)}</b> 운영계획을 읽었어요. ${sum}을(를) 자동으로 정리했어요.</p>
+      <p class="legend" style="margin:0">자동 변환된 초안이라 검수가 필요해요. 원본에 없던 신규 파트너명은 직접 추가해 주세요. '제공 구좌'는 일단 전체 구성(메인팝업 포함)으로 채워 두었어요.</p>
+      ${conflict?`<p class="err" style="margin:0">'${label}' ${mode==='banner'?'배너 구좌 순위표':'프리마케팅'} 데이터가 이미 있어요. 반영하면 덮어써요.</p>`:''}</div>
+    <footer><span class="err" id="cvErr"></span><div class="r">${mode==='banner'?'<button class="btn" type="button" id="cvDown">관리용 엑셀 내려받기</button>':''}<button class="btn" type="button" id="cvNo">취소</button><button class="btn primary" type="button" id="cvApply">${mode==='banner'?'배너 구좌 관리에 반영':'프리마케팅 관리에 반영'}</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#cvNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#cvDown')?.addEventListener('click',async()=>{ // 원본 buildBannerManagementWorkbook
+    try{const X=await loadExcel(),wb=new X.Workbook(),yy=String(p.y).slice(2),name=`${yy}년 ${p.mo}월 이벤트 배너 구좌 관리`,ws=wb.addWorksheet(name.slice(0,31)),a=r=>ws.addRow(r);
+      a([`${name} (자동 변환 초안 — 검수 필요)`]);a([`업데이트 일자: ${new Date().toISOString().slice(5,10).replace('-','/')}`]);a(['🤖 AI가 자동 생성한 내용이니 검수가 필요합니다. 특히 신규 파트너명 추가 여부를 꼭 확인해주세요.']);a([]);
+      a(['01. 구좌 운영 기준']);a(['No.','구좌명','최대 노출','프리마케팅 배정','운영 방식','비고']);p.criteria.forEach((c,i)=>a([i+1,c.name,c.maxExposure,c.preMarketing,c.operation,c.note]));a([]);
+      a(['02. 노출 순위별 배정 현황']);const sn=p.slotCols.map(s=>s.key);a(['순위',...sn]);p.ranks.forEach((r,i)=>a([i+1,...sn.map(k=>r[k]||'')]));a([]);
+      a(['03. 파트너/주차 운영 리스트',null,null,null,null,null,null,'자동 주차 설정']);a(['배너 순서','실적 순위','파트너사','순서','제공 구좌(추정 — 확인 필요)',null,null,'기준일시',new Date()]);p.partners.forEach(x=>a([x.bannerOrder,x.perfRank,x.name,x.weekLabel,x.combo]));
+      await downloads.save({filename:`${p.monthLabel.replace(/\s/g,'')}_배너구좌_관리용.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});}catch(err){if(err?.code!=='declined')toast('파일을 만들지 못했어요');}
+  });
+  $('#cvApply').onclick=async()=>{$('#cvApply').disabled=true;
+    try{let mo=bnMonthList().find(m=>m.key===key);if(!mo){await bnCreateMonth(key,null);mo=bnMonthList().find(m=>m.key===key);}
+      if(mode==='banner'){const cols=p.slotCols.map(s=>({id:bnColId(),name:s.key}));
+        for(const r of bnRanks(mo.id))await db.collection('evt_rows').doc(r.id).delete();evtRowsAll=evtRowsAll.filter(r=>!(r.monthId===mo.id&&r.kind==='banner_rank'));
+        await bnSetMonthDoc(mo.id,{cols,hidden:[],partners:p.partners.map(x=>({name:x.name,week:x.week,rankInWeek:x.rankInWeek}))});
+        let so=0;for(const r of p.ranks){const d={monthId:mo.id,kind:'banner_rank',sortOrder:so++};cols.forEach(c=>{if(r[c.name]!=null)d['v_'+c.id]=bnMap(String(r[c.name]));});const id=evUid();await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}
+        logChange('evt','update',mo.id,`${label} 배너 구좌 원본파일 변환 반영`,null,null,`순위 ${p.ranks.length}행 · 파트너 ${p.partners.length}명`);}
+      else{for(const r of bnPms(mo.id))await db.collection('evt_rows').doc(r.id).delete();evtRowsAll=evtRowsAll.filter(r=>!(r.monthId===mo.id&&r.kind==='pm_partner'));
+        for(const x of p.preMarketingPartners){const id=evUid(),d={monthId:mo.id,kind:'pm_partner',sortOrder:0,name:bnMap(x.name),week:x.week,rankInWeek:x.rankInWeek};await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}
+        logChange('evt','update',mo.id,`${label} 프리마케팅 원본파일 변환 반영`,null,null,`프리마케팅 ${p.preMarketingPartners.length}명`);}
+      bst.month=key;closeModal();render();toast(`'${label}' ${mode==='banner'?'배너 구좌':'프리마케팅 관리'}에 반영했어요. 신규 파트너명은 직접 확인해 주세요.`);}
+    catch(err){$('#cvApply').disabled=false;handleWriteError(err,'#cvErr');}};
+}
+
+onArea('#eventOpsArea','change',async e=>{
+  const el=e.target;
+  if(el.id==='bnMonth'){bst.month=el.value;render();return;}
+  if(el.id==='bnRawFile'){const f=el.files[0];el.value='';if(f)bnConvertFile(f,evtTab==='pm'?'pm':'banner');return;}
+  if(!canWrite)return;
+  try{
+    if(el.classList.contains('bnf')){const r=evtRowsAll.find(x=>x.id===el.closest('tr').dataset.buid);if(!r)return;const k='v_'+el.dataset.col,v=bnMap(el.value);el.value=v;if(String(r[k]??'')===v)return;
+      await db.collection('evt_rows').doc(r.id).update({[k]:v});r[k]=v;}
+    else if(el.classList.contains('pmf')){const mid=el.closest('table').dataset.mid,w=+el.dataset.week,rk=+el.dataset.rank,v=bnMap(el.value);el.value=v;const p=bnPms(mid).find(x=>x.week===w&&x.rankInWeek===rk);
+      if(p){if(String(p.name??'')===v)return;await db.collection('evt_rows').doc(p.id).update({name:v});p.name=v;}
+      else if(v){const id=evUid(),d={monthId:mid,kind:'pm_partner',sortOrder:0,name:v,week:w,rankInWeek:rk};await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}}
+    else if(el.classList.contains('pmSet')){const mo=bnMonthList().find(m=>m.key===bst.month),f=el.dataset.set;const v=f==='cycleWeeks'?Math.max(1,Math.min(12,parseInt(el.value)||4)):el.value;
+      await bnSetMonthDoc(mo.id,{[f]:v});logChange('evt','update',mo.id,`${mo.label} 프리마케팅`,null,null,f==='cycleWeeks'?`배치 주기 ${v}주`:`기준일시 ${v}`);render();}
+  }catch(err){handleWriteError(err);}
+});
+onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.bnf,.pmf'))setTimeout(()=>{if(!document.activeElement?.matches?.('#eventOpsArea .bnf,#eventOpsArea .pmf,#eventOpsArea .evf'))render();},0);});
+onArea('#eventOpsArea','click',async e=>{
+  if(evtTab!=='banner'&&evtTab!=='pm')return;
+  const id=e.target.closest('button')?.id;
+  const op=e.target.closest('[data-bopen]');if(op){const s=evtTab==='pm'?bst.popen:bst.open,k=op.dataset.bopen;s.has(k)?s.delete(k):s.add(k);render();return;}
+  const cu=e.target.closest('[data-bcur]');if(cu){bst.month=cu.dataset.bcur;render();window.scrollTo(0,0);return;}
+  if(id==='bnMapEdit'){bnOpenMap();return;}
+  if(!canWrite)return;
+  try{
+    if(id==='bnConvert'){$('#bnRawFile').click();return;}
+    if(id==='bnFirst'){await bnCreateMonth(todayStr().slice(0,7),null);bst.month=todayStr().slice(0,7);render();return;}
+    if(id==='bnAddMonth'){await bnNewMonth();return;}
+    const mo=bnMonthList().find(m=>m.key===bst.month);if(!mo)return;
+    if(id==='bnCols'){bnOpenCols(mo);return;}
+    if(id==='bnAddRow'){const so=Math.max(-1,...bnRanks(mo.id).map(r=>+r.sortOrder||0))+1,nid=evUid(),d={monthId:mo.id,kind:'banner_rank',sortOrder:so};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});render();return;}
+    if(id==='pmAddRank'){await bnSetMonthDoc(mo.id,{pmRankCount:bnMaxRank(mo,bnPms(mo.id))+1});render();return;}
+    if(id==='pmDelRank'){const pms=bnPms(mo.id),max=bnMaxRank(mo,pms);if(max<=6)return;const del=pms.filter(p=>(p.rankInWeek||1)===max),filled=del.filter(p=>p.name);
+      const go=async()=>{for(const p of del)await db.collection('evt_rows').doc(p.id).delete();evtRowsAll=evtRowsAll.filter(r=>!del.includes(r));await bnSetMonthDoc(mo.id,{pmRankCount:max-1});render();};
+      if(filled.length)evConfirm(`${max}위에 입력된 파트너 ${filled.length}곳이 함께 지워져요. 지울까요?`,go,'지우기');else await go();return;}
+    const dm=e.target.closest('[data-bdelm]');
+    if(dm){const m=bnMonthList().find(x=>x.key===dm.dataset.bdelm),rs=evtRowsAll.filter(r=>r.monthId===m.id);
+      evConfirm(`'${m.label}' 배너 구좌 데이터를 삭제할까요?\n같은 달의 프리마케팅 데이터도 함께 지워져요. (순위 ${bnRanks(m.id).length}행 · 프리마케팅 ${bnPms(m.id).length}건)`,async()=>{for(const r of rs)await db.collection('evt_rows').doc(r.id).delete();await db.collection('evt_months').doc(m.id).delete();
+        evtRowsAll=evtRowsAll.filter(r=>r.monthId!==m.id);evtMonths=evtMonths.filter(x=>x.id!==m.id);logChange('evt','delete',m.id,`${m.label} 배너·프리마케팅 시트`,null,null,`${rs.length}건 함께 삭제`);render();});return;}
+    const tr=e.target.closest('tr[data-buid]');if(!tr)return;const mid=tr.closest('table').dataset.mid,u=tr.dataset.buid;
+    if(e.target.closest('.bnDel')){evConfirm('이 순위 행을 삭제할까요?',async()=>{await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(r=>r.id!==u);logChange('evt','delete',u,'배너 순위 행');render();});return;}
+    const mv=e.target.closest('[data-bmv]');if(mv){const rows=bnRanks(mid),i=rows.findIndex(r=>r.id===u),j=i+ +mv.dataset.bmv;if(j<0||j>=rows.length)return;await bnMove(mid,u,j);}
+  }catch(err){handleWriteError(err);}
+});
+async function bnMove(mid,uid,to){const rows=bnRanks(mid).filter(r=>r.id!==uid),a=rows[to-1],b=rows[to],so=a&&b?(+a.sortOrder+ +b.sortOrder)/2:a?+a.sortOrder+1:b?+b.sortOrder-1:0,r=evtRowsAll.find(x=>x.id===uid);r.sortOrder=so;await db.collection('evt_rows').doc(uid).update({sortOrder:so});render();}
+let bnDrag=null;
+onArea('#eventOpsArea','dragstart',e=>{const tr=e.target.closest?.('tr[data-buid][draggable="true"]');if(tr){bnDrag=tr.dataset.buid;e.dataTransfer.effectAllowed='move';}});
+onArea('#eventOpsArea','dragover',e=>{if(bnDrag&&e.target.closest?.('tr[data-buid]'))e.preventDefault();});
+onArea('#eventOpsArea','drop',e=>{const tr=e.target.closest?.('tr[data-buid]');if(!bnDrag||!tr)return;e.preventDefault();const u=bnDrag;bnDrag=null;if(u===tr.dataset.buid)return;const mid=tr.closest('table').dataset.mid;bnMove(mid,u,bnRanks(mid).findIndex(r=>r.id===tr.dataset.buid)).catch(err=>handleWriteError(err));});
+onArea('#eventOpsArea','dragend',()=>{bnDrag=null;});
+// 원본 JSON 모양의 bannerMonths로(내보내기·요약)
+function bnToState(){return bnMonthList().map(m=>{const cols=m.cols||[];return {key:m.key,label:m.label,columns:cols.map(c=>c.name),hiddenColumns:cols.filter(c=>(m.hidden||[]).includes(c.id)).map(c=>c.name),cycleWeeks:m.cycleWeeks||4,weekAnchor:m.weekAnchor||'',partners:m.partners||[],changeLog:m.changeLog||[],...(m.pmRankCount?{pmRankCount:m.pmRankCount}:{}),
+  ranks:bnRanks(m.id).map(r=>({_uid:r.id,values:Object.fromEntries(cols.filter(c=>r['v_'+c.id]!=null&&r['v_'+c.id]!=='').map(c=>[c.name,r['v_'+c.id]]))})),
+  preMarketingPartners:bnPms(m.id).sort((a,b)=>(a.week-b.week)||(a.rankInWeek-b.rankInWeek)).map(p=>({_uid:p.id,name:p.name||'',week:p.week,rankInWeek:p.rankInWeek}))};});}
 
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;

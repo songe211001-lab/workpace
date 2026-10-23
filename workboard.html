@@ -625,6 +625,22 @@ a.rms:hover{text-decoration:underline}
 .shell.fold .gnbGroup.closed .gnbBody{display:flex}
 .shell.fold .gnbBody{padding-left:0}
 @media (max-width:900px){.shell.fold .gnbHead{display:flex}.shell.fold .gnbGroup.closed .gnbBody{display:none}.shell.fold .gnbBody{padding-left:8px}}
+/* ---------- GNB 하단 링크 · 화면 안 탭(보고서/업무 시간, 투입 현황/구성원) · 인력 표 · 연차 표 ---------- */
+.gnbFoot{margin-top:4px;padding-top:6px;border-top:1px solid var(--line)}
+.navItem.navMinor{height:32px;font-size:12.5px;font-weight:500;color:var(--ink-soft)}
+.navItem.navMinor .ico{width:16px;height:16px}
+.vtabs{display:flex;gap:2px;margin-right:4px}
+.vtab{border:0;border-bottom:2.5px solid transparent;background:none;height:32px;padding:0 10px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.vtab:hover{color:var(--fg)}
+.vtab[aria-selected="true"]{color:var(--accent-dark);border-bottom-color:var(--accent)}
+.vtab:focus-visible{outline:2px solid var(--accent-dark);outline-offset:-2px}
+.sgrp td{background:var(--bg);font-size:12px;padding:6px 12px;color:var(--ink-soft)}
+.sgrp b{color:var(--fg);margin-right:8px}
+.sgrp .rdot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.mlist{max-height:320px;overflow-y:auto}
+.mtable td,.mtable th{height:36px;padding-block:0;font-size:12.5px}
+.mtable .qbar{height:4px;margin-top:3px}
+.mtable td.rem{min-width:96px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -637,24 +653,18 @@ a.rms:hover{text-decoration:underline}
         <button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-work"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18"/></svg><span class="lbl">업무 관리</span><span class="chev" aria-hidden="true">▾</span></button>
         <div class="gnbBody" id="grp-work">
           <button type="button" role="tab" class="navItem" title="업무 관리" data-mode="tasks"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 11h6M9 15h4"/></svg><span class="lbl">업무 관리</span></button>
-          <button type="button" role="tab" class="navItem" title="투입 인력" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">투입 인력</span></button>
-          <button type="button" role="tab" class="navItem" title="휴가 관리" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">휴가 관리</span></button>
           <button type="button" role="tab" class="navItem" title="주간 보고" data-mode="report"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span class="lbl">주간 보고</span></button>
-          <button type="button" role="tab" class="navItem" title="업무 시간" data-mode="hours"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">업무 시간</span></button>
-          <button type="button" role="tab" class="navItem" title="변경 이력" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button>
-          <div class="sideSec" id="secAdmin">
-            <button type="button" class="navItem" title="구성원 관리" id="btnMembers"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg><span class="lbl">구성원 관리</span></button>
-          </div>
         </div>
       </section>
+      <section class="gnbGroup" data-grp="people">
+        <button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-people"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">인력 관리</span><span class="chev" aria-hidden="true">▾</span></button>
+        <div class="gnbBody" id="grp-people">
+          <button type="button" role="tab" class="navItem" title="인력" data-mode="staff"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6"/></svg><span class="lbl">인력</span></button>
+          <button type="button" role="tab" class="navItem" title="휴가 관리" data-mode="leave"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">휴가 관리</span></button>
+        </div>
+      </section>
+      <div class="gnbFoot"><button type="button" role="tab" class="navItem navMinor" title="변경 이력" data-mode="history" id="tabHistory" hidden><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span class="lbl">변경 이력</span></button></div>
     </nav>
-    <div class="brand sideBrand" id="brand">
-      <div class="brandView" id="brandView"><svg class="logo" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="14" r="6" style="fill:var(--warn-strong)"/><circle cx="15" cy="12" r="7" style="fill:var(--accent);fill-opacity:.9"/></svg><h1 class="brandName"><span id="siteTitle">업무 관리 대시보드</span></h1><button class="btn ghost editBtn" type="button" id="btnBrandEdit" hidden aria-label="제목 편집">✎ 편집</button></div>
-      <form class="brandEdit" id="brandEdit" hidden novalidate>
-        <input id="bTitle" maxlength="40" placeholder="제목" aria-label="제목">
-        <div class="brandBtns"><button class="btn primary" type="submit" id="bSave">저장</button><button class="btn ghost" type="button" id="bCancel">취소</button><span class="err" id="bErr"></span></div>
-      </form>
-    </div>
   </aside>
   <div class="sideBackdrop" id="sideBackdrop" aria-hidden="true"></div>
   <div class="main">
@@ -733,7 +743,7 @@ try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,
 {const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history'].includes(h))state.mode=h;}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
-function persistUI(){try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late}));}catch(e){}}
+function persistUI(){try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview}));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -848,10 +858,10 @@ function applyMode(){
   if(!AREAS[state.mode])state.mode='tasks';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
-  $('#btnMembers').disabled=$('#btnLeaveAdd').disabled=!canWrite;
-  document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===state.mode));
-  $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${state.mode}"] .lbl`)?.textContent||'';
-  $('#secAdmin').hidden=[...$('#secAdmin').querySelectorAll('.navItem')].every(b=>b.hidden);
+  $('#btnLeaveAdd').disabled=!canWrite;
+  const navMode=state.mode==='hours'?'report':state.mode; // 업무 시간은 주간 보고 안의 탭
+  document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===navMode));
+  $('#pageTitle').textContent=document.querySelector(`#modeTabs [data-mode="${navMode}"] .lbl`)?.textContent||'';
 }
 function render(){
   renderBody();liftTools();
@@ -865,6 +875,8 @@ function liftTools(){
   if(!canWrite)document.querySelectorAll('button:disabled:not([title])').forEach(b=>{b.title='편집 권한이 필요해요';b.dataset.np='1';});
 }
 // 헤더로 옮긴 도구 줄에서도 그 화면의 이벤트 처리가 그대로 동작하게
+// 헤더 도구 줄 안 화면 탭(보고서/업무 시간): 화면 모드만 바꿈
+$('#pageTools').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b||b.dataset.goto===state.mode)return;state.mode=b.dataset.goto;persistUI();render();});
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
 function renderBody(){
   renderBrand();applyMode();renderTodayOff();
@@ -1046,7 +1058,6 @@ let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#btnAdd').addEventListener('click',()=>openTask());
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
-$('#btnMembers').addEventListener('click',openMembers);
 $('#btnLeaveAdd').addEventListener('click',()=>openLeave());
 $('#main').addEventListener('click',e=>{
   if(e.target.closest('a'))return;
@@ -1406,11 +1417,9 @@ function renderLeave(){
     const s=memberStats(m,Y), p=PARTS.find(x=>x.k===m.part), pj=projOf(m.projectId);
     const base=Math.max(s.quota||0,s.used+s.planned)||1;
     const over=s.quota!=null&&s.used+s.planned>s.quota;
-    return `<div class="mcard ${lstate.member===m.id?'on':''}" data-mid="${esc(m.id)}" tabindex="0" role="button" aria-pressed="${lstate.member===m.id}">
-      <div class="mname">${esc(m.name)}</div>${pj||p?`<div class="mpart">${pj?`<span class="sw" style="background:${esc(pj.color)};border-radius:50%"></span>${esc(pj.name)}`:''}${pj&&p?' · ':''}${p?`<span class="sw" style="background:${p.c}"></span>${esc(p.label)}`:''}</div>`:''}
-      <div class="mnums"><span>부여<b class="num">${s.quota==null?'—':fmtDays(s.quota)}</b></span><span>사용<b class="num">${fmtDays(s.used)}</b></span><span>예정<b class="num">${fmtDays(s.planned)}</b></span><span>잔여<b class="num rem ${s.remain!=null&&s.remain<0?'neg':''}">${s.remain==null?'—':fmtDays(s.remain)}</b></span></div>
-      <div class="qbar"><span class="${over?'x':'u'}" style="width:${Math.min(100,s.used/base*100)}%"></span><span class="p" style="width:${Math.min(100,s.planned/base*100)}%"></span></div>
-    </div>`;}).join('');
+    return `<tr class="mrow ${lstate.member===m.id?'on':''}" data-mid="${esc(m.id)}" tabindex="0" aria-selected="${lstate.member===m.id}">
+      <td class="mname">${esc(m.name)}</td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)}</td><td class="r num">${fmtDays(s.used)}</td><td class="r num">${fmtDays(s.planned)}</td>
+      <td class="r rem"><span class="num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)}</span><div class="qbar"><span class="${over?'x':'u'}" style="width:${Math.min(100,s.used/base*100)}%"></span><span class="p" style="width:${Math.min(100,s.planned/base*100)}%"></span></div></td></tr>`;}).join('');
   // 달력
   const [cy,cm]=lstate.month.split('-').map(Number);
   const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
@@ -1427,8 +1436,8 @@ function renderLeave(){
   area.innerHTML=`
     <div class="rtool"><select class="sel" id="lProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${lstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}<option value="none" ${lstate.project==='none'?'selected':''}>프로젝트 미지정</option></select><select class="sel" id="lYear" aria-label="연도">${[Y-1,Y,Y+1].map(y=>`<option ${y===Y?'selected':''}>${y}</option>`).join('')}</select></div>
     <div class="panel">
-      <h3><span>${Y}년 연차 현황</span><span class="legend">단위: 일 · 반차 0.5 · 반반차 0.25 · 카드를 누르면 해당 구성원만 표시</span></h3>
-      ${shown.length?`<div class="mstrip">${mrows}</div>`:'<p class="legend" style="margin:0;padding:16px 14px">이 프로젝트에 배정된 구성원이 없습니다. 구성원 관리에서 프로젝트를 지정해 주세요.</p>'}
+      <h3><span>${Y}년 연차 현황</span><span class="legend">단위: 일 · 반차 0.5 · 반반차 0.25 · 이름을 누르면 해당 구성원만 표시</span></h3>
+      ${shown.length?`<div class="mlist"><table class="mtable"><thead><tr><th>이름</th><th class="r">부여</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th></tr></thead><tbody>${mrows}</tbody></table></div>`:'<p class="legend" style="margin:0;padding:16px 14px">이 프로젝트에 배정된 구성원이 없습니다. 구성원 관리에서 프로젝트를 지정해 주세요.</p>'}
     </div>
     <div class="panel">
         <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달">◀</button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달">▶</button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
@@ -1715,6 +1724,7 @@ function renderReport(){
   const kpis=[['완료',m.kpi.done,'건'],['진행 중',m.kpi.doing,'건'],['신규 요청',m.kpi.newReq,'건'],['지연·보류',m.kpi.late,'건'],['완료 소요',hrs(m.kpi.hours),'h'],['휴가·부재',m.kpi.leave,'건']];
   area.innerHTML=`
     <div class="rtool">
+      <div class="vtabs" role="tablist"><button type="button" class="vtab" role="tab" data-goto="report" aria-selected="true">보고서</button><button type="button" class="vtab" role="tab" data-goto="hours" aria-selected="false">업무 시간</button></div>
       <select class="sel" id="rProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${rstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="rWeek" aria-label="주">${periodOptions('week',ws,(a,b)=>reports.some(r=>r.week===a)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
       <details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">
@@ -1938,6 +1948,7 @@ function renderHours(){
       <td class="r num">${p.doingN}건 · ${hrs(p.doingH)}h</td><td class="r num">${p.leaveH?hrs(p.leaveH)+'h':'—'}</td></tr>${detail}`;}).join('');
   area.innerHTML=`
     <div class="rtool">
+      <div class="vtabs" role="tablist"><button type="button" class="vtab" role="tab" data-goto="report" aria-selected="false">보고서</button><button type="button" class="vtab" role="tab" data-goto="hours" aria-selected="true">업무 시간</button></div>
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
       <select class="sel" id="hrPick" aria-label="기간">${periodOptions(hrState.period,hrState.anchor,(a,b)=>wlogs.some(l=>l.date>=a&&l.date<=b)||tasks.some(x=>inPeriod(x,[a,b])))}</select>
@@ -1968,6 +1979,7 @@ onArea('#hoursArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.c
 // 프로젝트별 투입 인력: assignments 컬렉션 {projectId, memberId, part, role, start, end, rate, note}. 한 사람이 여러 프로젝트에 동시에 투입될 수 있음
 let assigns=[];
 const sstate={project:'all',show:'active'};
+if(state.sview!=='members')state.sview='asg'; // 인력 화면 탭(투입 현황/구성원), wb-ui에 기억
 function asgStatus(a,t=todayStr()){if(a.start&&a.start>t)return 'plan';if(a.end&&a.end<t)return 'end';return 'on';}
 const ASG_ST={on:['투입 중','s-done'],plan:['투입 예정','s-doing'],end:['종료','s-wait']};
 // 구성원이 속한 프로젝트: 구성원 관리의 소속 + 투입 등록(종료되지 않은 것)
@@ -1987,43 +1999,49 @@ function renderStaff(){
   const onNow=live.filter(a=>asgStatus(a)==='on');
   const people=new Set(onNow.map(a=>a.memberId));
   const over=[...people].filter(id=>activeRate(id)>100);
-  const cards=projs.map(p=>{
-    const list=live.filter(a=>a.projectId===p.id&&vis(a)).sort((x,y)=>{const o={on:0,plan:1,end:2};return o[asgStatus(x)]-o[asgStatus(y)]||PARTS.findIndex(q=>q.k===x.part)-PARTS.findIndex(q=>q.k===y.part)||memOf(x.memberId).name.localeCompare(memOf(y.memberId).name,'ko');});
-    const now=live.filter(a=>a.projectId===p.id&&asgStatus(a)==='on');
-    const mm=now.reduce((s,a)=>s+(+a.rate||0),0)/100;
-    const byPart=PARTS.map(pt=>({pt,n:now.filter(a=>a.part===pt.k).length})).filter(x=>x.n);
-    return `<section class="panel scard">
-      <h3><span class="rdot" style="background:${esc(p.color||'var(--muted)')}"></span><span>${esc(p.name)}</span>${p.client?`<span class="legend">${esc(p.client)}</span>`:''}
-        <span class="scount">${byPart.map(x=>`<span class="chip sm"><span class="sw" style="background:${x.pt.c}"></span>${esc(x.pt.label)} ${x.n}</span>`).join('')}<b class="num">투입 중 ${now.length}명 · ${mm.toFixed(mm%1?1:0)} M/M</b></span>
-        ${canWrite?`<button class="btn" type="button" data-addp="${esc(p.id)}">+ 투입 등록</button>`:''}</h3>
-      ${list.length?`<div class="scroll"><table class="stable"><thead><tr><th>이름</th><th>파트</th><th>역할</th><th>투입 기간</th><th class="r">투입률</th><th>상태</th><th>메모</th></tr></thead><tbody>
-      ${list.map(a=>{const m=memOf(a.memberId),pt=PARTS.find(x=>x.k===a.part),st=asgStatus(a),tot=activeRate(a.memberId);
-        return `<tr data-asg="${esc(a.id)}" tabindex="0"><td class="nowrap"><b>${esc(m.name)}</b>${st==='on'&&tot>100?`<div class="legend late" title="현재 모든 프로젝트 투입률 합계">전체 ${tot}% 투입</div>`:''}</td>
-          <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td>
-          <td class="nowrap">${esc(a.role||'—')}</td>
-          <td class="nowrap num">${fmtDate(a.start)} ~ ${a.end?fmtDate(a.end):'계속'}${st==='on'&&a.end?`<span class="dday">${dday(a.end).replace('D-','종료 D-')}</span>`:''}</td>
-          <td class="r num">${+a.rate||0}%</td>
-          <td><span class="pill ${ASG_ST[st][1]}">${ASG_ST[st][0]}</span></td>
-          <td class="snote">${esc(a.note||'')}</td></tr>`;}).join('')}
-      </tbody></table></div>`:`<p class="legend" style="margin:0;padding:14px">${sstate.show==='active'?'투입 중이거나 예정된 인력이 없습니다.':'해당하는 투입 기록이 없습니다.'}${canWrite?' 「+ 투입 등록」으로 추가하세요.':''}</p>`}
-    </section>`;}).join('');
+  const ord={on:0,plan:1,end:2};
+  const sortA=(x,y)=>ord[asgStatus(x)]-ord[asgStatus(y)]||PARTS.findIndex(q=>q.k===x.part)-PARTS.findIndex(q=>q.k===y.part)||memOf(x.memberId).name.localeCompare(memOf(y.memberId).name,'ko');
+  const row=a=>{const m=memOf(a.memberId),p=projOf(a.projectId),pt=PARTS.find(x=>x.k===a.part),st=asgStatus(a),tot=activeRate(a.memberId);
+    return `<tr data-asg="${esc(a.id)}" tabindex="0"><td class="nowrap"><b>${esc(m.name)}</b>${st==='on'&&tot>100?`<div class="legend late" title="현재 모든 프로젝트 투입률 합계">전체 ${tot}% 투입</div>`:''}</td>
+      <td class="nowrap">${esc(p.name)}</td>
+      <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td>
+      <td class="nowrap">${esc(a.role||'—')}</td>
+      <td class="nowrap num">${fmtDate(a.start)} ~ ${a.end?fmtDate(a.end):'계속'}${st==='on'&&a.end?`<span class="dday">${dday(a.end).replace('D-','종료 D-')}</span>`:''}</td>
+      <td class="r num">${+a.rate||0}%</td>
+      <td><span class="pill ${ASG_ST[st][1]}">${ASG_ST[st][0]}</span></td></tr>`;};
+  // 전체 프로젝트면 프로젝트 구분 행으로 묶고, 한 프로젝트를 고르면 그 행만
+  const rows=projs.map(p=>{const list=live.filter(a=>a.projectId===p.id&&vis(a)).sort(sortA);if(!list.length)return '';
+    const now=live.filter(a=>a.projectId===p.id&&asgStatus(a)==='on'),mm=now.reduce((s,a)=>s+(+a.rate||0),0)/100;
+    return (sstate.project==='all'?`<tr class="sgrp"><td colspan="7"><span class="rdot" style="background:${esc(p.color||'var(--muted)')}"></span><b>${esc(p.name)}</b><span class="num">투입 중 ${now.length}명 · ${mm.toFixed(mm%1?1:0)} M/M</span></td></tr>`:'')+list.map(row).join('');}).join('');
+  const asgTable=rows?`<div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th>프로젝트</th><th>파트</th><th>역할</th><th>투입 기간</th><th class="r">투입률</th><th>상태</th></tr></thead><tbody>${rows}</tbody></table></div>`
+    :`<p class="legend" style="margin:0;padding:14px">${sstate.show==='active'?'투입 중이거나 예정된 인력이 없습니다.':'해당하는 투입 기록이 없습니다.'}${canWrite?' 「+ 투입 등록」으로 추가하세요.':''}</p>`;
+  const Y=+todayStr().slice(0,4), isAdm=canWrite&&(typeof adminUI!=='function'||adminUI());
+  const memTable=`<input class="search" id="mQ" type="search" placeholder="이름·메일·파트·프로젝트 검색" aria-label="구성원 검색" style="max-width:320px">
+    <div class="tablebox"><table class="stable" id="mTable"><thead><tr><th>이름</th><th>메일</th><th>파트</th><th>소속 프로젝트</th><th class="r">현재 투입률</th><th class="r">${Y}년 연차</th></tr></thead><tbody>
+    ${[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=PARTS.find(x=>x.k===m.part),pj=projOf(m.projectId),r=activeRate(m.id),q=quotaOf(m,Y);
+      return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="nowrap">${esc(m.email||'—')}</td><td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num ${r>100?'late':''}">${r}%</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td></tr>`;}).join('')}
+    </tbody></table></div>`;
+  const vt='<div class="vtabs" role="tablist">'+[['asg','투입 현황'],['members','구성원']].map(([k,l])=>`<button type="button" class="vtab" role="tab" data-sview="${k}" aria-selected="${state.sview===k}">${l}</button>`).join('')+'</div>';
   area.innerHTML=`
     <div class="rtool">
-      <select class="sel" id="sProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${sstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+      ${vt}
+      ${state.sview==='members'?`<span class="spacer"></span>${isAdm?'<button class="btn" type="button" id="sMembers">구성원 관리</button>':''}</div>${memTable}`:`<select class="sel" id="sProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${sstate.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="sShow" aria-label="투입 상태">${[['active','투입 중·예정'],['on','투입 중'],['plan','예정'],['end','종료'],['all','전체']].map(([k,l])=>`<option value="${k}" ${sstate.show===k?'selected':''}>${l}</option>`).join('')}</select>
       <span class="spacer"></span>
       ${canWrite?'<button class="btn primary" type="button" id="sAdd">+ 투입 등록</button>':''}
     </div>
     ${statTable([[`현재 투입 인원`,`${people.size}<small>명</small>`,``],[`현재 투입 M/M`,`${(onNow.reduce((s,a)=>s+(+a.rate||0),0)/100).toFixed(1).replace(/\.0$/,'')}<small>M/M</small>`,``],[`투입 예정`,`${live.filter(a=>asgStatus(a)==='plan').length}<small>건</small>`,``],[`100% 초과 투입`,`${over.length}<small>명</small>`,`${over.length?'alert':''}`]])}
     ${!members.length?`<div class="banner">아직 등록된 구성원이 없습니다. 「구성원 관리」에서 사람을 먼저 추가한 뒤 프로젝트에 투입하세요.</div>`:''}
-    ${cards}
-    <p class="legend" style="margin:0">투입률은 해당 프로젝트에 쓰는 비중(%)입니다. 100% = 1 M/M. 한 사람이 여러 프로젝트에 동시에 투입되면 합계가 100%를 넘을 때 빨간색으로 표시됩니다. 여기서 투입한 프로젝트는 휴가 관리·업무 시간의 프로젝트 필터에도 반영됩니다.</p>`;
+    ${asgTable}
+    <p class="legend" style="margin:0">투입률은 해당 프로젝트에 쓰는 비중(%)입니다. 100% = 1 M/M. 한 사람이 여러 프로젝트에 동시에 투입되면 합계가 100%를 넘을 때 빨간색으로 표시됩니다. 여기서 투입한 프로젝트는 휴가 관리·업무 시간의 프로젝트 필터에도 반영됩니다.</p>`}`;
 }
+onArea('#staffArea','input',e=>{if(e.target.id!=='mQ')return;const k=e.target.value.trim().toLowerCase();document.querySelectorAll('#mTable tbody tr').forEach(r=>r.hidden=!!k&&!r.textContent.toLowerCase().includes(k));});
 onArea('#staffArea','change',e=>{if(e.target.id==='sProj'){sstate.project=e.target.value;render();}if(e.target.id==='sShow'){sstate.show=e.target.value;render();}});
 onArea('#staffArea','click',e=>{
-  const ap=e.target.closest('[data-addp]');if(ap){openAssign(null,ap.dataset.addp);return;}
+  const sv=e.target.closest('[data-sview]');if(sv){if(sv.dataset.sview!==state.sview){state.sview=sv.dataset.sview;persistUI();render();}return;}
   const id=e.target.closest('button')?.id;
   if(id==='sAdd'){openAssign(null,sstate.project!=='all'?sstate.project:'');return;}
+  if(id==='sMembers'){openMembers();return;}
   const row=e.target.closest('[data-asg]');if(row)openAssign(assigns.find(a=>a.id===row.dataset.asg));
 });
 onArea('#staffArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.closest('[data-asg]');if(row)openAssign(assigns.find(a=>a.id===row.dataset.asg));});
@@ -2083,29 +2101,8 @@ function openAssign(a,pid){
 /* ---------- brand text (제목·설명 편집) ---------- */
 const SITE_DEFAULT={title:'업무 관리 대시보드'};
 let site={...SITE_DEFAULT};
-function renderBrand(){
-  if(!$('#brandEdit').hidden)return;
-  $('#siteTitle').textContent=site.title||SITE_DEFAULT.title;
-  $('#btnBrandEdit').hidden=!(canWrite&&db);
-  document.title=site.title||SITE_DEFAULT.title;
-}
-$('#btnBrandEdit').addEventListener('click',()=>{
-  $('#bTitle').value=site.title||'';$('#bErr').textContent='';
-  $('#brandView').hidden=true;$('#brandEdit').hidden=false;$('#bTitle').focus();$('#bTitle').select();
-});
-const closeBrand=()=>{$('#brandEdit').hidden=true;$('#brandView').hidden=false;renderBrand();};
-$('#bCancel').addEventListener('click',closeBrand);
-$('#brandEdit').addEventListener('keydown',e=>{if(e.key==='Escape'){e.stopPropagation();closeBrand();}});
-$('#brandEdit').addEventListener('submit',async e=>{
-  e.preventDefault();
-  const title=$('#bTitle').value.trim(), subtitle=site.subtitle||'';
-  if(!title){$('#bErr').textContent='제목을 입력해 주세요.';$('#bTitle').focus();return;}
-  if(title===site.title){closeBrand();return;}
-  $('#bSave').disabled=true;
-  try{await db.doc('settings/site').set({title,subtitle,rmsTemplate:site.rmsTemplate||'',updatedAt:new Date().toISOString()});logChange('site','update','site',title,site,{...site,title,subtitle});site={...site,title,subtitle};closeBrand();toast('제목을 바꿨습니다');}
-  catch(err){handleWriteError(err,'#bErr');}
-  finally{$('#bSave').disabled=false;}
-});
+// 사이트 제목은 화면에 보이지 않고 브라우저 탭 제목으로만 써요(저장된 settings/site 값)
+function renderBrand(){document.title=site.title||SITE_DEFAULT.title;}
 
 /* ---------- history (변경 이력) ---------- */
 // 누가·언제·무엇을 바꿨는지 history 컬렉션에 1건씩 기록. 편집 권한(Contributor 이상)만 읽고 쓸 수 있으며 180일이 지난 기록은 자동 정리

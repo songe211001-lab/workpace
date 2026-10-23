@@ -825,8 +825,31 @@ a.rms:hover{text-decoration:underline}
 .linkUrl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;max-width:60%}
 .mnTools{display:flex;gap:6px;flex-wrap:wrap}
 .mnCtl #mnUrl{width:100%;max-width:420px}
-/* ---------- 이벤트 운영(관리대장 끼워 넣기) ---------- */
-.evtFrame{width:100%;height:calc(100vh - 170px);min-height:480px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface)}
+/* ---------- 이벤트 운영(관리대장 기능) ---------- */
+.evPanel{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.evPanel h3{margin:0;font-size:15px;font-weight:800}
+.evHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.evChips{display:flex;gap:6px;flex-wrap:wrap}
+.evTable td{padding:4px 6px;vertical-align:middle}
+.evTable th{white-space:nowrap}
+.evTable .evf{width:100%;min-width:72px;height:30px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 6px;font-size:13px;color:var(--fg)}
+.evTable .evf:hover:not(:disabled){border-color:var(--line)}
+.evTable .evf:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.evTable input[data-f="name"]{min-width:180px}
+.evTable input[type=date].evf{min-width:128px}
+.evTable .evMiss{background:var(--accent-soft)}
+.evTable .evDup{border-color:var(--bad);color:var(--bad)}
+.evSt{font-weight:700}
+.evSt.st-완료{color:var(--ok-strong,#2f8a5b)}.evSt.st-진행{color:var(--accent-dark)}.evSt.st-연장{color:#b57a12}.evSt.st-비노출{color:var(--muted)}
+.evOrd{white-space:nowrap}.evOrd .num{display:inline-block;min-width:20px;text-align:right;margin-right:4px;color:var(--ink-soft)}
+.evArr .btn{padding:0 4px;height:22px;font-size:10px}
+.evId{display:flex;align-items:center;gap:2px}.evId .evf{min-width:90px}
+.evTable tr[draggable="true"]{cursor:grab}
+.evMissBtn{all:unset;cursor:pointer;font:inherit}
+.evMissBtn[aria-pressed="true"]{text-decoration:underline}
+.evHist{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:8px}
+.evHistHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.req{color:var(--accent-dark)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2069,27 +2092,248 @@ function renderLink(c){
     :`<div class="empty"><h2>연결할 주소가 없어요</h2><p>메뉴 관리에서 이 메뉴의 URL을 입력해 주세요.</p></div>`;
 }
 
-/* ---------- 이벤트 운영: 알닷 이벤트 운영 관리대장(event-ops.html, 자체 Supabase)을 끼워 넣어 4개 탭을 그대로 씀 ---------- */
+/* ---------- 이벤트 운영: 알닷 이벤트 운영 관리대장의 기능을 옮겨 옴(1단계: 이벤트 관리 탭) ----------
+   저장(wb_docs): evt_months = 월·블록·설정 문서(id 'event_YYYY-MM' / 'settings'), evt_rows = 행 문서(id = 원본 _uid)
+   필드는 문서에 평평하게 둠(바뀐 칸만 update). 원본 이벤트ID(id)는 문서 id와 겹치지 않게 eid로 저장 */
 const EVT_TABS=[['events','이벤트 관리'],['banner','배너 구좌 관리'],['pm','프리마케팅 관리'],['benefit','혜택 관리']];
 const EVT_URL='event-ops.html';
 let evtTab=(()=>{try{return localStorage.getItem('wb-evtab')||'events';}catch(e){return 'events';}})();
-// 같은 출처 iframe 안의 관리대장 탭 버튼을 눌러 전환(관리대장 자체 탭 줄은 끼워 넣기 모드에서 숨김)
-function evtGo(t){
-  evtTab=t;try{localStorage.setItem('wb-evtab',t);}catch(e){}
-  $('#evtFrame')?.contentDocument?.querySelector(`.maintab-btn[data-tab="${t}"]`)?.click();
-  document.querySelectorAll('#eventOpsArea [data-evtab]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.evtab===t)));
+let evtMonths=[], evtRowsAll=[];
+const EV_STATUS=['완료','진행','대기','연장','비노출'];
+const EV_SEL={workType:['HTML','단순 업로드'],category:['알닷','파트너사','기타파일']};
+const EV_DONE=new Set(['완료','연장','비노출']);
+const EV_FIELDS=['status','name','workType','category','dueDate','reflectStatus','source','reviewUrl','urlType','opUrl','note'];
+const EV_LABEL={status:'작업상태',name:'이벤트명',workType:'작업유형',category:'구분',dueDate:'시작일',reflectStatus:'종료일',source:'소스수급',reviewUrl:'검수용URL',urlType:'URL유형',opUrl:'운영URL',note:'주요특이사항'};
+const EV_COLS=[['status','상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']];
+const EV_REQ=['name','dueDate','reflectStatus','eid'];
+const EV_LINKS={'친구추천':'https://www.uplusmvno.com/benefit/recommendation','롯데카드':'https://www.uplusmvno.com/benefit/affiliate-card','삼성카드':'https://www.uplusmvno.com/benefit/affiliate-card?mvnopPpCprtCardId=CC0000000029'};
+// 이벤트ID → 운영 페이지 주소(원본 eventIdToUrl과 같은 규칙)
+function evIdUrl(id){const v=String(id||'').trim();if(EV_LINKS[v])return EV_LINKS[v];const c=v.match(/^CC(\d{1,10})$/i);if(c)return `https://www.uplusmvno.com/benefit/affiliate-card?mvnopPpCprtCardId=CC${c[1].padStart(10,'0')}`;
+  return /^\d{1,10}$/.test(v)?`https://www.uplusmvno.com/benefit/event/detail?mvnopEvetId=EV${v.padStart(10,'0')}`:'';}
+const evIsoToDot=s=>s?s.replaceAll('-','.'):'';
+function evDotToIso(s){const m=String(s||'').trim().match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/);return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:'';}
+const evNextKey=k=>{const [y,m]=k.split('-').map(Number);return m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;};
+const evLabelOf=k=>`${k.slice(2,4)}년 ${+k.slice(5,7)}월`;
+const evMid=k=>'event_'+k;
+const evUid=()=>Math.random().toString(36).slice(2,9);
+const evSettings=()=>evtMonths.find(m=>m.id==='settings')||{};
+const evCols=()=>[...EV_COLS,...(evSettings().customEventColumns||[]).map(c=>[c.key,c.label])];
+const evMonthList=()=>evtMonths.filter(m=>m.kind==='event_month').sort((a,b)=>(a.sortKey||'')<(b.sortKey||'')?-1:1);
+const evRowsOf=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='event').sort((a,b)=>(a.sortOrder-b.sortOrder)||(a.id<b.id?-1:1));
+const est={month:null,filter:'전체',sel:new Set(),missing:false,open:new Set()};
+// 처음 보이는 달: 다음 달 시트가 있으면 그 달, 없으면 가장 최근 달(원본 getDefaultActiveEventMonthKey)
+function evDefaultMonth(){const L=evMonthList();if(!L.length)return null;const d=new Date(),n=`${d.getMonth()===11?d.getFullYear()+1:d.getFullYear()}-${String(d.getMonth()===11?1:d.getMonth()+2).padStart(2,'0')}`;return L.some(m=>m.key===n)?n:L[L.length-1].key;}
+const evMissing=(r,f)=>EV_REQ.includes(f)&&r.status!=='비노출'&&!String(r[f]??'').trim();
+const evDupOwners=(r,v)=>{const k=String(v??'').trim();if(!k||EV_LINKS[k])return [];const L=evRowsOf(r.monthId),lab=evtMonths.find(m=>m.id===r.monthId)?.label||'';return L.map((x,i)=>x.id!==r.id&&String(x.eid??'').trim()===k?`${lab} ${i+1}행`:null).filter(Boolean);};
+const evMaxId=()=>evtRowsAll.reduce((m,r)=>{const s=String(r.eid||'').trim();return /^\d+$/.test(s)?Math.max(m,+s):m;},0);
+// 마감 지연·임박(원본 scanDeadlines: 종료일이 있으면 종료일, 없으면 시작일 기준)
+function evDeadlines(rows,soon=7){const T=new Date(todayStr()+'T00:00:00'),over=[],near=[];
+  rows.forEach(r=>{if(!r.name||EV_DONE.has(r.status))return;const iso=evDotToIso(r.reflectStatus)||evDotToIso(r.dueDate);if(!iso)return;const d=Math.round((new Date(iso+'T00:00:00')-T)/864e5);if(d<0)over.push({...r,d});else if(d<=soon)near.push({...r,d});});
+  return {over:over.sort((a,b)=>a.d-b.d),near:near.sort((a,b)=>a.d-b.d)};}
+
+function evCell(r,k){
+  const ro=!canWrite?'disabled':'';
+  if(k==='status')return `<td><select class="evf evSt st-${esc(r.status)}" data-f="status" aria-label="상태" ${ro}>${EV_STATUS.map(o=>`<option ${r.status===o?'selected':''}>${o}</option>`).join('')}</select></td>`;
+  if(EV_SEL[k]){const cur=String(r[k]??''),o=['',...EV_SEL[k]];if(cur&&!o.includes(cur))o.push(cur);
+    return `<td><select class="evf" data-f="${k}" aria-label="${EV_LABEL[k]}" ${ro}>${o.map(v=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${v?esc(v):'선택'}</option>`).join('')}</select></td>`;}
+  const miss=est.missing&&evMissing(r,k)?' evMiss':'';
+  if(k==='dueDate'||k==='reflectStatus')return `<td><input type="date" class="evf${miss}" data-f="${k}" value="${evDotToIso(r[k])}" aria-label="${EV_LABEL[k]}" ${ro}></td>`;
+  if(k==='eid'){const url=evIdUrl(r.eid),dup=evDupOwners(r,r.eid);
+    return `<td><div class="evId"><input class="evf${miss}${dup.length?' evDup':''}" data-f="eid" value="${esc(r.eid||'')}" list="evLinkOpts" placeholder="ID…" aria-label="이벤트ID" ${dup.length?`title="${esc('같은 ID가 있어요: '+dup.join(', '))}"`:''} ${ro}><button type="button" class="btn ghost sm evLink" ${url?'':'disabled'} title="운영 페이지로 이동" aria-label="운영 페이지로 이동">↗</button></div></td>`;}
+  const ph={name:'이벤트명을 입력해 주세요',urlType:'신규'}[k];
+  return `<td><input class="evf${miss}${k==='name'&&!r.name?' evMiss':''}" data-f="${esc(k)}" value="${esc(r[k]||'')}" ${ph?`placeholder="${ph}"`:''} aria-label="${esc(EV_LABEL[k]||k)}" ${ro}></td>`;
 }
+function evRowHtml(r,i,cur){
+  return `<tr data-uid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}>${cur?`<td class="selCell"><input type="checkbox" class="evSel" ${est.sel.has(r.id)?'checked':''} aria-label="선택" ${canWrite?'':'disabled'}></td>`:''}
+    <td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-mv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-mv="1" aria-label="아래로">▼</button></span>`:''}</td>
+    ${evCols().map(([k])=>evCell(r,k)).join('')}
+    <td>${canWrite?'<button type="button" class="btn ghost sm evDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
+}
+const evHead=cur=>`<thead><tr>${cur?`<th class="selCell"><input type="checkbox" id="evAll" aria-label="보이는 행 모두 선택" ${canWrite?'':'disabled'}></th>`:''}<th>순서</th>${evCols().map(([k,l])=>`<th${k==='name'?' style="min-width:180px"':''}>${esc(l)}${k==='name'?' <b class="req">*</b>':''}</th>`).join('')}<th></th></tr></thead>`;
+
 function renderEventOps(){
   const area=$('#eventOpsArea');
-  // iframe은 처음 한 번만 만들고 다시 그리지 않음(관리대장이 다시 불러와지지 않게). 헤더로 옮겨 간 도구 줄만 다시 붙임
-  if(!area.querySelector(':scope>.rtool'))area.insertAdjacentHTML('afterbegin',`<div class="rtool"><span class="spacer"></span><a class="btn" href="${EVT_URL}" target="_blank" rel="noopener">새 창에서 열기 ↗</a></div>`);
-  if(area.querySelector('#evtFrame'))return;
-  area.insertAdjacentHTML('beforeend',`<div class="vbar"><div class="vtabs" role="tablist">${EVT_TABS.map(([k,l])=>`<button type="button" class="vtab" role="tab" data-evtab="${k}" aria-selected="${k===evtTab}">${l}</button>`).join('')}</div></div>
-    <iframe id="evtFrame" class="evtFrame" src="${EVT_URL}?embed=1" title="이벤트 운영 관리대장"></iframe>`);
-  // 관리대장 화면이 다 뜬 뒤(#appRoot가 보이면) 기억한 탭으로
-  $('#evtFrame').addEventListener('load',()=>{let n=0;const t=setInterval(()=>{const r=$('#evtFrame')?.contentDocument?.getElementById('appRoot');if((r&&!r.classList.contains('hidden'))||++n>40){clearInterval(t);evtGo(evtTab);}},250);});
+  if(area.contains(document.activeElement)&&document.activeElement.matches('.evf'))return; // 칸 입력 중엔 다시 그리지 않음
+  const tabs=`<div class="vbar"><div class="vtabs" role="tablist">${EVT_TABS.map(([k,l])=>`<button type="button" class="vtab" role="tab" data-evtab="${k}" aria-selected="${k===evtTab}">${l}</button>`).join('')}</div></div>`;
+  if(evtTab!=='events'){
+    area.innerHTML=`<div class="rtool"><span class="spacer"></span></div>${tabs}<div class="empty"><h2>${esc(EVT_TABS.find(t=>t[0]===evtTab)[1])} 탭은 다음 단계에서 옮겨요</h2><p>그때까지는 기존 관리대장에서 관리해 주세요.</p><a class="btn" href="${EVT_URL}" target="_blank" rel="noopener">기존 관리대장 열기 ↗</a></div>`;return;}
+  const L=evMonthList();
+  if(!est.month||!L.some(m=>m.key===est.month))est.month=evDefaultMonth();
+  const adm=isAdminUser(), tools=`${L.length?`<select class="sel" id="evMonth" aria-label="이벤트 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===est.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}<span class="spacer"></span>
+    ${exportMenu(downloads&&L.length?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장'],['evSum','이 달 요약 엑셀']]:[])}${adm?'<button class="btn" type="button" id="evImport">관리대장 데이터 가져오기</button><input type="file" id="evFile" accept=".json,application/json" hidden>':''}`;
+  if(!L.length){
+    area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 이벤트 달이 없어요</h2><p>${adm?'기존 관리대장의 \'JSON 내보내기\' 파일을 \'관리대장 데이터 가져오기\'로 올리거나, ':''}이번 달 시트를 새로 만들어 시작하세요.</p>${canWrite?'<button class="btn primary" type="button" id="evFirst">이번 달 시트 만들기</button>':''}</div>`;return;}
+  const mo=L.find(m=>m.key===est.month), mid=mo.id, rows=evRowsOf(mid);
+  for(const u of [...est.sel])if(!rows.some(r=>r.id===u))est.sel.delete(u);
+  const cnt=s=>rows.filter(r=>r.status===s).length, miss=rows.filter(r=>EV_REQ.some(f=>evMissing(r,f))).length;
+  const vis=rows.filter(r=>est.filter==='전체'||r.status===est.filter);
+  const cols=evCols().length+3;
+  const body=!rows.length?`<tr class="mEmpty"><td colspan="${cols}">아직 등록된 이벤트가 없어요. '+ 행 추가'로 시작하세요.</td></tr>`
+    :!vis.length?`<tr class="mEmpty"><td colspan="${cols}">'${esc(est.filter)}' 상태의 이벤트가 없어요.</td></tr>`
+    :vis.map(r=>evRowHtml(r,rows.indexOf(r),true)).join('');
+  const others=L.filter(m=>m.key!==est.month).reverse();
+  const bulk=canWrite&&est.sel.size?`<div class="bulkBar evBulk" role="region" aria-label="선택한 이벤트 한꺼번에 바꾸기"><b>${est.sel.size}건 선택</b>${EV_STATUS.map(s=>`<button type="button" class="btn sm" data-bulk="${s}">${s}로 변경</button>`).join('')}<button type="button" class="btn danger sm" id="evBulkDel">선택 삭제</button></div>`:'';
+  area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
+    ${statTable([[esc(mo.label),'<span style="font-size:15px">이벤트 현황</span>',''],['이벤트 수',`${rows.length}<small>건</small>`,''],['완료',`${cnt('완료')}<small>건</small>`,''],['진행',`${cnt('진행')}<small>건</small>`,''],['대기',`${cnt('대기')}<small>건</small>`,''],['연장',`${cnt('연장')}<small>건</small>`,''],['다음 ID',`${evMaxId()+1}`,''],[`미입력${est.missing?' · 표시 중':''}`,`<button type="button" class="evMissBtn" id="evMissing" aria-pressed="${est.missing}" title="시작일·종료일·이벤트ID·이벤트명이 빈 행 (누르면 표에 표시)">${miss}<small>건</small></button>`,miss?'alert':'']])}
+    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="evAddRow">+ 행 추가</button><button class="btn primary" type="button" id="evAddMonth">새 달 만들기</button>':''}</div>
+      <div class="chips evChips">${['전체',...EV_STATUS].map(f=>`<button type="button" class="chip" data-evf="${f}" aria-pressed="${est.filter===f}">${f} <span class="num">${f==='전체'?rows.length:cnt(f)}</span></button>`).join('')}</div>
+      ${bulk}
+      <div class="tablebox"><table class="stable evTable" data-mid="${esc(mid)}">${evHead(true)}<tbody>${body}</tbody></table></div>
+      <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 엑셀에서 여러 칸을 복사해 붙여넣을 수 있어요. 행은 끌어서 순서를 바꿀 수 있어요.</p></div>
+    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>
+      ${others.length?others.map(m=>{const open=est.open.has(m.key),rs=evRowsOf(m.id);return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-evopen="${esc(m.key)}" aria-expanded="${open}">${esc(m.label)}<span class="legend">${rs.length}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-evcur="${esc(m.key)}">이 달 보기</button>${canWrite?`<button type="button" class="btn ghost sm" data-evdelm="${esc(m.key)}">이 달 삭제</button>`:''}</div>
+        ${open?`<div class="tablebox"><table class="stable evTable" data-mid="${esc(m.id)}">${evHead(false)}<tbody>${rs.length?rs.map((r,i)=>evRowHtml(r,i,false)).join(''):`<tr class="mEmpty"><td colspan="${cols-1}">등록된 이벤트가 없어요.</td></tr>`}</tbody></table></div>`:''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 달 이력이 없어요.</p>'}</div>
+    <datalist id="evLinkOpts">${Object.keys(EV_LINKS).map(k=>`<option value="${esc(k)}">`).join('')}</datalist>`;
+  const all=$('#evAll');if(all)all.checked=vis.length>0&&vis.every(r=>est.sel.has(r.id));
 }
-onArea('#eventOpsArea','click',e=>{const b=e.target.closest('[data-evtab]');if(b)evtGo(b.dataset.evtab);});
+// 작은 확인 창(삭제 등)
+function evConfirm(msg,ok,label='삭제'){
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:420px"><header><h2>확인</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p style="margin:0;white-space:pre-wrap">${esc(msg)}</p></div><footer><span class="err" id="ecErr"></span><div class="r"><button class="btn" type="button" id="ecNo">취소</button><button class="btn ${label==='삭제'?'danger':'primary'}" type="button" id="ecYes">${esc(label)}</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#ecNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#ecYes').onclick=async()=>{$('#ecYes').disabled=true;try{await ok();closeModal();}catch(err){$('#ecYes').disabled=false;handleWriteError(err,'#ecErr');}};
+}
+const evRowById=u=>evtRowsAll.find(r=>r.id===u);
+async function evSaveField(r,f,v){
+  if(String(r[f]??'')===String(v))return;
+  const before={...r};r[f]=v;
+  await db.collection('evt_rows').doc(r.id).update({[f]:v,updatedAt:new Date().toISOString()});
+  logChange('evt','update',r.id,r.name||'(이벤트명 없음)',before,{...r});
+}
+async function evAddRows(mid,list){ // list: [{...fields}] → 맨 뒤에 추가
+  let so=Math.max(-1,...evRowsOf(mid).map(r=>+r.sortOrder||0));
+  for(const d of list){const id=evUid(),doc={monthId:mid,kind:'event',sortOrder:++so,status:'대기',name:'',workType:'',category:'',dueDate:'',reflectStatus:'',source:'',reviewUrl:'',urlType:'',opUrl:'',note:'',eid:'',...d,updatedAt:new Date().toISOString()};
+    await db.collection('evt_rows').doc(id).set(doc);evtRowsAll.push({id,...doc});}
+}
+async function evMove(mid,uid,toIdx){ // 행 하나를 toIdx 자리로(옮긴 행의 순서값만 이웃 사이 값으로 바꿈)
+  const rows=evRowsOf(mid).filter(r=>r.id!==uid);const a=rows[toIdx-1],b=rows[toIdx];
+  const so=a&&b?(+a.sortOrder+ +b.sortOrder)/2:a?+a.sortOrder+1:b?+b.sortOrder-1:0;
+  const r=evRowById(uid);r.sortOrder=so;await db.collection('evt_rows').doc(uid).update({sortOrder:so});render();
+}
+async function evNewMonth(){
+  const L=evMonthList(), last=L[L.length-1], key=last?evNextKey(last.key):todayStr().slice(0,7);
+  if(L.some(m=>m.key===key)){toast(`'${evLabelOf(key)}'은 이미 있어요.`);return;}
+  const carry=last?evRowsOf(last.id).filter(r=>r.status==='연장'):[];
+  await db.collection('evt_months').doc(evMid(key)).set({kind:'event_month',sortKey:key,key,label:evLabelOf(key)});
+  evtMonths.push({id:evMid(key),kind:'event_month',sortKey:key,key,label:evLabelOf(key)});
+  await evAddRows(evMid(key),carry.map(({id,monthId,sortOrder,updatedAt,...d})=>d));
+  logChange('evt','create',evMid(key),`${evLabelOf(key)} 이벤트 시트`,null,null,`연장 ${carry.length}건 이월`);
+  est.month=key;est.sel.clear();render();toast(`'${evLabelOf(key)}' 시트를 만들었어요. '연장' 상태였던 ${carry.length}건을 이월했어요.`);
+}
+// 여러 칸 붙여넣기(엑셀에서 복사): 시작 칸부터 오른쪽·아래로 채우고, 모자라면 행을 새로 만듦
+async function evPaste(e){
+  const inp=e.target.closest('.evf');if(!inp||!canWrite)return;const text=(e.clipboardData||window.clipboardData).getData('text');if(!text||!/[\t\n]/.test(text))return;
+  e.preventDefault();const tb=inp.closest('table'),mid=tb.dataset.mid,cur=tb.querySelector('#evAll')||tb.querySelector('.evSel');
+  if(cur&&est.filter!=='전체'){toast("필터를 '전체'로 바꾼 뒤 붙여넣어 주세요");return;}
+  const rows=evRowsOf(mid),start=rows.findIndex(r=>r.id===inp.closest('tr').dataset.uid),keys=evCols().map(c=>c[0]),c0=keys.indexOf(inp.dataset.f);if(start<0||c0<0)return;
+  const lines=text.replace(/\r/g,'').split('\n');if(lines[lines.length-1]==='')lines.pop();
+  const skipped=[];let n=0;
+  for(let i=0;i<lines.length;i++){
+    const vals={};lines[i].split('\t').forEach((v,j)=>{const k=keys[c0+j];if(!k)return;v=v.trim();if(k==='dueDate'||k==='reflectStatus')v=evIsoToDot(evDotToIso(v))||v;vals[k]=v;});
+    let r=rows[start+i];
+    if(r&&vals.eid!=null&&evDupOwners(r,vals.eid).length){skipped.push(`${start+i+1}행 '${vals.eid}'`);delete vals.eid;}
+    if(r){const before={...r};Object.assign(r,vals);await db.collection('evt_rows').doc(r.id).update({...vals,updatedAt:new Date().toISOString()});n++;}
+    else{await evAddRows(mid,[vals]);n++;}
+  }
+  logChange('evt','update',mid,`${evtMonths.find(m=>m.id===mid)?.label||''} 이벤트`,null,null,`${n}행 붙여넣기`);
+  inp.blur();render();toast(`${n}행을 붙여넣었어요.${skipped.length?` 이미 쓰는 ID라 넣지 않았어요: ${skipped.join(', ')}`:''}`);
+}
+onArea('#eventOpsArea','paste',e=>{evPaste(e).catch(err=>handleWriteError(err));});
+onArea('#eventOpsArea','change',async e=>{
+  const el=e.target;
+  if(el.id==='evMonth'){est.month=el.value;est.sel.clear();render();return;}
+  if(el.id==='evFile'){const f=el.files[0];el.value='';if(f)evImportFile(f);return;}
+  if(el.id==='evAll'){const mo=evMonthList().find(m=>m.key===est.month);evRowsOf(mo.id).filter(r=>est.filter==='전체'||r.status===est.filter).forEach(r=>el.checked?est.sel.add(r.id):est.sel.delete(r.id));render();return;}
+  if(el.classList.contains('evSel')){const u=el.closest('tr').dataset.uid;el.checked?est.sel.add(u):est.sel.delete(u);render();return;}
+  if(!el.classList.contains('evf')||!canWrite)return;
+  const r=evRowById(el.closest('tr').dataset.uid);if(!r)return;const f=el.dataset.f;let v=el.value;
+  if(f==='dueDate'||f==='reflectStatus')v=evIsoToDot(v);
+  if(f==='eid'){const d=evDupOwners(r,v);if(d.length){toast(`이미 사용 중인 ID예요: ${d.join(', ')}`);el.value=r.eid||'';return;}}
+  try{await evSaveField(r,f,v);}catch(err){handleWriteError(err);}
+  if(el.tagName==='SELECT')el.blur();
+  if(!$('#eventOpsArea').contains(document.activeElement)||!document.activeElement.matches('.evf'))render();
+});
+// 칸에서 나가면(저장 뒤) 다시 그림
+onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.evf'))setTimeout(()=>{if(!document.activeElement?.matches?.('#eventOpsArea .evf'))render();},0);});
+onArea('#eventOpsArea','click',async e=>{
+  const t=e.target.closest('[data-evtab]');if(t){evtTab=t.dataset.evtab;try{localStorage.setItem('wb-evtab',evtTab);}catch(er){}render();return;}
+  const id=e.target.closest('button')?.id;
+  if(id==='evMissing'){est.missing=!est.missing;render();return;}
+  if(id==='evImport'){$('#evFile').click();return;}
+  if(id==='evJson'||id==='evXlsx'||id==='evSum'){evExport(id);return;}
+  const fl=e.target.closest('[data-evf]');if(fl){est.filter=fl.dataset.evf;est.sel.clear();render();return;}
+  const op=e.target.closest('[data-evopen]');if(op){const k=op.dataset.evopen;est.open.has(k)?est.open.delete(k):est.open.add(k);render();return;}
+  const cu=e.target.closest('[data-evcur]');if(cu){est.month=cu.dataset.evcur;est.sel.clear();render();window.scrollTo(0,0);return;}
+  const lk=e.target.closest('.evLink');if(lk){const u=evIdUrl(evRowById(lk.closest('tr').dataset.uid)?.eid);if(u)window.open(u,'_blank','noopener');return;}
+  if(!canWrite)return;
+  try{
+    if(id==='evFirst'||id==='evAddMonth'){await evNewMonth();return;}
+    const mo=evMonthList().find(m=>m.key===est.month);
+    if(id==='evAddRow'){await evAddRows(mo.id,[{}]);logChange('evt','create',mo.id,`${mo.label} 이벤트 행`,null,null,'행 추가');render();return;}
+    const bk=e.target.closest('[data-bulk]');
+    if(bk){const s=bk.dataset.bulk,ids=[...est.sel];for(const u of ids){const r=evRowById(u);if(r&&r.status!==s){r.status=s;await db.collection('evt_rows').doc(u).update({status:s});}}
+      logChange('evt','update',mo.id,`${mo.label} 이벤트`,null,null,`${ids.length}건 상태를 '${s}'로 일괄 변경`);est.sel.clear();render();toast(`${ids.length}건을 '${s}' 상태로 바꿨어요.`);return;}
+    if(id==='evBulkDel'){const ids=[...est.sel];evConfirm(`선택한 ${ids.length}건을 삭제할까요?`,async()=>{for(const u of ids)await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(r=>!ids.includes(r.id));est.sel.clear();logChange('evt','delete',mo.id,`${mo.label} 이벤트 ${ids.length}건`,null,null,'일괄 삭제');render();});return;}
+    const dm=e.target.closest('[data-evdelm]');
+    if(dm){const m=evMonthList().find(x=>x.key===dm.dataset.evdelm),rs=evRowsOf(m.id);evConfirm(`'${m.label}' 데이터(${rs.length}건)를 삭제할까요?`,async()=>{for(const r of rs)await db.collection('evt_rows').doc(r.id).delete();await db.collection('evt_months').doc(m.id).delete();evtRowsAll=evtRowsAll.filter(r=>r.monthId!==m.id);evtMonths=evtMonths.filter(x=>x.id!==m.id);logChange('evt','delete',m.id,`${m.label} 이벤트 시트`,null,null,`${rs.length}건 함께 삭제`);render();});return;}
+    const tr=e.target.closest('tr[data-uid]');if(!tr)return;const tb=tr.closest('table'),mid=tb.dataset.mid,u=tr.dataset.uid;
+    if(e.target.closest('.evDel')){const r=evRowById(u);evConfirm(`'${r.name||'이벤트'}' 행을 삭제할까요?`,async()=>{await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(x=>x.id!==u);est.sel.delete(u);logChange('evt','delete',u,r.name||'(이벤트명 없음)');render();});return;}
+    const mv=e.target.closest('[data-mv]');
+    if(mv){if(tb.querySelector('.evSel')&&est.filter!=='전체'){toast("필터를 '전체'로 바꾼 뒤 순서를 바꿔 주세요");return;}const rows=evRowsOf(mid),i=rows.findIndex(r=>r.id===u),j=i+ +mv.dataset.mv;if(j<0||j>=rows.length)return;await evMove(mid,u,j);return;}
+  }catch(err){handleWriteError(err);}
+});
+// 끌어서 순서 바꾸기(현재 달 표)
+let evDrag=null;
+onArea('#eventOpsArea','dragstart',e=>{const tr=e.target.closest?.('tr[draggable="true"]');if(!tr)return;evDrag=tr.dataset.uid;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',evDrag);});
+onArea('#eventOpsArea','dragover',e=>{if(evDrag&&e.target.closest?.('tr[data-uid]'))e.preventDefault();});
+onArea('#eventOpsArea','drop',e=>{const tr=e.target.closest?.('tr[data-uid]');if(!evDrag||!tr)return;e.preventDefault();const u=evDrag;evDrag=null;if(u===tr.dataset.uid)return;
+  if(est.filter!=='전체'){toast("필터를 '전체'로 바꾼 뒤 순서를 바꿔 주세요");return;}
+  const mid=tr.closest('table').dataset.mid,to=evRowsOf(mid).findIndex(r=>r.id===tr.dataset.uid);evMove(mid,u,to).catch(err=>handleWriteError(err));});
+onArea('#eventOpsArea','dragend',()=>{evDrag=null;});
+
+// 원본 JSON 백업과 같은 모양으로 되돌림(이번 단계는 이벤트만, 나머지는 빈 배열)
+function evToState(){
+  return {eventMonths:evMonthList().map(m=>({key:m.key,label:m.label,events:evRowsOf(m.id).map(r=>{const o={_uid:r.id};EV_FIELDS.forEach(f=>o[f]=r[f]??'');o.id=r.eid??'';(evSettings().customEventColumns||[]).forEach(c=>o[c.key]=r[c.key]??'');return o;})})),
+    bannerMonths:[],benefitBlocks:[],customEventColumns:evSettings().customEventColumns||[],partnerNameMap:evSettings().partnerNameMap||{}};
+}
+async function evExport(id){
+  const d=new Date().toISOString().slice(0,10),S=evToState();
+  try{
+    if(id==='evJson'){await downloads.save({filename:`알닷_운영데이터_백업_${d}.json`,data:new Blob([JSON.stringify(S,null,2)],{type:'application/json'})});return;}
+    const X=await loadExcel(),wb=new X.Workbook(),cc=S.customEventColumns;
+    if(id==='evXlsx'){
+      S.eventMonths.forEach(mo=>{const ws=wb.addWorksheet((mo.label+' 이벤트 관리').slice(0,31));ws.addRow([...EV_FIELDS.map(f=>EV_LABEL[f]),'이벤트ID',...cc.map(c=>c.label)]).font={bold:true};mo.events.forEach(ev=>ws.addRow([...EV_FIELDS.map(f=>ev[f]??''),ev.id??'',...cc.map(c=>ev[c.key]??'')]));});
+      await downloads.save({filename:`알닷_이벤트_운영_${d}.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});return;}
+    // 이 달 요약(원본 buildMonthSummaryWorkbook). 배너·혜택은 다음 단계에서 옮김
+    const mo=S.eventMonths.find(m=>m.key===est.month);if(!mo)return;const ws=wb.addWorksheet('요약'),add=r=>ws.addRow(r);
+    add([`${mo.label} 운영 요약`]).font={bold:true,size:13};add([`만든 시각: ${new Date().toLocaleString('ko-KR')}`]);add([]);
+    add(['■ 이벤트 상태별']).font={bold:true};add(['상태','건수']);EV_STATUS.forEach(s=>add([s,mo.events.filter(e=>e.status===s).length]));add(['합계',mo.events.length]);add([]);
+    add(['■ 마감 지연·임박 (오늘 기준)']).font={bold:true};add(['구분','이벤트명','이벤트ID','기준일','D-day']);
+    const {over,near}=evDeadlines(evRowsOf(evMid(mo.key)));[...over,...near].forEach(r=>add([r.d<0?'지연':'임박',r.name,r.eid||'',r.reflectStatus||r.dueDate,r.d<0?`D+${-r.d}`:`D-${r.d}`]));if(!over.length&&!near.length)add(['없음']);
+    add([]);add(['■ 배너 구좌 배정 · 이번 달 종료 혜택']).font={bold:true};add(['배너·혜택은 다음 단계에서 옮겨요.']);
+    await downloads.save({filename:`알닷_${mo.label.replace(/\s/g,'')}_운영요약.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});
+  }catch(err){if(err?.code!=='declined')toast('파일을 만들지 못했어요');}
+}
+// 관리대장 데이터 가져오기(관리자): 원본 'JSON 내보내기' 파일 → 건수 확인 → 이벤트만 저장(원본 _uid를 문서 id로, 다시 가져와도 중복 없음)
+function evImportFile(file){
+  const rd=new FileReader();
+  rd.onload=()=>{let S=null;try{S=JSON.parse(rd.result);}catch(e){}
+    if(!S||!['eventMonths','bannerMonths','benefitBlocks'].every(k=>Array.isArray(S[k]))){toast('관리대장 JSON 백업 파일이 아니에요. (eventMonths·bannerMonths·benefitBlocks가 있어야 해요)');return;}
+    const ev=S.eventMonths.reduce((n,m)=>n+(m.events||[]).length,0),rk=S.bannerMonths.reduce((n,m)=>n+(m.ranks||[]).length,0),pm=S.bannerMonths.reduce((n,m)=>n+(m.preMarketingPartners||[]).length,0),bi=S.benefitBlocks.reduce((n,b)=>n+(b.items||[]).length,0);
+    evConfirm(`이 파일을 가져올까요?\n\n· 이벤트: ${S.eventMonths.length}개 달 · ${ev}건 → 지금 가져와요\n· 배너 구좌: ${S.bannerMonths.length}개 달 · 순위 ${rk}건 / 프리마케팅 ${pm}건 → 다음 단계에서\n· 혜택: ${S.benefitBlocks.length}개 블록 · ${bi}건 → 다음 단계에서\n\n같은 행이 이미 있으면 파일 내용으로 덮어써요.`,async()=>{
+      const seen=new Set();let n=0;$('#ecYes').textContent='가져오는 중…';
+      await db.collection('evt_months').doc('settings').set({kind:'settings',customEventColumns:S.customEventColumns||[],partnerNameMap:S.partnerNameMap||{}});
+      for(const mo of S.eventMonths){if(!/^\d{4}-\d{2}$/.test(mo.key||''))continue;
+        await db.collection('evt_months').doc(evMid(mo.key)).set({kind:'event_month',sortKey:mo.key,key:mo.key,label:mo.label||evLabelOf(mo.key)});
+        for(const [i,e] of (mo.events||[]).entries()){let u=String(e._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
+          const {_uid,id:eid,...f}=e;await db.collection('evt_rows').doc(u).set({...f,eid:eid??'',monthId:evMid(mo.key),kind:'event',sortOrder:i,updatedAt:new Date().toISOString()});n++;
+          if(n%20===0)$('#ecYes').textContent=`가져오는 중… ${n}/${ev}`;}}
+      logChange('evt','create','import','관리대장 데이터 가져오기',null,null,`이벤트 ${S.eventMonths.length}개 달 · ${n}건`);
+      est.month=null;toast(`이벤트 ${n}건을 가져왔어요.`);render();
+    },'가져오기');
+  };
+  rd.readAsText(file);
+}
 
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
@@ -2914,7 +3158,7 @@ function renderBrand(){document.title=`${menuName(state.mode==='hours'?'staff':s
 let actorId=null, userCap=null, historyItems=[], historyReady=false, historySub=null;
 const nameCache={}, nameAsked=new Set();
 const hstate={entity:'all',action:'all',actor:'all',range:'30',q:''};
-const HFIELDS={
+const HFIELDS={evt:[['status','작업상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']],
   task:[['projectId','프로젝트'],['part','파트'],['title','요청내용'],['jiraKey','Jira 키'],['rmsNo','RMS 번호'],['rmsUrl','RMS 링크'],['assignee','담당자'],['requester','요청자'],['status','진행 현황'],['priority','우선순위'],['requestDate','요청일자'],['dueDate','완료 일정'],['doneDate','실제 완료일'],['estHours','예상 소요(h)'],['actHours','실제 소요(h)'],['link','관련 링크'],['note','메모']],
   project:[['name','이름'],['client','고객사·기간'],['color','색상']],
   part:[['name','이름'],['color','색상'],['order','순서']],
@@ -2924,7 +3168,7 @@ const HFIELDS={
   site:[['title','제목'],['subtitle','설명'],['rmsTemplate','RMS 주소 규칙']],
   report:[]
 };
-const HENT={backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
+const HENT={evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
 const HACT={create:['등록','s-done'],update:['수정','s-doing'],delete:['삭제','h-del'],confirm:['확정','s-review'],unconfirm:['확정 해제','s-wait'],restore:['복원','s-review']};
 function hval(f,v){
   if(v===''||v==null)return '';
@@ -3027,6 +3271,8 @@ render();
   db.collection('members').onSnapshot(s=>{members=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));if(!mr){mr=true;ready();}render();},onErr);
   db.collection('leaves').onSnapshot(s=>{leaves=s.docs.map(x=>({id:x.id,...x.data()}));if(!lr){lr=true;ready();}render();},onErr);
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
+  db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
+  db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
   db.collection('parts').onSnapshot(s=>{
     if(s.docs.length){PARTS=s.docs.map(x=>{const d=x.data();return {k:x.id,label:d.name||'이름 없음',c:d.color||PART_COLORS[4],order:d.order??0};}).sort((a,b)=>a.order-b.order);partsStored=true;}
     else{PARTS=DEFAULT_PARTS.slice();partsStored=false;}

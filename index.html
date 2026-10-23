@@ -352,20 +352,6 @@ a.rms:hover{text-decoration:underline}
 .card .proj{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:5px}
 .card .proj .dot{width:6px;height:6px;border-radius:50%}
 
-/* matrix */
-.matrix{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow-x:auto}
-.matrix table{min-width:760px}
-.matrix td,.matrix th{text-align:right}
-.matrix td:first-child,.matrix th:first-child{text-align:left}
-.matrix tbody tr{cursor:default}
-.cell{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
-.cell .main{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-.cell .sub{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
-.cell .sub .late{font-weight:500}
-.cell.zero .main{color:var(--line)}
-.mini{width:72px;height:4px;background:var(--sunk);border-radius:2px;overflow:hidden}
-.mini i{display:block;height:100%;background:var(--ok-strong)}
-.matrix tfoot td{background:var(--sunk);font-weight:600}
 .legend{font-size:12px;color:var(--muted)}
 
 /* empty */
@@ -770,7 +756,6 @@ a.rms:hover{text-decoration:underline}
 .cpRow,.cpFields{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cpFields[hidden]{display:none}
 @media (max-width:900px){.pnRow{flex-wrap:wrap}.pnRow #pnTitle{flex-basis:100%}}
-.pPicks{display:inline-flex;gap:8px}
 /* ---------- 관리자/일반 뱃지 · 메뉴 관리 ---------- */
 .roleBadge{display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font-size:11px;font-weight:700;background:var(--sunk);color:var(--ink-soft);white-space:nowrap;vertical-align:middle}
 .roleBadge.adm{background:var(--accent-soft);color:var(--accent-dark)}
@@ -780,6 +765,22 @@ a.rms:hover{text-decoration:underline}
 .mnList li{display:flex;align-items:center;gap:8px}
 .mnList .ico{width:18px;height:18px;flex:none;color:var(--ink-soft)}
 .mnName{width:220px;max-width:100%;min-width:0}
+/* ---------- 업무 관리 헤더 필터 ---------- */
+#taskActions{flex-wrap:wrap}
+#taskActions .searchBox{margin:0;width:240px}
+@media (max-width:900px){#taskActions .searchBox{flex:1 1 180px;width:auto}}
+/* ---------- 주간보고 탭: 제목 → 탭 → 운영 건수 표 → 카테고리별 본문 ---------- */
+.rbar{margin-bottom:0}
+.rbar .rtitle{font-size:22px}
+.statTable.rsum{table-layout:auto;border-collapse:collapse}
+.statTable.rsum th,.statTable.rsum td{text-align:center;padding:8px 10px;border:1px solid var(--line);font-size:13px;font-weight:500;color:var(--fg)}
+.statTable.rsum thead th{font-weight:700;background:var(--bg)}
+.statTable.rsum tbody th{font-weight:500}
+.statTable.rsum td:last-child{font-weight:700}
+.rsum-wrap{border:0;border-radius:0}
+.rsec.rsimple{border-top:0;padding-top:8px}
+.rsec.rsimple .rsecBody{margin-top:8px}
+.rsec.rsimple .rEditor{min-height:120px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -809,7 +810,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="periodSel" aria-label="기간 단위"><option value="all">전체</option><option value="week">주간</option><option value="month">월간</option></select><span class="pPicks" id="pPick" hidden></span><button class="btn" id="btnAdd" type="button">프로젝트 등록하기</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label><button class="btn" id="btnAdd" type="button">프로젝트 등록하기</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <button class="btn ghost" type="button" id="btnProfile" hidden>내 프로필</button>
@@ -822,25 +823,19 @@ a.rms:hover{text-decoration:underline}
   <div class="area" id="taskArea">
   <div id="summary"></div>
 
-  <!-- 프로젝트 탭과 기간 선택을 한 줄에 -->
+  <div id="postNew" hidden></div>
+
+  <!-- 프로젝트 탭: 등록 카드 아래 -->
   <div class="ptRow">
   <div class="ptabs" id="ptabs" role="tablist"></div>
   </div>
 
-
-  <div id="postNew" hidden></div>
-
   <div class="filters">
     <div class="chips" id="partChips"></div>
-    <select class="sel" id="fStatus" aria-label="진행 현황"></select>
-    <select class="sel" id="fAssignee" aria-label="담당자"></select>
-    <input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색">
-    <label class="toggle"><input type="checkbox" id="fLate"> 지연만</label>
     <span class="spacer"></span>
     <div class="seg" id="viewSeg">
       <button type="button" data-view="list">목록</button>
       <button type="button" data-view="board">보드</button>
-      <button type="button" data-view="matrix">파트 현황</button>
     </div>
   </div>
 
@@ -1125,7 +1120,7 @@ const PCOLORS=['#1d5c84','#c2457a','#b57a12','#2f8a5b','#7a4fb0','#c4552f','#4b7
 let db=null, downloads=null, canWrite=false, storeReady=false;
 let projects=[], tasks=[], wlogs=[], comments=[], templates=[], wlRefresh=null;
 const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',project:'all',part:'all',status:'all',assignee:'all',q:'',late:false,sort:{key:'dueDate',dir:1}};
-try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,s);state.pAnchor=null;state.pBasis='active';}catch(e){}
+try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');Object.assign(state,s);state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
 {const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms'].includes(h))state.mode=h;}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
@@ -1148,7 +1143,7 @@ const defName=k=>k.startsWith('grp:')?MENU_GRPS.find(g=>'grp:'+g[0]===k)?.[1]:ME
 const menuName=k=>String(menuCfg.names?.[k]||'').trim()||defName(k)||k;
 function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
 // 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
-function menuOpen(k){if(k==='hours')k='report';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;return it[1]==='admin'||menuCfg.access?.[k]==='admin'?isAdminUser():true;}
+function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;return it[1]==='admin'||menuCfg.access?.[k]==='admin'?isAdminUser():true;}
 const firstMenu=()=>MENU_GRPS.flatMap(([g])=>menuOrder(g)).find(menuOpen)||'tasks';
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
@@ -1240,13 +1235,6 @@ function periodLabel(r){
   if(state.period==='month')return `${r[0].slice(0,4)}년 ${+r[0].slice(5,7)}월`;
   return `${r[0].slice(2).replace(/-/g,'.')} ~ ${r[1].slice(5).replace('-','.')}`;
 }
-function renderPeriodBar(){
-  const on=state.period!=='all';if(on)periodRange();
-  $('#periodSel').value=state.period;$('#pPick').hidden=!on;
-  if(on)$('#pPick').innerHTML=periodSelects(state.period,state.pAnchor,'pPickV');
-}
-$('#periodSel').addEventListener('change',e=>{state.period=e.target.value;state.pAnchor=null;persistUI();render();});
-$('#pPick').addEventListener('change',e=>{state.pAnchor=e.target.id==='pPickVY'?latestIn(state.period,+e.target.value):e.target.value;render();});
 
 /* ---------- filtering ---------- */
 function scoped(){return periodTasks().filter(t=>state.project==='all'||t.projectId===state.project);}
@@ -1255,7 +1243,6 @@ function passF(t){
   return (state.part==='all'||t.part===state.part)&&
     (state.status==='all'||(state.status==='open'?t.status!=='done':t.status===state.status))&&
     (state.assignee==='all'||(state.assignee==='me'?isMine(t):t.assignee===state.assignee))&&
-    (!state.late||isLate(t))&&
     (!q||[t.title,t.requester,t.assignee,t.jiraKey,t.rmsNo,t.note,projOf(t.projectId)?.name].some(v=>(v||'').toLowerCase().includes(q)));
 }
 function filtered(){return scoped().filter(passF);}
@@ -1284,7 +1271,7 @@ function applyMode(){
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnLeaveAdd').disabled=!canWrite;
   $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),22)}<span>${esc(myMember().name)}<span class="sLong"> · 내 프로필</span></span>${roleBadge()}`:'내 프로필'+roleBadge();$('#btnProfile').title='내 프로필';
-  const navMode=state.mode==='hours'?'report':state.mode; // 업무 시간은 주간 보고 안의 탭
+  const navMode=state.mode==='hours'?'staff':state.mode; // 업무 시간은 인력 관리 안의 탭
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===navMode));
   $('#pageTitle').textContent=menuName(navMode);
 }
@@ -1304,6 +1291,7 @@ function liftTools(){
 document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;const v=b.dataset.rview;if(b.dataset.goto===state.mode&&(!v||v===rstate.view))return;if(v)rstate.view=v;if(state.mode==='report')v3Flush();state.mode=b.dataset.goto;persistUI();render();});
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
 function renderBody(){
+  if(state.mode==='staff'&&state.sview==='hours')state.mode='hours';if(state.mode==='hours')state.sview='hours';
   renderBrand();applyMode();renderTodayOff();
   if(state.mode!=='menus')mDraft=null;
   if(state.mode==='leave'){renderLeave();return;}
@@ -1314,7 +1302,7 @@ function renderBody(){
   if(state.mode==='staff'){if(document.activeElement?.id!=='mQ'){renderStaff();applyMQ();}return;}
   if(state.mode==='history'){if(document.activeElement?.id!=='hQ')renderHistory();return;}
   if(state.mode==='report'){if(!document.activeElement?.dataset?.note)renderReport();return;}
-  renderPeriodBar();renderSummary();renderTabs();renderFilters();
+  renderSummary();renderTabs();renderFilters();
   const main=$('#main');
   $('#btnAdd').hidden=!canWrite;
   renderPostNew();
@@ -1332,7 +1320,6 @@ function renderBody(){
   }
   if(post){renderPost(post);return;}
   if(state.view==='board')renderBoard(list);
-  else if(state.view==='matrix')renderMatrix();
   else renderList();
 }
 
@@ -1367,7 +1354,6 @@ function renderFilters(){
   const me=myMember();if(state.assignee==='me'&&storeReady&&!me)state.assignee='all';
   if(state.assignee!=='all'&&state.assignee!=='me'&&!names.includes(state.assignee))state.assignee='all';
   $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
-  $('#fLate').checked=state.late;
   if(document.activeElement!==$('#fSearch'))$('#fSearch').value=state.q;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
 }
@@ -1386,24 +1372,6 @@ function renderBoard(list){
     </div>`;}).join('')}</div><p class="legend">카드를 다른 열로 끌어 놓으면 진행 현황이 바뀝니다</p>`;
 }
 
-function renderMatrix(){
-  const projs=state.project==='all'?projects:projects.filter(p=>p.id===state.project);
-  const cell=list=>{
-    if(!list.length)return `<div class="cell zero"><span class="main">0</span></div>`;
-    const done=list.filter(t=>t.status==='done').length, late=list.filter(isLate).length;
-    const est=list.reduce((a,t)=>a+(+t.estHours||0),0);
-    const r=Math.round(done/list.length*100);
-    return `<div class="cell"><span class="main">${done}/${list.length}</span><div class="mini"><i style="width:${r}%"></i></div><span class="sub">${hrs(est)}h${late?` · <span class="late">지연 ${late}</span>`:''}</span></div>`;
-  };
-  const PT=periodTasks();
-  const rows=projs.map(p=>{const pt=PT.filter(t=>t.projectId===p.id);
-    return `<tr><td><span class="part"><span class="sw" style="background:${esc(p.color)};width:8px;height:8px;border-radius:50%"></span><b>${esc(p.name)}</b></span>${p.client?`<div class="legend">${esc(p.client)}</div>`:''}</td>
-    ${PARTS.map(x=>`<td>${cell(pt.filter(t=>t.part===x.k))}</td>`).join('')}<td>${cell(pt)}</td></tr>`;}).join('');
-  const all=PT.filter(t=>projs.some(p=>p.id===t.projectId));
-  $('#main').innerHTML=`<div class="matrix"><table><thead><tr><th>프로젝트</th>${PARTS.map(p=>`<th><span class="part" style="justify-content:flex-end"><span class="sw" style="background:${p.c}"></span>${p.label}</span></th>`).join('')}<th>합계</th></tr></thead>
-  <tbody>${rows}</tbody><tfoot><tr><td>합계</td>${PARTS.map(x=>`<td>${cell(all.filter(t=>t.part===x.k))}</td>`).join('')}<td>${cell(all)}</td></tr></tfoot></table></div>
-  <p class="legend">완료/전체 건수 · 예상 소요시간 합계 · 지연 건수</p>`;
-}
 
 /* ---------- 게시물(최상위 업무) · 요청(parentId로 게시물에 붙은 하위 업무) ---------- */
 const isPost=t=>!t.parentId||!tasks.some(x=>x.id===t.parentId);
@@ -1560,7 +1528,6 @@ $('#ptabs').addEventListener('click',e=>{const ed=e.target.closest('[data-pedit]
 $('#partChips').addEventListener('click',e=>{const b=e.target.closest('[data-part]');if(!b)return;state.part=b.dataset.part;persistUI();render();});
 $('#fStatus').addEventListener('change',e=>{state.status=e.target.value;persistUI();render();});
 $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMember()){e.target.value=state.assignee;openWhoAmI();return;}state.assignee=e.target.value;persistUI();render();});
-$('#fLate').addEventListener('change',e=>{state.late=e.target.checked;persistUI();render();});
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#btnAdd').addEventListener('click',()=>{if(state.post){state.post=null;persistUI();render();}const t=$('#pnTitle');if(t){t.scrollIntoView({block:'center',behavior:'smooth'});t.focus({preventScroll:true});}});
@@ -2469,7 +2436,10 @@ rstate.week3=thursdayOf(todayStr());
 function rWeekLabel(thu){const wed=addDays(thu,6),firstMon=mondayOf(wed.slice(0,8)+'01');
   return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(mondayOf(wed)+'T00:00:00')-new Date(firstMon+'T00:00:00'))/(7*864e5))+1}주`;}
 const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
-const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['report','sum','주간보고'],['report','detail','주간보고(상세)'],['hours','','업무 시간']].map(([m,v,l])=>`<button type="button" class="vtab" role="tab" data-goto="${m}" ${v?`data-rview="${v}"`:''} aria-selected="${m==='hours'?cur==='hours':cur===v}">${l}</button>`).join('')}</div></div>`;
+const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['sum','주간보고'],['detail','주간보고(상세)']].map(([v,l])=>`<button type="button" class="vtab" role="tab" data-goto="report" data-rview="${v}" aria-selected="${cur===v}">${l}</button>`).join('')}</div></div>`;
+// 인력 관리 탭: 투입 현황 · 구성원 · 업무 시간(업무 시간은 mode 'hours' 화면을 그대로 씀)
+const staffTabs=()=>'<div class="vtabs" role="tablist">'+[['asg','투입 현황'],['members','구성원'],['hours','업무 시간']].map(([k,l])=>`<button type="button" class="vtab" role="tab" data-sview="${k}" aria-selected="${state.sview===k}">${l}</button>`).join('')+'</div>';
+document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-sview]');if(!b)return;const k=b.dataset.sview,m=k==='hours'?'hours':'staff';if(k===state.sview&&m===state.mode)return;state.sview=k;state.mode=m;persistUI();render();});
 const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];
 const v3Id=thu=>`w_${thu}`;
 const v3Doc=()=>reports.find(r=>r.id===v3Id(rstate.week3));
@@ -2522,7 +2492,7 @@ function renderReport(){
   const {thu,doc,cats}=v3Data(),locked=!!doc?.confirmed,ro=!canWrite||locked,inc=cats.filter(c=>c.inCount);
   const tot=k=>inc.reduce((n,c)=>n+(+c.counts[k]||0),0);
   const old=reports.filter(r=>r.kind!=='v3'&&r.week&&r.week>=mondayOf(thu)&&r.week<=mondayOf(addDays(thu,6)));
-  const sum=`<h3 class="rsubt">${rWeekLabel(thu).slice(4)} 운영 건수</h3><div class="statWrap"><table class="statTable rsum"><thead><tr><th>구분</th>${inc.map(c=>`<th title="${esc(c.name)}">${esc(c.name)}</th>`).join('')}<th>합계</th></tr></thead><tbody>
+  const sum=`<h3 class="rsubt">${rWeekLabel(thu).slice(4)} 운영 건수</h3><div class="statWrap rsum-wrap"><table class="statTable rsum"><thead><tr><th>구분</th>${inc.map(c=>`<th title="${esc(c.name)}">${esc(c.name)}</th>`).join('')}<th>합계</th></tr></thead><tbody>
     ${R_KINDS.map(([k,l])=>`<tr><th scope="row">${l}</th>${inc.map(c=>`<td class="num">${+c.counts[k]||0}</td>`).join('')}<td class="num"><b>${tot(k)}</b></td></tr>`).join('')}</tbody></table></div>`;
   const secs=cats.map(c=>{const fold=rstate.fold.has(c.id),s=c.sec;
     return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
@@ -2533,15 +2503,20 @@ function renderReport(){
         ${ro?'':'<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>'}
         <div class="rEditor" data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
       </div></section>`;}).join('');
+  const simple=cats.map(c=>{const s=c.sec;
+    return `<section class="rsec rsimple" data-cid="${esc(c.id)}">
+      <header class="rsecHead"><h3>${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>${!c.project&&!ro?'<button class="btn sm" type="button" data-cdel>삭제</button>':''}</header>
+      <div class="rsecBody"><div class="rEditor" data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div></div></section>`;}).join('');
+  const addCat=ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`;
   area.innerHTML=`
-    ${rTabs(rstate.view)}
     <div class="rtool">
       ${periodSelects('rweek',thu,'rWeek3')}
       <span class="spacer"></span>
       ${exportMenu([['rCopy','텍스트 복사'],...(downloads?[['rXlsx','엑셀 저장'],['rCsv','CSV','운영 건수 표만'],['rMd','Markdown']]:[])])}
     </div>
-    <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${rRange(thu)}</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
-    ${rstate.view==='detail'?secs+(ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`):sum}
+    <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${thu.replace(/-/g,'/')}(목)~${addDays(thu,6).slice(5).replace('-','/')}(수)</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
+    ${rTabs(rstate.view)}
+    ${rstate.view==='detail'?secs:sum+simple}${addCat}
     ${!doc&&old.length?`<div class="rold"><span class="legend">이전 형식 보고서 보기:</span>${old.map(r=>`<button class="btn ghost sm" type="button" data-oldrep="${esc(r.id)}">${esc(projOf(r.projectId)?.name||'전체 프로젝트')} · ${esc(md(r.week))} 주</button>`).join('')}</div>`:''}`;
 }
 onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&canWrite)v3Queue(ed.closest('[data-cid]').dataset.cid);});
@@ -2745,7 +2720,7 @@ function renderHours(){
       <td class="r num">${p.doneN}건 · ${hrs(p.doneH)}h${p.noAct?`<span class="legend" title="실제 소요가 비어 예상 소요로 계산"> *${p.noAct}</span>`:''}</td>
       <td class="r num">${p.doingN}건 · ${hrs(p.doingH)}h</td><td class="r num">${p.leaveH?hrs(p.leaveH)+'h':'—'}</td></tr>${detail}`;}).join('');
   area.innerHTML=`
-    ${rTabs('hours')}
+    <div class="vbar">${staffTabs()}</div>
     <div class="rtool">
       <select class="sel" id="hrProj" aria-label="프로젝트"><option value="all">전체 프로젝트</option>${projects.map(p=>`<option value="${esc(p.id)}" ${hrState.project===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
       <select class="sel" id="hrPer" aria-label="기간 단위"><option value="week" ${hrState.period==='week'?'selected':''}>주간</option><option value="month" ${hrState.period==='month'?'selected':''}>월간</option></select>
@@ -2777,7 +2752,7 @@ onArea('#hoursArea','keydown',e=>{if(e.key!=='Enter')return;const row=e.target.c
 // 프로젝트별 투입 인력: assignments 컬렉션 {projectId, memberId, part, role, start, end, rate, note}. 한 사람이 여러 프로젝트에 동시에 투입될 수 있음
 let assigns=[];
 const sstate={project:'all',show:'active'};
-if(state.sview!=='members')state.sview='asg'; // 인력 화면 탭(투입 현황/구성원), wb-ui에 기억
+if(!['members','hours'].includes(state.sview))state.sview='asg'; // 인력 화면 탭(투입 현황/구성원/업무 시간), wb-ui에 기억
 function asgStatus(a,t=todayStr()){if(a.start&&a.start>t)return 'plan';if(a.end&&a.end<t)return 'end';return 'on';}
 const ASG_ST={on:['투입 중','s-done'],plan:['투입 예정','s-doing'],end:['종료','s-wait']};
 // 구성원이 속한 프로젝트: 구성원 관리의 소속 + 투입 등록(종료되지 않은 것)
@@ -2818,7 +2793,7 @@ function renderStaff(){
     ${[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=PARTS.find(x=>x.k===m.part),pj=projOf(m.projectId),r=activeRate(m.id),q=quotaOf(m,Y);
       return `<tr><td class="nowrap"><b>${esc(m.name)}</b></td><td class="nowrap">${esc(m.email||'—')}</td><td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num ${r>100?'late':''}">${r}%</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td></tr>`;}).join('')}
     <tr class="mEmpty" hidden><td colspan="6">검색 결과가 없어요</td></tr></tbody></table></div>`;
-  const vt='<div class="vtabs" role="tablist">'+[['asg','투입 현황'],['members','구성원']].map(([k,l])=>`<button type="button" class="vtab" role="tab" data-sview="${k}" aria-selected="${state.sview===k}">${l}</button>`).join('')+'</div>';
+  const vt=staffTabs();
   area.innerHTML=`
     <div class="vbar">${vt}${state.sview==='members'?`<label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="mQ" type="search" placeholder="이름·메일·파트·프로젝트 검색" aria-label="구성원 검색" value="${esc(sstate.mq||'')}"></label>`:''}</div>
     <div class="rtool">
@@ -2837,7 +2812,7 @@ function applyMQ(){const k=(sstate.mq||'').trim().toLowerCase(),rows=[...documen
 onArea('#staffArea','input',e=>{if(e.target.id!=='mQ')return;sstate.mq=e.target.value;applyMQ();});
 onArea('#staffArea','change',e=>{if(e.target.id==='sProj'){sstate.project=e.target.value;render();}if(e.target.id==='sShow'){sstate.show=e.target.value;render();}});
 onArea('#staffArea','click',e=>{
-  const sv=e.target.closest('[data-sview]');if(sv){if(sv.dataset.sview!==state.sview){state.sview=sv.dataset.sview;persistUI();render();}return;}
+  if(e.target.closest('[data-sview]'))return; // 탭 전환은 공용 처리
   const id=e.target.closest('button')?.id;
   if(id==='sAdd'){openAssign(null,sstate.project!=='all'?sstate.project:'');return;}
   if(id==='sMembers'){openMembers();return;}
@@ -2901,7 +2876,7 @@ function openAssign(a,pid){
 const SITE_DEFAULT={title:'업무 관리 대시보드'};
 let site={...SITE_DEFAULT};
 // 사이트 제목은 화면에 보이지 않고 브라우저 탭 제목으로만 써요(저장된 settings/site 값)
-function renderBrand(){document.title=`${menuName(state.mode==='hours'?'report':state.mode)} · ${site.title||SITE_DEFAULT.title}`;}
+function renderBrand(){document.title=`${menuName(state.mode==='hours'?'staff':state.mode)} · ${site.title||SITE_DEFAULT.title}`;}
 
 /* ---------- history (변경 이력) ---------- */
 // 누가·언제·무엇을 바꿨는지 history 컬렉션에 1건씩 기록. 편집 권한(Contributor 이상)만 읽고 쓸 수 있으며 180일이 지난 기록은 자동 정리

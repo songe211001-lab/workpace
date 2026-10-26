@@ -836,6 +836,15 @@ a.rms:hover{text-decoration:underline}
 @keyframes evFlash{0%,50%{background:var(--accent-soft)}100%{background:transparent}}
 .evFlash,.evFlash>td{animation:evFlash 2s ease-out}
 @media (max-width:600px){.evSearchWrap{flex:1 1 100%}.evSearchWrap .searchBox{width:100%}}
+/* ---------- 휴지통 창 ---------- */
+.trBtn .trIco{width:15px;height:15px;flex:none}
+.trList{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden}
+.trItem{display:flex;align-items:center;gap:12px;padding:10px 14px;border-top:1px solid var(--line);min-width:0}
+.trItem:first-child{border-top:0}
+.trMain{display:flex;flex-direction:column;gap:2px;flex:1 1 auto;min-width:0}
+.trMain b{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.trActs{display:flex;gap:4px;flex:none}
+@media (max-width:600px){.trItem{flex-wrap:wrap}.trActs{width:100%;justify-content:flex-end}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -852,7 +861,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
     </div>
@@ -1354,7 +1363,7 @@ $('#main').addEventListener('click',async e=>{
     const ed=e.target.closest('[data-rqe]');if(ed){openTask(tasks.find(x=>x.id===ed.dataset.rqe));return;}
     const del=e.target.closest('.cmDel');if(!del)return;
     if(!del.dataset.sure){del.dataset.sure='1';del.textContent='정말 삭제';return;}
-    try{await db.collection('comments').doc(del.dataset.cm).delete();}catch(err){handleWriteError(err,'#cpErr');}
+    try{await wbDropComment(del.dataset.cm);}catch(err){handleWriteError(err,'#cpErr');}
     return;
   }
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
@@ -1533,7 +1542,7 @@ function openTask(t,prefill){
         return;}
       const del=e.target.closest('.cmDel');if(!del)return;
       if(!del.dataset.sure){del.dataset.sure='1';del.textContent='정말 삭제';return;}
-      try{await db.collection('comments').doc(del.dataset.cm).delete();}catch(err){handleWriteError(err,'#cmErr');}
+      try{await wbDropComment(del.dataset.cm);}catch(err){handleWriteError(err,'#cmErr');}
     });
     // 댓글 입력은 업무 저장과 상관없으니 닫기 경고 대상에서 뺌
     $('#cmBox').addEventListener('input',e=>e.stopPropagation());
@@ -1547,9 +1556,9 @@ function openTask(t,prefill){
     openTask(null,{projectId:t.projectId,part:np.k,title:t.title,jiraKey:t.jiraKey||'',rmsNo:t.rmsNo||'',rmsUrl:t.rmsUrl||'',link:t.link||'',requester:t.assignee||t.requester||'',priority:t.priority??2,parentId:rootOf(t).id,prevId:t.id,note:`이전 단계: ${pt.label} · ${t.title}`});});
   setTimeout(()=>{if(!ro)$('#tTitle').focus();},0);
   $('#tDel')?.addEventListener('click',()=>{
-    $('#delZone').innerHTML=`<div class="confirm">이 업무를 삭제할까요? <button class="btn danger" type="button" id="tDelYes">삭제</button><button class="btn ghost" type="button" id="tDelNo">취소</button></div>`;
+    $('#delZone').innerHTML=`<div class="confirm">이 업무를 삭제할까요? 휴지통에서 30일 동안 복구할 수 있어요. <button class="btn danger" type="button" id="tDelYes">삭제</button><button class="btn ghost" type="button" id="tDelNo">취소</button></div>`;
     $('#tDelNo').onclick=()=>openTask(t);
-    $('#tDelYes').onclick=async()=>{try{await db.collection('tasks').doc(t.id).delete();logChange('task','delete',t.id,t.title);closeModal();toast('삭제했습니다');}catch(err){handleWriteError(err,'#tErr');}};
+    $('#tDelYes').onclick=async()=>{try{await wbDrop('tasks','task',`업무 · ${t.title||'(제목 없음)'}`,[wbDocOf('tasks',tasks.find(x=>x.id===t.id)||t)]);logChange('task','delete',t.id,t.title,null,null,'휴지통으로 옮김');closeModal();toast('휴지통으로 옮겼어요');}catch(err){handleWriteError(err,'#tErr');}};
   });
   $('#taskForm').addEventListener('submit',async e=>{
     e.preventDefault();if(ro)return;
@@ -1626,13 +1635,12 @@ function openProject(p){
   $('#pDown')?.addEventListener('click',()=>move(1));
   $('#pDel')?.addEventListener('click',()=>{
     const pid=p.id,n=tasks.filter(t=>t.projectId===pid).length;
-    $('#pConfirm').innerHTML=`<div class="confirm">'${esc(p.name)}' 프로젝트${n?`와 업무 ${n}건`:''}을 삭제할까요? <button class="btn danger" type="button" id="pDelYes">삭제</button><button class="btn ghost" type="button" id="pDelNo">취소</button></div>`;
+    $('#pConfirm').innerHTML=`<div class="confirm">'${esc(p.name)}' 프로젝트${n?`와 업무 ${n}건`:''}을 삭제할까요? 휴지통에서 30일 동안 복구할 수 있어요. <button class="btn danger" type="button" id="pDelYes">삭제</button><button class="btn ghost" type="button" id="pDelNo">취소</button></div>`;
     $('#pDelNo').onclick=()=>$('#pConfirm').innerHTML='';
     $('#pDelYes').onclick=async()=>{
-      try{for(const t of tasks.filter(t=>t.projectId===pid))await db.collection('tasks').doc(t.id).delete();
-        for(const a of assigns.filter(a=>a.projectId===pid))await db.collection('assignments').doc(a.id).delete();
-        await db.collection('projects').doc(pid).delete();logChange('project','delete',pid,p.name,null,null,n?`업무 ${n}건 함께 삭제`:'');
-        if(state.project===pid)state.project='all';closeModal();toast('삭제했습니다');}
+      try{await wbDrop('tasks','project',`프로젝트 · ${p.name}${n?` (업무 ${n}건)`:''}`,[wbDocOf('projects',projects.find(x=>x.id===pid)||p),...tasks.filter(t=>t.projectId===pid).map(t=>wbDocOf('tasks',t)),...assigns.filter(a=>a.projectId===pid).map(a=>wbDocOf('assignments',a))]);
+        logChange('project','delete',pid,p.name,null,null,`${n?`업무 ${n}건과 함께 `:''}휴지통으로 옮김`);
+        if(state.project===pid)state.project='all';closeModal();toast('휴지통으로 옮겼어요');}
       catch(err){handleWriteError(err,'#pErr');}
     };
   });
@@ -2412,26 +2420,71 @@ async function evRestore(t){
 }
 // 30일 지난 묶음은 비움(쓰기 권한이 있는 사람이 화면을 열 때)
 let evPurged=false;
-async function evPurge(){if(!canWrite)return;const lim=Date.now()-EV_TRASH_DAYS*864e5;for(const t of evtTrash.filter(x=>new Date(x.at).getTime()<lim)){try{await db.collection('evt_trash').doc(t.id).delete();}catch(e){}}}
-function evTrashDraw(){
-  const box=$('#trList');if(!box)return;const adm=isAdminUser(),L=evtTrash.slice().sort((a,b)=>a.at<b.at?1:-1);
-  box.innerHTML=L.length?`<div class="tablebox"><table class="stable"><thead><tr><th>지운 것</th><th>종류</th><th>지운 시각</th><th></th></tr></thead><tbody>${L.map(t=>{const n=evTrashCount(t),d=new Date(t.at),left=Math.max(0,EV_TRASH_DAYS-Math.floor((Date.now()-d)/864e5));
-    return `<tr data-tid="${esc(t.id)}"><td>${esc(t.label)}${n?` <span class="legend">${n}행</span>`:''}</td><td>${esc(EV_TRASH_TYPE[t.type]||t.type)}</td><td><span class="legend">${esc(d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}${t.by?` · ${esc(t.by)}`:''} · ${left}일 남음</span></td>
-      <td style="white-space:nowrap">${canWrite?'<button type="button" class="btn sm" data-trr="1">복구</button>':''}${adm?'<button type="button" class="btn ghost sm" data-trx="1">영구 삭제</button>':''}</td></tr>`;}).join('')}</tbody></table></div>`:'<p class="legend" style="margin:0">휴지통이 비어 있어요.</p>';
+/* ----- 휴지통(업무 관리 · 주간 보고): trash 컬렉션 문서 하나 = 지운 묶음 하나 {at, area, type, label, payload, by}
+   payload.docs = 지운 문서 그대로 [{coll, id, data}] → 복구하면 같은 id로 다시 씀. 보고서 카테고리는 payload {docId, cat, idx} ----- */
+let wbTrash=[],wbPurged=false;
+const WB_TRASH_TYPE={task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
+const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
+const wbLocal=c=>({tasks,projects,assignments:assigns,comments})[c]||[];
+// 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
+async function wbDrop(area,type,label,docs,extra={}){
+  await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});
+  for(const d of docs)await db.collection(d.coll).doc(d.id).delete();
 }
-function evOpenTrash(){
-  evPurge();
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:760px"><header><h2>휴지통</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">지운 달·블록·행을 ${EV_TRASH_DAYS}일 동안 보관해요. ${EV_TRASH_DAYS}일이 지나면 자동으로 비워져요.${isAdminUser()?'':' 영구 삭제는 관리자만 할 수 있어요.'}</p><div id="trList"></div></div>
+async function wbRestore(t){
+  const p=t.payload||{},fail=m=>{throw {evMsg:m};};
+  if(t.type==='report_cat'){
+    const doc=reports.find(r=>r.id===p.docId);if(!doc)fail('그 주 보고서가 없어서 복구할 수 없어요.');
+    const cats=Array.isArray(doc.cats)?[...doc.cats]:[];if(cats.some(c=>c.id===p.cat.id||c.name===p.cat.name))fail(`'${p.cat.name}' 카테고리가 이미 있어서 복구하지 않았어요.`);
+    cats.splice(Math.min(p.idx??cats.length,cats.length),0,p.cat);await db.collection('reports').doc(doc.id).update({cats,updatedAt:new Date().toISOString()});
+  }else{
+    const docs=p.docs||[],has=(c,id)=>wbLocal(c).some(x=>x.id===id)||docs.some(d=>d.coll===c&&d.id===id);
+    // 원래 있던 곳(프로젝트·업무)이 없으면 막음
+    for(const d of docs){
+      if(d.coll==='tasks'&&d.data.projectId&&!has('projects',d.data.projectId))fail(`원래 프로젝트가 없어서 '${d.data.title||'업무'}'을(를) 복구할 수 없어요. 프로젝트를 먼저 복구해 주세요.`);
+      if(d.coll==='comments'&&!has('tasks',d.data.taskId))fail('댓글이 달려 있던 업무가 없어서 복구할 수 없어요. 업무를 먼저 복구해 주세요.');}
+    let n=0;for(const d of docs){if(wbLocal(d.coll).some(x=>x.id===d.id))continue;await db.collection(d.coll).doc(d.id).set(d.data);n++;}
+    if(!n){await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);return '이미 복구된 항목이라 휴지통에서만 지웠어요.';}
+  }
+  await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);
+  logChange(t.area==='report'?'report':'task','create',t.id,t.label,null,null,'휴지통에서 복구');
+  return `'${t.label}'을(를) 복구했어요.`;
+}
+async function wbDropComment(id){const c=comments.find(x=>x.id===id);if(!c){await db.collection('comments').doc(id).delete();return;}
+  const t=tasks.find(x=>x.id===c.taskId);await wbDrop('tasks','comment',`댓글 · ${String(c.text||'').replace(/\s+/g,' ').slice(0,30)}${t?` (${t.title})`:''}`,[wbDocOf('comments',c)]);}
+function wbTrashPaint(){const b=$('#tkTrashBtn');if(b)b.outerHTML=trashBtn('tkTrashBtn',TRASH_SRC.tasks.list().length);}
+document.addEventListener('click',e=>{const b=e.target.closest?.('#tkTrashBtn,#rpTrashBtn');if(b)openTrash(b.id==='tkTrashBtn'?'tasks':'report');});
+
+/* ----- 휴지통 창(이벤트 운영 · 업무 관리 · 주간 보고 공통) ----- */
+const TRASH_ICO='<svg class="trIco" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>';
+const trashBtn=(id,n)=>`<button class="btn trBtn" type="button" id="${id}">${TRASH_ICO}휴지통${n?` <span class="num">${n}</span>`:''}</button>`;
+// 휴지통 종류: list = 보이는 묶음, restore(t) → 안내 문구, coll = 휴지통 컬렉션, types = 종류 이름, count(t) = 행 수
+const TRASH_SRC={
+  evt:{list:()=>evtTrash,restore:t=>evRestore(t),coll:'evt_trash',types:EV_TRASH_TYPE,count:t=>evTrashCount(t),note:'지운 달·블록·행',ent:'evt',drop:id=>{evtTrash=evtTrash.filter(x=>x.id!==id);}},
+  tasks:{list:()=>wbTrash.filter(t=>t.area==='tasks'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:t=>(t.payload?.docs||[]).filter(d=>d.coll==='tasks').length,note:'지운 업무·프로젝트·댓글',ent:'task',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
+  report:{list:()=>wbTrash.filter(t=>t.area==='report'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 보고서 카테고리',ent:'report',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}}};
+let trashOpen=null;
+function trashDraw(){
+  const box=$('#trList'),S=TRASH_SRC[trashOpen];if(!box||!S)return;const adm=isAdminUser(),L=S.list().slice().sort((a,b)=>a.at<b.at?1:-1);
+  box.innerHTML=L.length?L.map(t=>{const n=S.count(t),d=new Date(t.at),left=Math.max(0,EV_TRASH_DAYS-Math.floor((Date.now()-d)/864e5));
+    return `<div class="trItem" data-tid="${esc(t.id)}"><div class="trMain"><b>${esc(t.label)}</b><span class="legend">${esc(S.types[t.type]||t.type)}${n?` · ${n}건`:''} · ${esc(d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}${t.by?` · ${esc(t.by)}`:''} · ${left}일 남음</span></div>
+      <div class="trActs">${canWrite?'<button type="button" class="btn sm" data-trr="1">복구</button>':''}${adm?'<button type="button" class="btn ghost sm" data-trx="1">영구 삭제</button>':''}</div></div>`;}).join(''):'<p class="legend" style="margin:0">휴지통이 비어 있어요.</p>';
+}
+function openTrash(kind){
+  const S=TRASH_SRC[kind];trashOpen=kind;trashPurge(kind);
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:640px"><header><h2>휴지통</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">${S.note}을 ${EV_TRASH_DAYS}일 동안 보관해요. ${EV_TRASH_DAYS}일이 지나면 자동으로 비워져요.${isAdminUser()?'':' 영구 삭제는 관리자만 할 수 있어요.'}</p><div id="trList" class="trList"></div></div>
     <footer><span class="err" id="trErr"></span><div class="r"><button class="btn" type="button" id="trClose">닫기</button></div></footer></div></div>`;
   $('#xClose').onclick=$('#trClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
-  evTrashDraw();
-  $('#trList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const t=evtTrash.find(x=>x.id===b.closest('tr').dataset.tid);if(!t)return;$('#trErr').textContent='';b.disabled=true;
-    try{if(b.dataset.trr){toast(await evRestore(t));render();}
-      else if(b.dataset.trx&&isAdminUser()){if(!b.dataset.ok){b.dataset.ok='1';b.disabled=false;b.textContent='한 번 더 누르면 삭제';return;}await db.collection('evt_trash').doc(t.id).delete();evtTrash=evtTrash.filter(x=>x.id!==t.id);logChange('evt','delete',t.id,t.label,null,null,'휴지통에서 영구 삭제');}
-      evTrashDraw();}
+  trashDraw();
+  $('#trList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const t=S.list().find(x=>x.id===b.closest('[data-tid]').dataset.tid);if(!t)return;$('#trErr').textContent='';b.disabled=true;
+    try{if(b.dataset.trr){toast(await S.restore(t));render();}
+      else if(b.dataset.trx&&isAdminUser()){if(!b.dataset.ok){b.dataset.ok='1';b.disabled=false;b.textContent='한 번 더 누르면 삭제';return;}await db.collection(S.coll).doc(t.id).delete();S.drop(t.id);logChange(S.ent,'delete',t.id,t.label,null,null,'휴지통에서 영구 삭제');}
+      trashDraw();}
     catch(err){b.disabled=false;if(err?.evMsg)$('#trErr').textContent=err.evMsg;else handleWriteError(err,'#trErr');}});
 }
+// 30일 지난 묶음은 비움(쓰기 권한이 있는 사람이 휴지통을 열거나 화면을 처음 열 때)
+async function trashPurge(kind){if(!canWrite)return;const S=TRASH_SRC[kind],lim=Date.now()-EV_TRASH_DAYS*864e5;for(const t of S.list().filter(x=>new Date(x.at).getTime()<lim)){try{await db.collection(S.coll).doc(t.id).delete();}catch(e){}}}
 
 /* ----- 다음 달 한 번에 만들기(원본 addAllNextMonths): 이벤트·배너·혜택의 다음 달을 만들고, 이미 있는 건 건너뜀 ----- */
 async function evNextAll(){
@@ -2448,7 +2501,7 @@ async function evNextAll(){
 /* ----- 전체 검색(원본 searchAll · goToHit): 이벤트·배너·프리마케팅·혜택 모든 달에서 찾아 그 자리로 이동 ----- */
 let evQ='',evHits=[],evHi=0;
 const evSearchHtml=()=>`<div class="evSearchWrap"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="evSearch" type="search" value="${esc(evQ)}" placeholder="전체 검색 (이벤트·배너·혜택)" aria-label="이벤트 운영 전체 검색" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="evDrop"></label><div class="evDrop" id="evDrop" role="listbox" hidden></div></div>`;
-const evCommonBtns=()=>`<button class="btn" type="button" id="evTrashBtn">휴지통${evtTrash.length?` <span class="num">${evtTrash.length}</span>`:''}</button>${canWrite?'<button class="btn" type="button" id="evNextAll" title="이벤트·배너·프리마케팅·혜택의 다음 달을 한 번에 만들어요. 이미 있는 달은 건너뛰어요.">다음 달 한 번에 만들기</button>':''}`;
+const evCommonBtns=()=>`${trashBtn('evTrashBtn',evtTrash.length)}${canWrite?'<button class="btn" type="button" id="evNextAll" title="이벤트·배너·프리마케팅·혜택의 다음 달을 한 번에 만들어요. 이미 있는 달은 건너뛰어요.">다음 달 한 번에 만들기</button>':''}`;
 function evSearch(q){
   q=q.trim().toLowerCase();if(!q)return [];const H=[],has=v=>String(v??'').toLowerCase().includes(q);
   evMonthList().slice().reverse().forEach(m=>evRowsOf(m.id).forEach((r,i)=>{if(['name','eid','category','note','opUrl'].some(f=>has(r[f])))H.push({tab:'events',kind:'이벤트',title:r.name||'(이벤트명 없음)',where:`${m.label} ${i+1}행${r.eid?` · ID ${r.eid}`:''}`,month:m.key,uid:r.id});}));
@@ -2485,7 +2538,7 @@ document.addEventListener('mousedown',e=>{if(!e.target.closest?.('.evSearchWrap'
 onArea('#eventOpsArea','click',async e=>{
   const h=e.target.closest('[data-hit]');if(h){evGoHit(evHits[+h.dataset.hit]);return;}
   const id=e.target.closest('button')?.id;
-  if(id==='evTrashBtn'){evOpenTrash();return;}
+  if(id==='evTrashBtn'){openTrash('evt');return;}
   if(id==='evNextAll'&&canWrite){const b=e.target.closest('button');b.disabled=true;try{await evNextAll();}catch(err){handleWriteError(err);render();}}
 });
 // 원본 JSON의 benefitBlocks 모양(최신 블록이 [0])
@@ -3055,7 +3108,7 @@ function renderReport(){
     <div class="rtool">
       ${periodSelects('rweek',thu,'rWeek3')}
       <span class="spacer"></span>
-      ${exportMenu([['rCopy','텍스트 복사'],...(downloads?[['rXlsx','엑셀 저장'],['rCsv','CSV','운영 건수 표만'],['rMd','Markdown']]:[])])}
+      ${trashBtn('rpTrashBtn',TRASH_SRC.report.list().length)}${exportMenu([['rCopy','텍스트 복사'],...(downloads?[['rXlsx','엑셀 저장'],['rCsv','CSV','운영 건수 표만'],['rMd','Markdown']]:[])])}
     </div>
     <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${thu.replace(/-/g,'/')}(목)~${addDays(thu,6).slice(5).replace('-','/')}(수)</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
     ${rTabs(rstate.view)}
@@ -3100,8 +3153,10 @@ onArea('#reportArea','click',async e=>{
   if(e.target.closest('[data-hl]')){toggleHl(sec.querySelector('.rEditor'));v3Queue(cid);return;}
   if(e.target.closest('[data-hr]')){insertHr(sec.querySelector('.rEditor'));v3Queue(cid);return;}
   if(e.target.closest('[data-refill]')){const c=v3Data().cats.find(x=>x.id===cid),counts=v3Auto(c,rstate.week3).counts;try{await v3Save(cid,{counts,countsEdited:false,...(Array.isArray(c.sec.lines)?{lines:v3SetHeads(c.sec.lines,counts)}:{})});}catch(err){handleWriteError(err);}return;}
-  if(e.target.closest('[data-cdel]')){const c=v3Data().cats.find(x=>x.id===cid);if(!confirm(`'${c?.name}' 카테고리를 이 주 보고서에서 삭제할까요?`))return;
-    try{await v3SaveDoc({cats:v3Custom(v3Doc()).filter(x=>x.id!==cid)});}catch(err){handleWriteError(err);}return;}
+  if(e.target.closest('[data-cdel]')){const c=v3Data().cats.find(x=>x.id===cid);if(!confirm(`'${c?.name}' 카테고리를 이 주 보고서에서 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`))return;
+    try{const all=v3Custom(v3Doc()),idx=all.findIndex(x=>x.id===cid),cat=all[idx];await v3SaveDoc({cats:all.filter(x=>x.id!==cid)});
+      if(cat)await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area:'report',type:'report_cat',label:`${rWeekLabel(rstate.week3)} · ${cat.name}`,payload:{docId:v3Id(rstate.week3),cat,idx},by:myMember()?.name||''});
+      toast('휴지통으로 옮겼어요');}catch(err){handleWriteError(err);}return;}
   const ob=e.target.closest('[data-oldrep]');if(ob){const r=reports.find(x=>x.id===ob.dataset.oldrep);if(!r)return;
     const txt=reportText(dedupModel(r.confirmed&&r.model?r.model:buildReport(r.week,r.projectId)),r.notes||{});
     $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal"><header><h2>이전 형식 보고서 (읽기 전용)</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header><div class="body" style="grid-template-columns:1fr"><pre class="oldRep">${esc(txt)}</pre></div></div></div>`;
@@ -3486,7 +3541,8 @@ render();
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
   db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
-  db.collection('evt_trash').onSnapshot(s=>{evtTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!evPurged){evPurged=true;evPurge();}evTrashDraw();if(state.mode==='eventops')render();},onErr);
+  db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');}trashDraw();wbTrashPaint();if(state.mode==='report')render();},onErr);
+  db.collection('evt_trash').onSnapshot(s=>{evtTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!evPurged){evPurged=true;trashPurge('evt');}trashDraw();if(state.mode==='eventops')render();},onErr);
   db.collection('parts').onSnapshot(s=>{
     if(s.docs.length){PARTS=s.docs.map(x=>{const d=x.data();return {k:x.id,label:d.name||'이름 없음',c:d.color||PART_COLORS[4],order:d.order??0};}).sort((a,b)=>a.order-b.order);partsStored=true;}
     else{PARTS=DEFAULT_PARTS.slice();partsStored=false;}

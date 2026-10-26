@@ -2512,7 +2512,7 @@ function bnRender(area,tabs){
   const conv=canWrite?`<button class="btn" type="button" id="bnConvert">사업팀 원본파일 변환</button><input type="file" id="bnRawFile" accept=".xlsx,.xlsm,.xls,.csv" hidden>`:'';
   if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 배너 달이 없어요</h2><p>관리대장 데이터를 가져오거나, 이번 달 시트를 만들거나, 사업팀 원본파일을 변환해 시작하세요.</p><div class="evHead" style="justify-content:center">${conv}${canWrite?'<button class="btn primary" type="button" id="bnFirst">이번 달 시트 만들기</button>':''}</div></div>`;return;}
   const mo=L.find(m=>m.key===bst.month);
-  const head=`<div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`${pm?'':`<button class="btn ghost" type="button" data-bdelm="${esc(mo.key)}">이 달 삭제</button>`}${pm?'':'<button class="btn" type="button" id="bnAddRow">+ 행 추가</button><button class="btn" type="button" id="bnCols">구좌 편집</button>'}${conv}<button class="btn primary" type="button" id="bnAddMonth">새 달 만들기</button>`:''}</div>`;
+  const head=`<div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`<button class="btn ghost" type="button" ${pm?'data-pdelm':'data-bdelm'}="${esc(mo.key)}">이 달 삭제</button>${pm?'':'<button class="btn" type="button" id="bnAddRow">+ 행 추가</button><button class="btn" type="button" id="bnCols">구좌 편집</button>'}${conv}<button class="btn primary" type="button" id="bnAddMonth">새 달 만들기</button>`:''}</div>`;
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
     <div class="panel evPanel">${head}${pm?bnPmGrid(mo,true)+bnPmStatus(mo):bnRankTable(mo,true)}
       <p class="legend" style="margin:0">${pm?'배너 구좌와 같은 달을 함께 써요. 새 달을 만들면 배너 구좌에도 같은 달이 생겨요.':'칸을 고친 뒤 다른 곳을 누르면 저장돼요. 파트너명 매핑에 있는 원본 이름은 표시 이름으로 바뀌어요.'}</p></div>`;
@@ -2676,6 +2676,11 @@ onArea('#eventOpsArea','click',async e=>{
     if(id==='pmDelRank'){const pms=bnPms(mo.id),max=bnMaxRank(mo,pms);if(max<=6)return;const del=pms.filter(p=>(p.rankInWeek||1)===max),filled=del.filter(p=>p.name);
       const go=async()=>{if(del.length)await evDrop('rows',`${mo.label} 프리마케팅 ${max}위 (${filled.length}곳)`,[],del);await bnSetMonthDoc(mo.id,{pmRankCount:max-1});render();};
       if(filled.length)evConfirm(`${max}위에 입력된 파트너 ${filled.length}곳이 함께 지워져요. 지울까요?`,go,'지우기');else await go();return;}
+    // 프리마케팅 탭의 이 달 삭제: 그 달 프리마케팅만 지움(배너 구좌는 남김)
+    const pd=e.target.closest('[data-pdelm]');
+    if(pd){const m=bnMonthList().find(x=>x.key===pd.dataset.pdelm),ps=bnPms(m.id);if(!ps.length){toast('이 달에는 지울 프리마케팅 데이터가 없어요.');return;}
+      evConfirm(`'${m.label}' 프리마케팅 데이터(${ps.length}건)를 삭제할까요?
+배너 구좌는 그대로 남아요. 휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await evDrop('rows',`${m.label} 프리마케팅 ${ps.length}건`,[],ps);render();});return;}
     const dm=e.target.closest('[data-bdelm]');
     if(dm){const m=bnMonthList().find(x=>x.key===dm.dataset.bdelm),rs=evtRowsAll.filter(r=>r.monthId===m.id);
       evConfirm(`'${m.label}' 배너 구좌 데이터를 삭제할까요?\n같은 달의 프리마케팅 데이터도 함께 지워져요. (순위 ${bnRanks(m.id).length}행 · 프리마케팅 ${bnPms(m.id).length}건)`,async()=>{await evDrop('banner_month',`${m.label} 배너·프리마케팅 달`,[m],rs);render();});return;}
@@ -2729,7 +2734,7 @@ function bfRender(area,tabs){
   const b=L.find(x=>x.id===bfst.cur),its=bfItems(b.id);
   const warn=its.filter(it=>{const d=bfDays(it.expiryDate);return d!=null&&d<=7;}).length;
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
-    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(bfLabel(b.label))}${b.id!==L[0].id?' <span class="legend">(이전 블록 보는 중)</span>':''}</h3><span class="spacer"></span>${canWrite?`<button class="btn ghost" type="button" data-fdelm="${esc(b.id)}">블록 삭제</button><button class="btn" type="button" id="bfAddRow">+ 행 추가</button><button class="btn primary" type="button" id="bfAddBlock">새 달 만들기</button>`:''}</div>
+    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(bfLabel(b.label))}${b.id!==L[0].id?' <span class="legend">(이전 블록 보는 중)</span>':''}</h3><span class="spacer"></span>${canWrite?`<button class="btn ghost" type="button" data-fdelm="${esc(b.id)}">이 달 삭제</button><button class="btn" type="button" id="bfAddRow">+ 행 추가</button><button class="btn primary" type="button" id="bfAddBlock">새 달 만들기</button>`:''}</div>
       ${warn?`<div class="banner" role="status">곧 종료되거나 이미 지난 혜택이 ${warn}건 있어요 — 아래에서 확인하세요.</div>`:''}
       ${bfTable(b,true)}
       <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 종료일이 7일 안이면 주황, 지났으면 빨강으로 표시해요. 새 달을 만들면 가장 최근 블록의 혜택을 복사해요.</p></div>`;

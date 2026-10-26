@@ -820,6 +820,24 @@ a.rms:hover{text-decoration:underline}
 .bcList{display:flex;flex-direction:column;gap:6px}
 .bcRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .bcRow .sel{flex:1 1 140px;min-width:0}
+/* ---------- 이벤트 운영: 혜택 · 휴지통 · 전체 검색 ---------- */
+.bfTable .bff{width:100%;min-width:110px;height:30px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 6px;font-size:13px;color:var(--fg)}
+.bfTable input[data-f="copy"]{min-width:200px}.bfTable input[type=date].bff{min-width:128px}
+.bfTable .bff:hover:not(:disabled){border-color:var(--line)}
+.bfTable .bff:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.bfTable .bff.bfSoon{background:var(--warn-soft);border-color:var(--warn-border);color:var(--warn)}
+.bfTable .bff.bfOver{background:var(--bad-soft);border-color:var(--bad-border);color:var(--bad)}
+.evSearchWrap{position:relative;min-width:0}
+.evSearchWrap .searchBox{margin:0;width:240px}
+.evDrop{position:absolute;top:calc(100% + 4px);left:0;z-index:30;width:min(440px,calc(100vw - 32px));max-height:360px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:4px;display:flex;flex-direction:column}
+.evDrop[hidden]{display:none}
+.evHit{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;align-items:center;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:13px}
+.evHit b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.evHit .legend{grid-column:2}
+.evHit[aria-selected="true"],.evHit:hover{background:var(--accent-soft)}
+.evMore{margin:0;padding:6px 8px}
+@keyframes evFlash{0%,50%{background:var(--accent-soft)}100%{background:transparent}}
+.evFlash,.evFlash>td{animation:evFlash 2s ease-out}
+@media (max-width:600px){.evSearchWrap{flex:1 1 100%}.evSearchWrap .searchBox{width:100%}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1774,7 +1792,6 @@ function renderLink(c){
    저장(wb_docs): evt_months = 월·블록·설정 문서(id 'event_YYYY-MM' / 'settings'), evt_rows = 행 문서(id = 원본 _uid)
    필드는 문서에 평평하게 둠(바뀐 칸만 update). 원본 이벤트ID(id)는 문서 id와 겹치지 않게 eid로 저장 */
 const EVT_TABS=[['events','이벤트 관리'],['banner','배너 구좌 관리'],['pm','프리마케팅 관리'],['benefit','혜택 관리']];
-const EVT_URL='https://songe211001-lab.github.io/workpace/event-ops.html';
 let evtTab=(()=>{try{return localStorage.getItem('wb-evtab')||'events';}catch(e){return 'events';}})();
 let evtMonths=[], evtRowsAll=[];
 const EV_STATUS=['완료','진행','대기','연장','비노출'];
@@ -1794,6 +1811,8 @@ const evNextKey=k=>{const [y,m]=k.split('-').map(Number);return m===12?`${y+1}-0
 const evLabelOf=k=>`${k.slice(2,4)}년 ${+k.slice(5,7)}월`;
 const evMid=k=>'event_'+k;
 const evUid=()=>Math.random().toString(36).slice(2,9);
+// 로컬 목록에 넣기(저장소 구독이 먼저 넣었으면 건너뜀 — 같은 행이 두 번 보이지 않게)
+const evKeep=(a,o)=>{if(!a.some(x=>x.id===o.id))a.push(o);};
 const evSettings=()=>evtMonths.find(m=>m.id==='settings')||{};
 const evCols=()=>[...EV_COLS,...(evSettings().customEventColumns||[]).map(c=>[c.key,c.label])];
 const evMonthList=()=>evtMonths.filter(m=>m.kind==='event_month').sort((a,b)=>(a.sortKey||'')<(b.sortKey||'')?-1:1);
@@ -1831,14 +1850,13 @@ const evHead=cur=>`<thead><tr>${cur?`<th class="selCell"><input type="checkbox" 
 
 function renderEventOps(){
   const area=$('#eventOpsArea');
-  if(area.contains(document.activeElement)&&document.activeElement.matches('.evf,.bnf,.pmf,.pmSet'))return; // 칸 입력 중엔 다시 그리지 않음
+  if(area.contains(document.activeElement)&&document.activeElement.matches('.evf,.bnf,.pmf,.pmSet,.bff')||document.activeElement?.id==='evSearch')return; // 칸 입력 중엔 다시 그리지 않음
   const tabs=`<div class="vbar"><div class="vtabs" role="tablist">${EVT_TABS.map(([k,l])=>`<button type="button" class="vtab" role="tab" data-evtab="${k}" aria-selected="${k===evtTab}">${l}</button>`).join('')}</div></div>`;
   if(evtTab==='banner'||evtTab==='pm'){bnRender(area,tabs);return;}
-  if(evtTab!=='events'){
-    area.innerHTML=`<div class="rtool"><span class="spacer"></span></div>${tabs}<div class="empty"><h2>${esc(EVT_TABS.find(t=>t[0]===evtTab)[1])} 탭은 다음 단계에서 옮겨요</h2><p>그때까지는 기존 관리대장에서 관리해 주세요.</p><a class="btn" href="${EVT_URL}" target="_blank" rel="noopener">기존 관리대장 열기 ↗</a></div>`;return;}
+  if(evtTab==='benefit'){bfRender(area,tabs);return;}
   const L=evMonthList();
   if(!est.month||!L.some(m=>m.key===est.month))est.month=evDefaultMonth();
-  const adm=isAdminUser(), tools=`${L.length?`<select class="sel" id="evMonth" aria-label="이벤트 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===est.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}<span class="spacer"></span>
+  const adm=isAdminUser(), tools=`${L.length?`<select class="sel" id="evMonth" aria-label="이벤트 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===est.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}${evSearchHtml()}<span class="spacer"></span>${evCommonBtns()}
     ${exportMenu(downloads&&L.length?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장'],['evSum','이 달 요약 엑셀']]:[])}${adm?'<button class="btn" type="button" id="evImport">관리대장 데이터 가져오기</button><input type="file" id="evFile" accept=".json,application/json" hidden>':''}`;
   if(!L.length){
     area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 이벤트 달이 없어요</h2><p>${adm?'기존 관리대장의 \'JSON 내보내기\' 파일을 \'관리대장 데이터 가져오기\'로 올리거나, ':''}이번 달 시트를 새로 만들어 시작하세요.</p>${canWrite?'<button class="btn primary" type="button" id="evFirst">이번 달 시트 만들기</button>':''}</div>`;return;}
@@ -1882,22 +1900,22 @@ async function evSaveField(r,f,v){
 async function evAddRows(mid,list){ // list: [{...fields}] → 맨 뒤에 추가
   let so=Math.max(-1,...evRowsOf(mid).map(r=>+r.sortOrder||0));
   for(const d of list){const id=evUid(),doc={monthId:mid,kind:'event',sortOrder:++so,status:'대기',name:'',workType:'',category:'',dueDate:'',reflectStatus:'',source:'',reviewUrl:'',urlType:'',opUrl:'',note:'',eid:'',...d,updatedAt:new Date().toISOString()};
-    await db.collection('evt_rows').doc(id).set(doc);evtRowsAll.push({id,...doc});}
+    await db.collection('evt_rows').doc(id).set(doc);evKeep(evtRowsAll,{id,...doc});}
 }
 async function evMove(mid,uid,toIdx){ // 행 하나를 toIdx 자리로(옮긴 행의 순서값만 이웃 사이 값으로 바꿈)
   const rows=evRowsOf(mid).filter(r=>r.id!==uid);const a=rows[toIdx-1],b=rows[toIdx];
   const so=a&&b?(+a.sortOrder+ +b.sortOrder)/2:a?+a.sortOrder+1:b?+b.sortOrder-1:0;
   const r=evRowById(uid);r.sortOrder=so;await db.collection('evt_rows').doc(uid).update({sortOrder:so});render();
 }
-async function evNewMonth(){
+async function evNewMonth(silent){
   const L=evMonthList(), last=L[L.length-1], key=last?evNextKey(last.key):todayStr().slice(0,7);
-  if(L.some(m=>m.key===key)){toast(`'${evLabelOf(key)}'은 이미 있어요.`);return;}
+  if(L.some(m=>m.key===key)){if(!silent)toast(`'${evLabelOf(key)}'은 이미 있어요.`);return null;}
   const carry=last?evRowsOf(last.id).filter(r=>r.status==='연장'):[];
   await db.collection('evt_months').doc(evMid(key)).set({kind:'event_month',sortKey:key,key,label:evLabelOf(key)});
-  evtMonths.push({id:evMid(key),kind:'event_month',sortKey:key,key,label:evLabelOf(key)});
+  evKeep(evtMonths,{id:evMid(key),kind:'event_month',sortKey:key,key,label:evLabelOf(key)});
   await evAddRows(evMid(key),carry.map(({id,monthId,sortOrder,updatedAt,...d})=>d));
   logChange('evt','create',evMid(key),`${evLabelOf(key)} 이벤트 시트`,null,null,`연장 ${carry.length}건 이월`);
-  est.month=key;est.sel.clear();render();toast(`'${evLabelOf(key)}' 시트를 만들었어요. '연장' 상태였던 ${carry.length}건을 이월했어요.`);
+  est.month=key;est.sel.clear();if(silent)return evLabelOf(key);render();toast(`'${evLabelOf(key)}' 시트를 만들었어요. '연장' 상태였던 ${carry.length}건을 이월했어요.`);
 }
 // 여러 칸 붙여넣기(엑셀에서 복사): 시작 칸부터 오른쪽·아래로 채우고, 모자라면 행을 새로 만듦
 async function evPaste(e){
@@ -1952,11 +1970,11 @@ onArea('#eventOpsArea','click',async e=>{
     const bk=e.target.closest('[data-bulk]');
     if(bk){const s=bk.dataset.bulk,ids=[...est.sel];for(const u of ids){const r=evRowById(u);if(r&&r.status!==s){r.status=s;await db.collection('evt_rows').doc(u).update({status:s});}}
       logChange('evt','update',mo.id,`${mo.label} 이벤트`,null,null,`${ids.length}건 상태를 '${s}'로 일괄 변경`);est.sel.clear();render();toast(`${ids.length}건을 '${s}' 상태로 바꿨어요.`);return;}
-    if(id==='evBulkDel'){const ids=[...est.sel];evConfirm(`선택한 ${ids.length}건을 삭제할까요?`,async()=>{for(const u of ids)await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(r=>!ids.includes(r.id));est.sel.clear();logChange('evt','delete',mo.id,`${mo.label} 이벤트 ${ids.length}건`,null,null,'일괄 삭제');render();});return;}
+    if(id==='evBulkDel'){const ids=[...est.sel];evConfirm(`선택한 ${ids.length}건을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await evDrop('rows',`${mo.label} 이벤트 ${ids.length}건 (일괄 삭제)`,[],ids.map(evRowById).filter(Boolean));est.sel.clear();render();});return;}
     const dm=e.target.closest('[data-evdelm]');
-    if(dm){const m=evMonthList().find(x=>x.key===dm.dataset.evdelm),rs=evRowsOf(m.id);evConfirm(`'${m.label}' 데이터(${rs.length}건)를 삭제할까요?`,async()=>{for(const r of rs)await db.collection('evt_rows').doc(r.id).delete();await db.collection('evt_months').doc(m.id).delete();evtRowsAll=evtRowsAll.filter(r=>r.monthId!==m.id);evtMonths=evtMonths.filter(x=>x.id!==m.id);logChange('evt','delete',m.id,`${m.label} 이벤트 시트`,null,null,`${rs.length}건 함께 삭제`);render();});return;}
+    if(dm){const m=evMonthList().find(x=>x.key===dm.dataset.evdelm),rs=evRowsOf(m.id);evConfirm(`'${m.label}' 데이터(${rs.length}건)를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await evDrop('event_month',`${m.label} 이벤트 달 (${rs.length}건)`,[m],rs);render();});return;}
     const tr=e.target.closest('tr[data-uid]');if(!tr)return;const tb=tr.closest('table'),mid=tb.dataset.mid,u=tr.dataset.uid;
-    if(e.target.closest('.evDel')){const r=evRowById(u);evConfirm(`'${r.name||'이벤트'}' 행을 삭제할까요?`,async()=>{await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(x=>x.id!==u);est.sel.delete(u);logChange('evt','delete',u,r.name||'(이벤트명 없음)');render();});return;}
+    if(e.target.closest('.evDel')){const r=evRowById(u);evConfirm(`'${r.name||'이벤트'}' 행을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await evDrop('rows',`${evtMonths.find(x=>x.id===r.monthId)?.label||''} 이벤트 · ${r.name||'(제목없음)'}`,[],[r]);est.sel.delete(u);render();});return;}
     const mv=e.target.closest('[data-mv]');
     if(mv){if(tb.querySelector('.evSel')&&est.filter!=='전체'){toast("필터를 '전체'로 바꾼 뒤 순서를 바꿔 주세요");return;}const rows=evRowsOf(mid),i=rows.findIndex(r=>r.id===u),j=i+ +mv.dataset.mv;if(j<0||j>=rows.length)return;await evMove(mid,u,j);return;}
   }catch(err){handleWriteError(err);}
@@ -1970,10 +1988,10 @@ onArea('#eventOpsArea','drop',e=>{const tr=e.target.closest?.('tr[data-uid]');if
   const mid=tr.closest('table').dataset.mid,to=evRowsOf(mid).findIndex(r=>r.id===tr.dataset.uid);evMove(mid,u,to).catch(err=>handleWriteError(err));});
 onArea('#eventOpsArea','dragend',()=>{evDrag=null;});
 
-// 원본 JSON 백업과 같은 모양으로 되돌림(이번 단계는 이벤트만, 나머지는 빈 배열)
+// 원본 JSON 백업과 같은 모양으로 되돌림(원본 활동 기록·휴지통은 대시보드 변경 이력·휴지통을 따로 써서 빈 배열)
 function evToState(){
   return {eventMonths:evMonthList().map(m=>({key:m.key,label:m.label,events:evRowsOf(m.id).map(r=>{const o={_uid:r.id};EV_FIELDS.forEach(f=>o[f]=r[f]??'');o.id=r.eid??'';(evSettings().customEventColumns||[]).forEach(c=>o[c.key]=r[c.key]??'');return o;})})),
-    bannerMonths:bnToState(),benefitBlocks:[],customEventColumns:evSettings().customEventColumns||[],partnerNameMap:evSettings().partnerNameMap||{}};
+    bannerMonths:bnToState(),benefitBlocks:bfToState(),customEventColumns:evSettings().customEventColumns||[],partnerNameMap:evSettings().partnerNameMap||{},activityLog:[],trash:[]};
 }
 async function evExport(id){
   const d=new Date().toISOString().slice(0,10),S=evToState();
@@ -1986,8 +2004,9 @@ async function evExport(id){
       if(nf.length){const ws=wb.addWorksheet('알닷 배너 구좌');nf.forEach(mo=>{ws.addRow([`■ 알닷 배너 구좌 (${mo.label})`]);ws.addRow(['노출순위',...mo.columns]);mo.ranks.forEach((r,i)=>ws.addRow([i+1,...mo.columns.map(c=>r.values[c]??'')]));ws.addRow([]);});}
       const pmm=nf.filter(mo=>mo.preMarketingPartners.length);
       if(pmm.length){const ws=wb.addWorksheet('프리마케팅');pmm.forEach(mo=>{ws.addRow([`■ 프리마케팅 (${mo.label})`,'배치 주기',mo.cycleWeeks||4,'기준일시',mo.weekAnchor||'']);ws.addRow(['주차','순위','파트너사']);mo.preMarketingPartners.forEach(x=>ws.addRow([x.week,x.rankInWeek,x.name??'']));ws.addRow([]);});}
+      if(S.benefitBlocks.length){const ws=wb.addWorksheet('알닷 혜택');S.benefitBlocks.forEach(b=>{ws.addRow([`■ 알닷 혜택 (${b.label})`]);ws.addRow(['No.','혜택명','문구','작업현황','종료일']);b.items.forEach((it,i)=>ws.addRow([i+1,it.name,it.copy,it.status,it.expiryDate]));ws.addRow([]);});}
       await downloads.save({filename:`알닷_이벤트_운영_${d}.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});return;}
-    // 이 달 요약(원본 buildMonthSummaryWorkbook). 배너·혜택은 다음 단계에서 옮김
+    // 이 달 요약(원본 buildMonthSummaryWorkbook)
     const mo=S.eventMonths.find(m=>m.key===est.month);if(!mo)return;const ws=wb.addWorksheet('요약'),add=r=>ws.addRow(r);
     add([`${mo.label} 운영 요약`]).font={bold:true,size:13};add([`만든 시각: ${new Date().toLocaleString('ko-KR')}`]);add([]);
     add(['■ 이벤트 상태별']).font={bold:true};add(['상태','건수']);EV_STATUS.forEach(s=>add([s,mo.events.filter(e=>e.status===s).length]));add(['합계',mo.events.length]);add([]);
@@ -1995,17 +2014,17 @@ async function evExport(id){
     const {over,near}=evDeadlines(evRowsOf(evMid(mo.key)));[...over,...near].forEach(r=>add([r.d<0?'지연':'임박',r.name,r.eid||'',r.reflectStatus||r.dueDate,r.d<0?`D+${-r.d}`:`D-${r.d}`]));if(!over.length&&!near.length)add(['없음']);
     add([]);add(['■ 배너 구좌 배정']).font={bold:true};const bm=S.bannerMonths.find(b=>b.key===mo.key);
     if(bm){add(['노출순위',...bm.columns]);bm.ranks.forEach((r,i)=>add([i+1,...bm.columns.map(c=>r.values[c]??'')]));}else add(['이 달의 배너 시트가 없어요.']);
-    add([]);add(['■ 이번 달 종료 혜택']).font={bold:true};add(['혜택은 다음 단계에서 옮겨요.']);
+    add([]);add(['■ 이번 달 종료 혜택']).font={bold:true};add(['혜택명','문구','작업현황','종료일']);const seenB=new Set();S.benefitBlocks.forEach(b=>b.items.forEach(it=>{if(String(it.expiryDate||'').startsWith(mo.key)&&!seenB.has(it._uid)){seenB.add(it._uid);add([it.name,it.copy,it.status,it.expiryDate]);}}));if(!seenB.size)add(['없음']);
     await downloads.save({filename:`알닷_${mo.label.replace(/\s/g,'')}_운영요약.xlsx`,data:new Blob([await wb.xlsx.writeBuffer()])});
   }catch(err){if(err?.code!=='declined')toast('파일을 만들지 못했어요');}
 }
-// 관리대장 데이터 가져오기(관리자): 원본 'JSON 내보내기' 파일 → 건수 확인 → 이벤트만 저장(원본 _uid를 문서 id로, 다시 가져와도 중복 없음)
+// 관리대장 데이터 가져오기(관리자): 원본 'JSON 내보내기' 파일 → 건수 확인 → 이벤트·배너·혜택 저장(원본 _uid를 문서 id로, 다시 가져와도 중복 없음)
 function evImportFile(file){
   const rd=new FileReader();
   rd.onload=()=>{let S=null;try{S=JSON.parse(rd.result);}catch(e){}
     if(!S||!['eventMonths','bannerMonths','benefitBlocks'].every(k=>Array.isArray(S[k]))){toast('관리대장 JSON 백업 파일이 아니에요. (eventMonths·bannerMonths·benefitBlocks가 있어야 해요)');return;}
     const ev=S.eventMonths.reduce((n,m)=>n+(m.events||[]).length,0),rk=S.bannerMonths.reduce((n,m)=>n+(m.ranks||[]).length,0),pm=S.bannerMonths.reduce((n,m)=>n+(m.preMarketingPartners||[]).length,0),bi=S.benefitBlocks.reduce((n,b)=>n+(b.items||[]).length,0);
-    evConfirm(`이 파일을 가져올까요?\n\n· 이벤트: ${S.eventMonths.length}개 달 · ${ev}건 → 지금 가져와요\n· 배너 구좌: ${S.bannerMonths.length}개 달 · 순위 ${rk}건 / 프리마케팅 ${pm}건 → 지금 가져와요\n· 혜택: ${S.benefitBlocks.length}개 블록 · ${bi}건 → 다음 단계에서\n\n같은 행이 이미 있으면 파일 내용으로 덮어써요.`,async()=>{
+    evConfirm(`이 파일을 가져올까요?\n\n· 이벤트: ${S.eventMonths.length}개 달 · ${ev}건 → 지금 가져와요\n· 배너 구좌: ${S.bannerMonths.length}개 달 · 순위 ${rk}건 / 프리마케팅 ${pm}건 → 지금 가져와요\n· 혜택: ${S.benefitBlocks.length}개 블록 · ${bi}건 → 지금 가져와요\n· 원본 휴지통 ${(S.trash||[]).length}건 · 활동 기록 ${(S.activityLog||[]).length}건 → 가져오지 않아요 (대시보드의 휴지통·변경 이력을 따로 써요)\n\n같은 행이 이미 있으면 파일 내용으로 덮어써요.`,async()=>{
       const seen=new Set();let n=0;$('#ecYes').textContent='가져오는 중…';
       await db.collection('evt_months').doc('settings').set({kind:'settings',customEventColumns:S.customEventColumns||[],partnerNameMap:S.partnerNameMap||{}});
       for(const mo of S.eventMonths){if(!/^\d{4}-\d{2}$/.test(mo.key||''))continue;
@@ -2024,8 +2043,13 @@ function evImportFile(file){
         for(const x of (mo.preMarketingPartners||[])){let u=String(x._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
           await db.collection('evt_rows').doc(u).set({monthId:mid,kind:'pm_partner',sortOrder:0,name:mapN(x.name||''),week:x.week,rankInWeek:x.rankInWeek});nb++;}
         if(nb%20===0)$('#ecYes').textContent=`가져오는 중… 배너 ${nb}건`;}
-      logChange('evt','create','import','관리대장 데이터 가져오기',null,null,`이벤트 ${S.eventMonths.length}개 달 · ${n}건, 배너 ${S.bannerMonths.length}개 달 · ${nb}건`);
-      est.month=null;bst.month=null;toast(`이벤트 ${n}건, 배너·프리마케팅 ${nb}건을 가져왔어요.`);render();
+      // 혜택 블록: 파일 순서([0]이 최신)를 sortKey로(클수록 최신). 블록 _uid를 문서 id에 써서 다시 가져와도 중복 없음
+      let nf=0;for(const [bi2,b] of S.benefitBlocks.entries()){let bu=String(b._uid||'');if(!bu||!/^[\w-]+$/.test(bu))bu=evUid();const mid='benefit_'+bu;
+        await db.collection('evt_months').doc(mid).set({kind:'benefit_block',sortKey:S.benefitBlocks.length-bi2,label:b.label||''});
+        for(const [i,it] of (b.items||[]).entries()){let u=String(it._uid||'');if(!u||seen.has(u)||!/^[\w-]+$/.test(u))u=evUid();seen.add(u);
+          await db.collection('evt_rows').doc(u).set({monthId:mid,kind:'benefit_item',sortOrder:i,name:it.name||'',copy:it.copy||'',status:it.status||'',expiryDate:it.expiryDate||''});nf++;}}
+      logChange('evt','create','import','관리대장 데이터 가져오기',null,null,`이벤트 ${S.eventMonths.length}개 달 · ${n}건, 배너 ${S.bannerMonths.length}개 달 · ${nb}건, 혜택 ${S.benefitBlocks.length}개 블록 · ${nf}건`);
+      est.month=null;bst.month=null;bfst.cur=null;toast(`이벤트 ${n}건, 배너·프리마케팅 ${nb}건, 혜택 ${nf}건을 가져왔어요.`);render();
     },'가져오기');
   };
   rd.readAsText(file);
@@ -2084,7 +2108,7 @@ function bnPmStatus(mo){
 function bnRender(area,tabs){
   const L=bnMonthList(),pm=evtTab==='pm',adm=isAdminUser();
   if(!bst.month||!L.some(m=>m.key===bst.month))bst.month=bnDefaultMonth();
-  const tools=`${L.length?`<select class="sel" id="bnMonth" aria-label="배너 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===bst.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}<span class="spacer"></span>
+  const tools=`${L.length?`<select class="sel" id="bnMonth" aria-label="배너 달">${L.slice().reverse().map(m=>`<option value="${esc(m.key)}" ${m.key===bst.month?'selected':''}>${esc(m.label)}</option>`).join('')}</select>`:''}${evSearchHtml()}<span class="spacer"></span>${evCommonBtns()}
     ${exportMenu(downloads&&(L.length||evMonthList().length)?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장']]:[])}${adm?'<button class="btn" type="button" id="bnMapEdit">파트너명 매핑</button>':''}`;
   const conv=canWrite?`<button class="btn" type="button" id="bnConvert">사업팀 원본파일 변환</button><input type="file" id="bnRawFile" accept=".xlsx,.xlsm,.xls,.csv" hidden>`:'';
   if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 배너 달이 없어요</h2><p>관리대장 데이터를 가져오거나, 이번 달 시트를 만들거나, 사업팀 원본파일을 변환해 시작하세요.</p><div class="evHead" style="justify-content:center">${conv}${canWrite?'<button class="btn primary" type="button" id="bnFirst">이번 달 시트 만들기</button>':''}</div></div>`;return;}
@@ -2102,23 +2126,23 @@ async function bnSetMonthDoc(id,patch){await db.collection('evt_months').doc(id)
 async function bnCreateMonth(key,base){ // base가 있으면 이전 달 구성을 복사(원본 addNewBannerMonth)
   const id=bnMid(key),doc={kind:'banner_month',sortKey:key,key,label:evLabelOf(key),cols:base?(base.cols||[]).map(c=>({...c})):BN_DEF_COLS.map(n=>({id:bnColId(),name:n})),hidden:base?[...(base.hidden||[])]:[],
     cycleWeeks:base?.cycleWeeks||4,weekAnchor:bnAnchor(key),partners:base?(base.partners||[]).map(p=>({...p})):[],changeLog:[]};
-  await db.collection('evt_months').doc(id).set(doc);evtMonths.push({id,...doc});
-  if(base){let so=0;for(const r of bnRanks(base.id)){const {id:_i,monthId,sortOrder,updatedAt,...v}=r;const nid=evUid(),d={...v,monthId:id,kind:'banner_rank',sortOrder:so++};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});}
-    for(const p of bnPms(base.id)){const nid=evUid(),d={monthId:id,kind:'pm_partner',sortOrder:0,name:p.name||'',week:p.week,rankInWeek:p.rankInWeek};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});}}
+  await db.collection('evt_months').doc(id).set(doc);evKeep(evtMonths,{id,...doc});
+  if(base){let so=0;for(const r of bnRanks(base.id)){const {id:_i,monthId,sortOrder,updatedAt,...v}=r;const nid=evUid(),d={...v,monthId:id,kind:'banner_rank',sortOrder:so++};await db.collection('evt_rows').doc(nid).set(d);evKeep(evtRowsAll,{id:nid,...d});}
+    for(const p of bnPms(base.id)){const nid=evUid(),d={monthId:id,kind:'pm_partner',sortOrder:0,name:p.name||'',week:p.week,rankInWeek:p.rankInWeek};await db.collection('evt_rows').doc(nid).set(d);evKeep(evtRowsAll,{id:nid,...d});}}
   return id;
 }
-async function bnNewMonth(){
+async function bnNewMonth(silent){
   const L=bnMonthList(),last=L[L.length-1],key=last?evNextKey(last.key):todayStr().slice(0,7);
-  if(L.some(m=>m.key===key)){toast(`'${evLabelOf(key)}'은 이미 있어요.`);return;}
+  if(L.some(m=>m.key===key)){if(!silent)toast(`'${evLabelOf(key)}'은 이미 있어요.`);return null;}
   await bnCreateMonth(key,last);logChange('evt','create',bnMid(key),`${evLabelOf(key)} 배너·프리마케팅 시트`,null,null,last?'이전 달 구성 복사':'');
-  bst.month=key;render();toast(`'${evLabelOf(key)}' 달을 만들었어요.${last?' 이전 달의 배너·프리마케팅 구성을 복사했어요.':''}`);
+  bst.month=key;if(silent)return evLabelOf(key);render();toast(`'${evLabelOf(key)}' 달을 만들었어요.${last?' 이전 달의 배너·프리마케팅 구성을 복사했어요.':''}`);
 }
 // 구좌 편집: 이름 변경·순서·숨김·추가·삭제(지운 칸의 값은 함께 지움)
 function bnOpenCols(mo){
   let rows=(mo.cols||[]).map(c=>({...c,hide:(mo.hidden||[]).includes(c.id)}));
   const draw=()=>{$('#bcList').innerHTML=rows.length?rows.map((r,i)=>`<div class="bcRow"><input class="sel" data-i="${i}" value="${esc(r.name)}" aria-label="구좌 이름" maxlength="30"><label class="cfItem"><input type="checkbox" data-hide="${i}" ${r.hide?'checked':''}>숨김</label><button type="button" class="btn ghost sm" data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-down="${i}" ${i<rows.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-del="${i}">삭제</button></div>`).join(''):'<p class="legend">구좌가 없어요. 아래에서 추가해 주세요.</p>';};
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:560px"><header><h2>구좌 편집 · ${esc(mo.label)}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">이름을 바꾸면 순위표 값은 그대로 따라가요. 지운 구좌의 값은 함께 사라져요. 숨긴 구좌는 표에서만 안 보여요.</p><div id="bcList" class="bcList"></div>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">이름을 바꾸면 순위표 값은 그대로 따라가요. 지운 구좌의 값은 휴지통에 30일 동안 보관돼요. 숨긴 구좌는 표에서만 안 보여요.</p><div id="bcList" class="bcList"></div>
       <div class="bcRow"><input class="sel" id="bcNew" placeholder="새 구좌 이름…" maxlength="30" aria-label="새 구좌 이름"><button type="button" class="btn" id="bcAdd">+ 추가</button></div></div>
     <footer><span class="err" id="bcErr"></span><div class="r"><button class="btn" type="button" id="bcNo">취소</button><button class="btn primary" type="button" id="bcSave">저장</button></div></footer></div></div>`;
   draw();$('#xClose').onclick=$('#bcNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
@@ -2130,9 +2154,9 @@ function bnOpenCols(mo){
   $('#bcSave').onclick=async()=>{
     const names=rows.map(r=>r.name.trim());if(names.some(n=>!n)){$('#bcErr').textContent='비어 있는 구좌 이름이 있어요.';return;}if(new Set(names).size!==names.length){$('#bcErr').textContent='같은 이름의 구좌가 있어요.';return;}
     const removed=(mo.cols||[]).filter(c=>!rows.some(r=>r.id===c.id));
-    if(removed.length&&!$('#bcSave').dataset.ok){$('#bcErr').textContent=`'${removed.map(c=>c.name).join("', '")}' 구좌를 지우면 그 칸의 값도 함께 사라져요. 한 번 더 누르면 저장해요.`;$('#bcSave').dataset.ok='1';return;}
+    if(removed.length&&!$('#bcSave').dataset.ok){$('#bcErr').textContent=`'${removed.map(c=>c.name).join("', '")}' 구좌를 지우면 그 칸의 값은 휴지통으로 옮겨요. 한 번 더 누르면 저장해요.`;$('#bcSave').dataset.ok='1';return;}
     $('#bcSave').disabled=true;
-    try{for(const r of bnRanks(mo.id)){const p={};removed.forEach(c=>{if(r['v_'+c.id])p['v_'+c.id]='';});if(Object.keys(p).length){await db.collection('evt_rows').doc(r.id).update(p);Object.assign(r,p);}}
+    try{if(removed.length)await evTrashCols(mo,removed);for(const r of bnRanks(mo.id)){const p={};removed.forEach(c=>{if(r['v_'+c.id])p['v_'+c.id]='';});if(Object.keys(p).length){await db.collection('evt_rows').doc(r.id).update(p);Object.assign(r,p);}}
       await bnSetMonthDoc(mo.id,{cols:rows.map((r,i)=>({id:r.id,name:names[i]})),hidden:rows.filter(r=>r.hide).map(r=>r.id)});
       logChange('evt','update',mo.id,`${mo.label} 배너 구좌 편집`,null,null,names.join(', '));closeModal();toast('구좌를 바꿨어요.');render();}
     catch(err){$('#bcSave').disabled=false;handleWriteError(err,'#bcErr');}
@@ -2151,7 +2175,7 @@ function bnOpenMap(){
   $('#pmList').addEventListener('click',e=>{const d=e.target.closest('[data-del]');if(d){rows.splice(+d.dataset.del,1);draw();}});
   $('#pmSave').onclick=async()=>{
     const map={};rows.forEach(r=>{const f=r.from.trim(),t=r.to.trim();if(f&&t)map[f]=t;});$('#pmSave').disabled=true;
-    try{const {id:_sid,...cur}=evSettings();await db.collection('evt_months').doc('settings').set({...cur,kind:'settings',partnerNameMap:map});const s=evtMonths.find(m=>m.id==='settings');if(s)s.partnerNameMap=map;else evtMonths.push({id:'settings',kind:'settings',partnerNameMap:map});
+    try{const {id:_sid,...cur}=evSettings();await db.collection('evt_months').doc('settings').set({...cur,kind:'settings',partnerNameMap:map});const s=evtMonths.find(m=>m.id==='settings');if(s)s.partnerNameMap=map;else evKeep(evtMonths,{id:'settings',kind:'settings',partnerNameMap:map});
       let n=0;for(const r of evtRowsAll){const p={};if(r.kind==='banner_rank')Object.keys(r).forEach(k=>{if(k.startsWith('v_')){const v=String(r[k]??'').trim();if(map[v]&&map[v]!==r[k])p[k]=map[v];}});
         if(r.kind==='pm_partner'){const v=String(r.name??'').trim();if(map[v]&&map[v]!==r.name)p.name=map[v];}
         if(Object.keys(p).length){await db.collection('evt_rows').doc(r.id).update(p);Object.assign(r,p);n+=Object.keys(p).length;}}
@@ -2216,10 +2240,10 @@ async function bnConvertFile(file,mode){
       if(mode==='banner'){const cols=p.slotCols.map(s=>({id:bnColId(),name:s.key}));
         for(const r of bnRanks(mo.id))await db.collection('evt_rows').doc(r.id).delete();evtRowsAll=evtRowsAll.filter(r=>!(r.monthId===mo.id&&r.kind==='banner_rank'));
         await bnSetMonthDoc(mo.id,{cols,hidden:[],partners:p.partners.map(x=>({name:x.name,week:x.week,rankInWeek:x.rankInWeek}))});
-        let so=0;for(const r of p.ranks){const d={monthId:mo.id,kind:'banner_rank',sortOrder:so++};cols.forEach(c=>{if(r[c.name]!=null)d['v_'+c.id]=bnMap(String(r[c.name]));});const id=evUid();await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}
+        let so=0;for(const r of p.ranks){const d={monthId:mo.id,kind:'banner_rank',sortOrder:so++};cols.forEach(c=>{if(r[c.name]!=null)d['v_'+c.id]=bnMap(String(r[c.name]));});const id=evUid();await db.collection('evt_rows').doc(id).set(d);evKeep(evtRowsAll,{id,...d});}
         logChange('evt','update',mo.id,`${label} 배너 구좌 원본파일 변환 반영`,null,null,`순위 ${p.ranks.length}행 · 파트너 ${p.partners.length}명`);}
       else{for(const r of bnPms(mo.id))await db.collection('evt_rows').doc(r.id).delete();evtRowsAll=evtRowsAll.filter(r=>!(r.monthId===mo.id&&r.kind==='pm_partner'));
-        for(const x of p.preMarketingPartners){const id=evUid(),d={monthId:mo.id,kind:'pm_partner',sortOrder:0,name:bnMap(x.name),week:x.week,rankInWeek:x.rankInWeek};await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}
+        for(const x of p.preMarketingPartners){const id=evUid(),d={monthId:mo.id,kind:'pm_partner',sortOrder:0,name:bnMap(x.name),week:x.week,rankInWeek:x.rankInWeek};await db.collection('evt_rows').doc(id).set(d);evKeep(evtRowsAll,{id,...d});}
         logChange('evt','update',mo.id,`${label} 프리마케팅 원본파일 변환 반영`,null,null,`프리마케팅 ${p.preMarketingPartners.length}명`);}
       bst.month=key;closeModal();render();toast(`'${label}' ${mode==='banner'?'배너 구좌':'프리마케팅 관리'}에 반영했어요. 신규 파트너명은 직접 확인해 주세요.`);}
     catch(err){$('#cvApply').disabled=false;handleWriteError(err,'#cvErr');}};
@@ -2235,7 +2259,7 @@ onArea('#eventOpsArea','change',async e=>{
       await db.collection('evt_rows').doc(r.id).update({[k]:v});r[k]=v;}
     else if(el.classList.contains('pmf')){const mid=el.closest('table').dataset.mid,w=+el.dataset.week,rk=+el.dataset.rank,v=bnMap(el.value);el.value=v;const p=bnPms(mid).find(x=>x.week===w&&x.rankInWeek===rk);
       if(p){if(String(p.name??'')===v)return;await db.collection('evt_rows').doc(p.id).update({name:v});p.name=v;}
-      else if(v){const id=evUid(),d={monthId:mid,kind:'pm_partner',sortOrder:0,name:v,week:w,rankInWeek:rk};await db.collection('evt_rows').doc(id).set(d);evtRowsAll.push({id,...d});}}
+      else if(v){const id=evUid(),d={monthId:mid,kind:'pm_partner',sortOrder:0,name:v,week:w,rankInWeek:rk};await db.collection('evt_rows').doc(id).set(d);evKeep(evtRowsAll,{id,...d});}}
     else if(el.classList.contains('pmSet')){const mo=bnMonthList().find(m=>m.key===bst.month),f=el.dataset.set;const v=f==='cycleWeeks'?Math.max(1,Math.min(12,parseInt(el.value)||4)):el.value;
       await bnSetMonthDoc(mo.id,{[f]:v});logChange('evt','update',mo.id,`${mo.label} 프리마케팅`,null,null,f==='cycleWeeks'?`배치 주기 ${v}주`:`기준일시 ${v}`);render();}
   }catch(err){handleWriteError(err);}
@@ -2254,17 +2278,16 @@ onArea('#eventOpsArea','click',async e=>{
     if(id==='bnAddMonth'){await bnNewMonth();return;}
     const mo=bnMonthList().find(m=>m.key===bst.month);if(!mo)return;
     if(id==='bnCols'){bnOpenCols(mo);return;}
-    if(id==='bnAddRow'){const so=Math.max(-1,...bnRanks(mo.id).map(r=>+r.sortOrder||0))+1,nid=evUid(),d={monthId:mo.id,kind:'banner_rank',sortOrder:so};await db.collection('evt_rows').doc(nid).set(d);evtRowsAll.push({id:nid,...d});render();return;}
+    if(id==='bnAddRow'){const so=Math.max(-1,...bnRanks(mo.id).map(r=>+r.sortOrder||0))+1,nid=evUid(),d={monthId:mo.id,kind:'banner_rank',sortOrder:so};await db.collection('evt_rows').doc(nid).set(d);evKeep(evtRowsAll,{id:nid,...d});render();return;}
     if(id==='pmAddRank'){await bnSetMonthDoc(mo.id,{pmRankCount:bnMaxRank(mo,bnPms(mo.id))+1});render();return;}
     if(id==='pmDelRank'){const pms=bnPms(mo.id),max=bnMaxRank(mo,pms);if(max<=6)return;const del=pms.filter(p=>(p.rankInWeek||1)===max),filled=del.filter(p=>p.name);
-      const go=async()=>{for(const p of del)await db.collection('evt_rows').doc(p.id).delete();evtRowsAll=evtRowsAll.filter(r=>!del.includes(r));await bnSetMonthDoc(mo.id,{pmRankCount:max-1});render();};
+      const go=async()=>{if(del.length)await evDrop('rows',`${mo.label} 프리마케팅 ${max}위 (${filled.length}곳)`,[],del);await bnSetMonthDoc(mo.id,{pmRankCount:max-1});render();};
       if(filled.length)evConfirm(`${max}위에 입력된 파트너 ${filled.length}곳이 함께 지워져요. 지울까요?`,go,'지우기');else await go();return;}
     const dm=e.target.closest('[data-bdelm]');
     if(dm){const m=bnMonthList().find(x=>x.key===dm.dataset.bdelm),rs=evtRowsAll.filter(r=>r.monthId===m.id);
-      evConfirm(`'${m.label}' 배너 구좌 데이터를 삭제할까요?\n같은 달의 프리마케팅 데이터도 함께 지워져요. (순위 ${bnRanks(m.id).length}행 · 프리마케팅 ${bnPms(m.id).length}건)`,async()=>{for(const r of rs)await db.collection('evt_rows').doc(r.id).delete();await db.collection('evt_months').doc(m.id).delete();
-        evtRowsAll=evtRowsAll.filter(r=>r.monthId!==m.id);evtMonths=evtMonths.filter(x=>x.id!==m.id);logChange('evt','delete',m.id,`${m.label} 배너·프리마케팅 시트`,null,null,`${rs.length}건 함께 삭제`);render();});return;}
+      evConfirm(`'${m.label}' 배너 구좌 데이터를 삭제할까요?\n같은 달의 프리마케팅 데이터도 함께 지워져요. (순위 ${bnRanks(m.id).length}행 · 프리마케팅 ${bnPms(m.id).length}건)`,async()=>{await evDrop('banner_month',`${m.label} 배너·프리마케팅 달`,[m],rs);render();});return;}
     const tr=e.target.closest('tr[data-buid]');if(!tr)return;const mid=tr.closest('table').dataset.mid,u=tr.dataset.buid;
-    if(e.target.closest('.bnDel')){evConfirm('이 순위 행을 삭제할까요?',async()=>{await db.collection('evt_rows').doc(u).delete();evtRowsAll=evtRowsAll.filter(r=>r.id!==u);logChange('evt','delete',u,'배너 순위 행');render();});return;}
+    if(e.target.closest('.bnDel')){{const r=evtRowsAll.find(x=>x.id===u),i=bnRanks(mid).indexOf(r),m=evtMonths.find(x=>x.id===mid);evConfirm('이 순위 행을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.',async()=>{await evDrop('rows',`${m?.label||''} 배너 ${i+1}위 행`,[],[r]);render();});}return;}
     const mv=e.target.closest('[data-bmv]');if(mv){const rows=bnRanks(mid),i=rows.findIndex(r=>r.id===u),j=i+ +mv.dataset.bmv;if(j<0||j>=rows.length)return;await bnMove(mid,u,j);}
   }catch(err){handleWriteError(err);}
 });
@@ -2278,6 +2301,208 @@ onArea('#eventOpsArea','dragend',()=>{bnDrag=null;});
 function bnToState(){return bnMonthList().map(m=>{const cols=m.cols||[];return {key:m.key,label:m.label,columns:cols.map(c=>c.name),hiddenColumns:cols.filter(c=>(m.hidden||[]).includes(c.id)).map(c=>c.name),cycleWeeks:m.cycleWeeks||4,weekAnchor:m.weekAnchor||'',partners:m.partners||[],changeLog:m.changeLog||[],...(m.pmRankCount?{pmRankCount:m.pmRankCount}:{}),
   ranks:bnRanks(m.id).map(r=>({_uid:r.id,values:Object.fromEntries(cols.filter(c=>r['v_'+c.id]!=null&&r['v_'+c.id]!=='').map(c=>[c.name,r['v_'+c.id]]))})),
   preMarketingPartners:bnPms(m.id).sort((a,b)=>(a.week-b.week)||(a.rankInWeek-b.rankInWeek)).map(p=>({_uid:p.id,name:p.name||'',week:p.week,rankInWeek:p.rankInWeek}))};});}
+
+/* ---------- 이벤트 운영 3단계: 혜택 관리 · 휴지통 · 다음 달 한 번에 만들기 · 전체 검색 ----------
+   evt_months 'benefit_<블록 uid>' = {kind:'benefit_block', sortKey(숫자, 클수록 최신 = 원본 benefitBlocks[0]), label}
+   evt_rows kind 'benefit_item' = {monthId, sortOrder, name, copy, status, expiryDate}
+   evt_trash 문서 하나 = 지운 묶음 하나 {at, type, label, payload:{months:[문서], rows:[문서], where}, by} — 복구하면 같은 id·순서값으로 다시 씀 */
+let evtTrash=[];
+const EV_TRASH_DAYS=30;
+const EV_TRASH_TYPE={rows:'행',event_month:'이벤트 달',banner_month:'배너·프리마케팅 달',benefit_block:'혜택 블록',banner_cols:'배너 구좌 칸'};
+const bfMonthList=()=>evtMonths.filter(m=>m.kind==='benefit_block').sort((a,b)=>(+b.sortKey||0)-(+a.sortKey||0));
+const bfItems=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='benefit_item').sort((a,b)=>(a.sortOrder-b.sortOrder)||(a.id<b.id?-1:1));
+const bfst={cur:null,open:new Set()};
+// 블록 이름 → 'YYYY-MM'(원본 benefitBlockMonthKey), 'M월'만 있으면 'YY년 M월'로 보여 줌(원본 formatBenefitLabel)
+function bfMonthKey(label){const m=String(label||'').match(/(?:(\d{2,4})년\s*)?(\d{1,2})월/);if(!m||+m[2]<1||+m[2]>12)return null;const y=m[1]?(m[1].length===2?2000+ +m[1]:+m[1]):new Date().getFullYear();return `${y}-${String(+m[2]).padStart(2,'0')}`;}
+const bfLabel=l=>{const m=String(l||'').match(/^(\d{1,2})월$/);return m?`${(est.month||todayStr()).slice(2,4)}년 ${m[1]}월`:l||'';};
+const bfDays=iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso||'')?Math.round((new Date(iso+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/864e5):null;
+
+function bfRow(it,i){
+  const ro=canWrite?'':'disabled',d=bfDays(it.expiryDate),cls=d==null?'':d<0?' bfOver':d<=7?' bfSoon':'';
+  const tt=d==null?'혜택 종료일 (선택)':d<0?`${-d}일 지난 혜택이에요. 종료 처리해 주세요.`:d<=7?`${d?`D-${d}`:'오늘 만료'} — 곧 종료돼요.`:'혜택 종료일';
+  return `<tr data-fuid="${esc(it.id)}"><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-fmv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-fmv="1" aria-label="아래로">▼</button></span>`:''}</td>
+    <td><input class="bff" data-f="name" value="${esc(it.name||'')}" placeholder="혜택명" aria-label="혜택명" ${ro}></td><td><input class="bff" data-f="copy" value="${esc(it.copy||'')}" placeholder="문구" aria-label="문구" ${ro}></td>
+    <td><input class="bff" data-f="status" value="${esc(it.status||'')}" placeholder="작업현황" aria-label="작업현황" ${ro}></td><td><input type="date" class="bff${cls}" data-f="expiryDate" value="${esc(it.expiryDate||'')}" title="${esc(tt)}" aria-label="종료일" ${ro}></td>
+    <td>${canWrite?'<button type="button" class="btn ghost sm bfDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
+}
+const bfTable=(b,cur)=>{const its=bfItems(b.id);return `<div class="tablebox"><table class="stable evTable bfTable" data-mid="${esc(b.id)}"><thead><tr><th>순서</th><th>혜택명</th><th>문구</th><th>작업현황</th><th>종료일</th><th></th></tr></thead><tbody>
+  ${its.length?its.map(bfRow).join(''):`<tr class="mEmpty"><td colspan="6">등록된 혜택이 없어요.${cur&&canWrite?" '+ 행 추가'로 시작하세요.":''}</td></tr>`}</tbody></table></div>`;};
+function bfRender(area,tabs){
+  const L=bfMonthList();
+  if(!bfst.cur||!L.some(b=>b.id===bfst.cur))bfst.cur=L[0]?.id||null;
+  const tools=`${L.length?`<select class="sel" id="bfBlock" aria-label="혜택 블록">${L.map(b=>`<option value="${esc(b.id)}" ${b.id===bfst.cur?'selected':''}>${esc(bfLabel(b.label))}</option>`).join('')}</select>`:''}${evSearchHtml()}<span class="spacer"></span>${evCommonBtns()}
+    ${exportMenu(downloads&&(L.length||evMonthList().length)?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장']]:[])}`;
+  if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 혜택 블록이 없어요</h2><p>관리대장 데이터를 가져오거나, 다음 달 블록을 만들어 시작하세요.</p>${canWrite?'<button class="btn primary" type="button" id="bfFirst">새 달 만들기</button>':''}</div>`;return;}
+  const b=L.find(x=>x.id===bfst.cur),its=bfItems(b.id),others=L.filter(x=>x.id!==b.id);
+  const warn=its.filter(it=>{const d=bfDays(it.expiryDate);return d!=null&&d<=7;}).length;
+  area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
+    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(bfLabel(b.label))}${b.id!==L[0].id?' <span class="legend">(이전 블록 보는 중)</span>':''}</h3><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="bfAddRow">+ 행 추가</button><button class="btn primary" type="button" id="bfAddBlock">새 달 만들기</button>':''}</div>
+      ${warn?`<div class="banner" role="status">곧 종료되거나 이미 지난 혜택이 ${warn}건 있어요 — 아래에서 확인하세요.</div>`:''}
+      ${bfTable(b,true)}
+      <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 종료일이 7일 안이면 주황, 지났으면 빨강으로 표시해요. 새 달을 만들면 가장 최근 블록의 혜택을 복사해요.</p></div>
+    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>
+      ${others.length?others.map(x=>{const open=bfst.open.has(x.id);return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-fopen="${esc(x.id)}" aria-expanded="${open}">${esc(bfLabel(x.label))}<span class="legend">${bfItems(x.id).length}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-fcur="${esc(x.id)}">이 달 보기</button>${canWrite?`<button type="button" class="btn ghost sm" data-fdelm="${esc(x.id)}">블록 삭제</button>`:''}</div>${open?bfTable(x,false):''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 블록 이력이 없어요.</p>'}</div>`;
+}
+// 새 달 블록: 가장 최근 블록의 다음 달, 그 블록 혜택을 복사(원본 addNewBenefitMonth). silent면 만든 이름만 돌려줌
+async function bfNewBlock(silent){
+  const L=bfMonthList(),from=L[0],base=from&&bfMonthKey(from.label),key=evNextKey(base||todayStr().slice(0,7)),label=evLabelOf(key);
+  if(L.some(b=>bfLabel(b.label)===label)){if(!silent)toast(`'${label}' 블록은 이미 있어요.`);return null;}
+  const id='benefit_'+evUid(),doc={kind:'benefit_block',sortKey:Math.max(0,...L.map(b=>+b.sortKey||0))+1,label};
+  await db.collection('evt_months').doc(id).set(doc);evKeep(evtMonths,{id,...doc});
+  const its=from?bfItems(from.id):[];let so=0;
+  for(const it of its){const nid=evUid(),d={monthId:id,kind:'benefit_item',sortOrder:so++,name:it.name||'',copy:it.copy||'',status:it.status||'',expiryDate:it.expiryDate||''};await db.collection('evt_rows').doc(nid).set(d);evKeep(evtRowsAll,{id:nid,...d});}
+  logChange('evt','create',id,`${label} 혜택 블록`,null,null,from?`${bfLabel(from.label)} 혜택 ${its.length}건 복사`:'');
+  bfst.cur=id;if(silent)return label;
+  render();toast(`'${label}' 블록을 만들었어요.${from?` '${bfLabel(from.label)}' 혜택 ${its.length}건을 복사했어요.`:''}`);
+}
+async function bfAddRow(b){const so=Math.max(-1,...bfItems(b.id).map(r=>+r.sortOrder||0))+1,id=evUid(),d={monthId:b.id,kind:'benefit_item',sortOrder:so,name:'',copy:'',status:'',expiryDate:''};await db.collection('evt_rows').doc(id).set(d);evKeep(evtRowsAll,{id,...d});}
+async function bfMove(mid,uid,to){const rows=bfItems(mid).filter(r=>r.id!==uid),a=rows[to-1],b=rows[to],so=a&&b?(+a.sortOrder+ +b.sortOrder)/2:a?+a.sortOrder+1:b?+b.sortOrder-1:0,r=evtRowsAll.find(x=>x.id===uid);r.sortOrder=so;await db.collection('evt_rows').doc(uid).update({sortOrder:so});render();}
+onArea('#eventOpsArea','change',async e=>{
+  const el=e.target;
+  if(el.id==='bfBlock'){bfst.cur=el.value;render();return;}
+  if(!el.classList.contains('bff')||!canWrite)return;
+  const r=evtRowsAll.find(x=>x.id===el.closest('tr').dataset.fuid),f=el.dataset.f,v=el.value;if(!r||String(r[f]??'')===v)return;
+  try{await db.collection('evt_rows').doc(r.id).update({[f]:v});r[f]=v;}catch(err){handleWriteError(err);}
+  if(f==='expiryDate')el.blur();
+  if(!document.activeElement?.matches?.('#eventOpsArea .bff'))render();
+});
+onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.bff'))setTimeout(()=>{if(!document.activeElement?.matches?.('#eventOpsArea .bff'))render();},0);});
+onArea('#eventOpsArea','click',async e=>{
+  if(evtTab!=='benefit')return;
+  const id=e.target.closest('button')?.id;
+  const op=e.target.closest('[data-fopen]');if(op){const k=op.dataset.fopen;bfst.open.has(k)?bfst.open.delete(k):bfst.open.add(k);render();return;}
+  const cu=e.target.closest('[data-fcur]');if(cu){bfst.cur=cu.dataset.fcur;render();window.scrollTo(0,0);return;}
+  if(!canWrite)return;
+  try{
+    if(id==='bfFirst'||id==='bfAddBlock'){await bfNewBlock();return;}
+    const b=bfMonthList().find(x=>x.id===bfst.cur);
+    if(id==='bfAddRow'&&b){await bfAddRow(b);render();return;}
+    const dm=e.target.closest('[data-fdelm]');
+    if(dm){const x=bfMonthList().find(y=>y.id===dm.dataset.fdelm),its=bfItems(x.id);evConfirm(`'${bfLabel(x.label)}' 혜택 블록(${its.length}건)을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await evDrop('benefit_block',`${bfLabel(x.label)} 혜택 블록 (${its.length}건)`,[x],its);render();});return;}
+    const tr=e.target.closest('tr[data-fuid]');if(!tr)return;const mid=tr.closest('table').dataset.mid,u=tr.dataset.fuid;
+    if(e.target.closest('.bfDel')){const r=evtRowsAll.find(x=>x.id===u),bl=evtMonths.find(x=>x.id===mid);await evDrop('rows',`${bfLabel(bl?.label)} 혜택 · ${r.name||'(이름없음)'}`,[],[r]);render();toast('휴지통으로 옮겼어요.');return;}
+    const mv=e.target.closest('[data-fmv]');if(mv){const rows=bfItems(mid),i=rows.findIndex(r=>r.id===u),j=i+ +mv.dataset.fmv;if(j<0||j>=rows.length)return;await bfMove(mid,u,j);}
+  }catch(err){handleWriteError(err);}
+});
+
+/* ----- 휴지통(원본 moveToTrash · restoreTrash · purgeOldTrash) ----- */
+const EV_KIND_WORD={event_month:'이벤트',banner_month:'배너',benefit_block:'혜택'};
+const evWhere=m=>m?`${m.kind==='benefit_block'?bfLabel(m.label):m.label} ${EV_KIND_WORD[m.kind]||''}`.trim():'';
+// 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
+async function evDrop(type,label,months,rows){
+  await db.collection('evt_trash').doc(evUid()).set({at:new Date().toISOString(),type,label,payload:{months:months.map(m=>({...m})),rows:rows.map(r=>({...r})),where:evWhere(months[0]||evtMonths.find(m=>m.id===rows[0]?.monthId))},by:myMember()?.name||''});
+  for(const r of rows)await db.collection('evt_rows').doc(r.id).delete();
+  for(const m of months)await db.collection('evt_months').doc(m.id).delete();
+  const rs=new Set(rows.map(r=>r.id)),ms=new Set(months.map(m=>m.id));
+  evtRowsAll=evtRowsAll.filter(r=>!rs.has(r.id));evtMonths=evtMonths.filter(m=>!ms.has(m.id));
+  logChange('evt','delete',months[0]?.id||rows[0]?.id||'',label,null,null,'휴지통으로 옮김');
+}
+// 배너 구좌 칸을 지울 때: 칸 이름·자리와 그 칸의 값만 담아 둠(복구하면 칸을 원래 자리에 다시 넣고 값을 되돌림)
+async function evTrashCols(mo,removed){
+  const cols=removed.map(c=>({...c,idx:(mo.cols||[]).findIndex(x=>x.id===c.id)})),vals=[];
+  bnRanks(mo.id).forEach(r=>{const v={id:r.id};removed.forEach(c=>{if(r['v_'+c.id])v['v_'+c.id]=r['v_'+c.id];});if(Object.keys(v).length>1)vals.push(v);});
+  await db.collection('evt_trash').doc(evUid()).set({at:new Date().toISOString(),type:'banner_cols',label:`${mo.label} 배너 구좌 칸 '${removed.map(c=>c.name).join("', '")}'`,payload:{monthId:mo.id,cols,vals,where:evWhere(mo)},by:myMember()?.name||''});
+}
+const evTrashCount=t=>t.type==='banner_cols'?(t.payload?.vals||[]).length:(t.payload?.rows||[]).length;
+async function evRestore(t){
+  const p=t.payload||{},fail=msg=>{throw {evMsg:msg};};let n=0;
+  if(t.type==='banner_cols'){
+    const mo=evtMonths.find(x=>x.id===p.monthId);if(!mo)fail(`원래 있던 곳(${p.where||'배너 달'})이 없어서 복구할 수 없어요. 그 달을 먼저 복구해 주세요.`);
+    const cols=[...(mo.cols||[])];(p.cols||[]).slice().sort((a,b)=>a.idx-b.idx).forEach(c=>{if(cols.some(x=>x.id===c.id))return;const nm=cols.some(x=>x.name===c.name)?`${c.name} (복구)`:c.name;cols.splice(c.idx<0?cols.length:Math.min(c.idx,cols.length),0,{id:c.id,name:nm});});
+    await bnSetMonthDoc(mo.id,{cols});
+    for(const v of p.vals||[]){const r=evtRowsAll.find(x=>x.id===v.id);if(!r)continue;const {id,...d}=v;await db.collection('evt_rows').doc(id).update(d);Object.assign(r,d);n++;}
+  }else{
+    const months=p.months||[],rows=p.rows||[];
+    for(const m of months)if(evtMonths.some(x=>x.id===m.id||(m.kind==='benefit_block'&&x.kind==='benefit_block'&&bfLabel(x.label)===bfLabel(m.label))))fail(`'${m.kind==='benefit_block'?bfLabel(m.label):m.label}'이(가) 이미 있어서 복구하지 않았어요.`);
+    if(!months.length&&rows.length&&!evtMonths.some(x=>x.id===rows[0].monthId))fail(`원래 있던 곳(${p.where||'그 달'})이 없어서 복구할 수 없어요. 그 달·블록을 먼저 복구해 주세요.`);
+    for(const m of months){const {id,...d}=m;await db.collection('evt_months').doc(id).set(d);evKeep(evtMonths,{...m});}
+    for(const r of rows){if(evtRowsAll.some(x=>x.id===r.id))continue;const {id,...d}=r;await db.collection('evt_rows').doc(id).set(d);evKeep(evtRowsAll,{...r});n++;}
+    if(!months.length&&rows.length&&!n){await db.collection('evt_trash').doc(t.id).delete();return '이미 복구된 행이라 휴지통에서만 지웠어요.';}
+  }
+  await db.collection('evt_trash').doc(t.id).delete();evtTrash=evtTrash.filter(x=>x.id!==t.id);
+  logChange('evt','create',t.id,t.label,null,null,'휴지통에서 복구');
+  return `'${t.label}'을(를) 복구했어요.`;
+}
+// 30일 지난 묶음은 비움(쓰기 권한이 있는 사람이 화면을 열 때)
+let evPurged=false;
+async function evPurge(){if(!canWrite)return;const lim=Date.now()-EV_TRASH_DAYS*864e5;for(const t of evtTrash.filter(x=>new Date(x.at).getTime()<lim)){try{await db.collection('evt_trash').doc(t.id).delete();}catch(e){}}}
+function evTrashDraw(){
+  const box=$('#trList');if(!box)return;const adm=isAdminUser(),L=evtTrash.slice().sort((a,b)=>a.at<b.at?1:-1);
+  box.innerHTML=L.length?`<div class="tablebox"><table class="stable"><thead><tr><th>지운 것</th><th>종류</th><th>지운 시각</th><th></th></tr></thead><tbody>${L.map(t=>{const n=evTrashCount(t),d=new Date(t.at),left=Math.max(0,EV_TRASH_DAYS-Math.floor((Date.now()-d)/864e5));
+    return `<tr data-tid="${esc(t.id)}"><td>${esc(t.label)}${n?` <span class="legend">${n}행</span>`:''}</td><td>${esc(EV_TRASH_TYPE[t.type]||t.type)}</td><td><span class="legend">${esc(d.toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}))}${t.by?` · ${esc(t.by)}`:''} · ${left}일 남음</span></td>
+      <td style="white-space:nowrap">${canWrite?'<button type="button" class="btn sm" data-trr="1">복구</button>':''}${adm?'<button type="button" class="btn ghost sm" data-trx="1">영구 삭제</button>':''}</td></tr>`;}).join('')}</tbody></table></div>`:'<p class="legend" style="margin:0">휴지통이 비어 있어요.</p>';
+}
+function evOpenTrash(){
+  evPurge();
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:760px"><header><h2>휴지통</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">지운 달·블록·행을 ${EV_TRASH_DAYS}일 동안 보관해요. ${EV_TRASH_DAYS}일이 지나면 자동으로 비워져요.${isAdminUser()?'':' 영구 삭제는 관리자만 할 수 있어요.'}</p><div id="trList"></div></div>
+    <footer><span class="err" id="trErr"></span><div class="r"><button class="btn" type="button" id="trClose">닫기</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#trClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  evTrashDraw();
+  $('#trList').addEventListener('click',async e=>{const b=e.target.closest('button');if(!b)return;const t=evtTrash.find(x=>x.id===b.closest('tr').dataset.tid);if(!t)return;$('#trErr').textContent='';b.disabled=true;
+    try{if(b.dataset.trr){toast(await evRestore(t));render();}
+      else if(b.dataset.trx&&isAdminUser()){if(!b.dataset.ok){b.dataset.ok='1';b.disabled=false;b.textContent='한 번 더 누르면 삭제';return;}await db.collection('evt_trash').doc(t.id).delete();evtTrash=evtTrash.filter(x=>x.id!==t.id);logChange('evt','delete',t.id,t.label,null,null,'휴지통에서 영구 삭제');}
+      evTrashDraw();}
+    catch(err){b.disabled=false;if(err?.evMsg)$('#trErr').textContent=err.evMsg;else handleWriteError(err,'#trErr');}});
+}
+
+/* ----- 다음 달 한 번에 만들기(원본 addAllNextMonths): 이벤트·배너·혜택의 다음 달을 만들고, 이미 있는 건 건너뜀 ----- */
+async function evNextAll(){
+  const made=[],skip=[];
+  const run=async(name,fn,next)=>{const l=await fn(true);l?made.push(`${name} ${l}`):skip.push(`${name} ${next}`);};
+  const e=evMonthList(),b=bnMonthList(),f=bfMonthList()[0],fk=f&&bfMonthKey(f.label);
+  await run('이벤트',evNewMonth,evLabelOf(e.length?evNextKey(e[e.length-1].key):todayStr().slice(0,7)));
+  await run('배너·프리마케팅',bnNewMonth,evLabelOf(b.length?evNextKey(b[b.length-1].key):todayStr().slice(0,7)));
+  await run('혜택',bfNewBlock,evLabelOf(evNextKey(fk||todayStr().slice(0,7))));
+  render();
+  toast(made.length?`새 달을 만들었어요: ${made.join(', ')}${skip.length?` · 이미 있어서 건너뜀: ${skip.join(', ')}`:''}`:'다음 달이 이미 모두 있어요.');
+}
+
+/* ----- 전체 검색(원본 searchAll · goToHit): 이벤트·배너·프리마케팅·혜택 모든 달에서 찾아 그 자리로 이동 ----- */
+let evQ='',evHits=[],evHi=0;
+const evSearchHtml=()=>`<div class="evSearchWrap"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="evSearch" type="search" value="${esc(evQ)}" placeholder="전체 검색 (이벤트·배너·혜택)" aria-label="이벤트 운영 전체 검색" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="evDrop"></label><div class="evDrop" id="evDrop" role="listbox" hidden></div></div>`;
+const evCommonBtns=()=>`<button class="btn" type="button" id="evTrashBtn">휴지통${evtTrash.length?` <span class="num">${evtTrash.length}</span>`:''}</button>${canWrite?'<button class="btn" type="button" id="evNextAll" title="이벤트·배너·프리마케팅·혜택의 다음 달을 한 번에 만들어요. 이미 있는 달은 건너뛰어요.">다음 달 한 번에 만들기</button>':''}`;
+function evSearch(q){
+  q=q.trim().toLowerCase();if(!q)return [];const H=[],has=v=>String(v??'').toLowerCase().includes(q);
+  evMonthList().slice().reverse().forEach(m=>evRowsOf(m.id).forEach((r,i)=>{if(['name','eid','category','note','opUrl'].some(f=>has(r[f])))H.push({tab:'events',kind:'이벤트',title:r.name||'(이벤트명 없음)',where:`${m.label} ${i+1}행${r.eid?` · ID ${r.eid}`:''}`,month:m.key,uid:r.id});}));
+  bnMonthList().slice().reverse().forEach(m=>{const cols=m.cols||[];bnRanks(m.id).forEach((r,i)=>cols.forEach(c=>{if(has(r['v_'+c.id]))H.push({tab:'banner',kind:'배너',title:r['v_'+c.id],where:`${m.label} ${i+1}위 · ${c.name}`,month:m.key,uid:r.id});}));
+    bnPms(m.id).filter(p=>has(p.name)).sort((a,b)=>(a.week-b.week)||(a.rankInWeek-b.rankInWeek)).forEach(p=>H.push({tab:'pm',kind:'프리마케팅',title:p.name,where:`${m.label} ${p.week}주차 ${p.rankInWeek}위`,month:m.key,cell:[p.week,p.rankInWeek]}));});
+  bfMonthList().forEach(b=>bfItems(b.id).forEach((it,i)=>{if(has(it.name)||has(it.copy))H.push({tab:'benefit',kind:'혜택',title:it.name||it.copy||'(이름없음)',where:`${bfLabel(b.label)} ${i+1}행`,block:b.id,uid:it.id});}));
+  return H;
+}
+function evDrawDrop(){
+  const d=$('#evDrop'),inp=$('#evSearch');if(!d||!inp)return;
+  if(!evQ.trim()){d.hidden=true;inp.setAttribute('aria-expanded','false');return;}
+  const show=evHits.slice(0,40);
+  d.innerHTML=show.length?show.map((h,i)=>`<button type="button" class="evHit" role="option" id="evHit${i}" data-hit="${i}" aria-selected="${i===evHi}"><span class="chip">${h.kind}</span><b>${esc(h.title)}</b><span class="legend">${esc(h.where)}</span></button>`).join('')+(evHits.length>40?`<p class="legend evMore">${evHits.length-40}건 더 있어요… 검색어를 더 자세히 적어 주세요.</p>`:''):'<p class="legend evMore">찾는 내용이 없어요.</p>';
+  d.hidden=false;inp.setAttribute('aria-expanded','true');inp.setAttribute('aria-activedescendant',show.length?`evHit${evHi}`:'');
+  $('#evHit'+evHi)?.scrollIntoView({block:'nearest'});
+}
+function evGoHit(h){
+  if(!h)return;evtTab=h.tab;try{localStorage.setItem('wb-evtab',h.tab);}catch(e){}
+  if(h.tab==='events'){est.month=h.month;est.filter='전체';est.sel.clear();}
+  if(h.tab==='banner'||h.tab==='pm')bst.month=h.month;
+  if(h.tab==='benefit')bfst.cur=h.block;
+  $('#evDrop')&&($('#evDrop').hidden=true);document.activeElement?.blur();render();
+  const el=h.cell?document.querySelector(`#eventOpsArea .pmTable .pmf[data-week="${h.cell[0]}"][data-rank="${h.cell[1]}"]`)?.closest('td'):document.querySelector(`#eventOpsArea tr[data-uid="${h.uid}"],#eventOpsArea tr[data-buid="${h.uid}"],#eventOpsArea tr[data-fuid="${h.uid}"]`);
+  if(el){el.scrollIntoView({block:'center'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
+}
+document.addEventListener('input',e=>{if(e.target.id!=='evSearch')return;evQ=e.target.value;evHits=evSearch(evQ);evHi=0;evDrawDrop();});
+document.addEventListener('focusin',e=>{if(e.target.id==='evSearch'&&evQ.trim()){evHits=evSearch(evQ);evDrawDrop();}});
+document.addEventListener('keydown',e=>{if(e.target.id!=='evSearch')return;const n=Math.min(evHits.length,40);
+  if(e.key==='ArrowDown'&&n){e.preventDefault();evHi=(evHi+1)%n;evDrawDrop();}
+  else if(e.key==='ArrowUp'&&n){e.preventDefault();evHi=(evHi-1+n)%n;evDrawDrop();}
+  else if(e.key==='Enter'){e.preventDefault();evGoHit(evHits[evHi]);}
+  else if(e.key==='Escape'){if($('#evDrop')&&!$('#evDrop').hidden){e.preventDefault();$('#evDrop').hidden=true;e.target.setAttribute('aria-expanded','false');}}});
+document.addEventListener('mousedown',e=>{if(!e.target.closest?.('.evSearchWrap')&&$('#evDrop'))$('#evDrop').hidden=true;});
+onArea('#eventOpsArea','click',async e=>{
+  const h=e.target.closest('[data-hit]');if(h){evGoHit(evHits[+h.dataset.hit]);return;}
+  const id=e.target.closest('button')?.id;
+  if(id==='evTrashBtn'){evOpenTrash();return;}
+  if(id==='evNextAll'&&canWrite){const b=e.target.closest('button');b.disabled=true;try{await evNextAll();}catch(err){handleWriteError(err);render();}}
+});
+// 원본 JSON의 benefitBlocks 모양(최신 블록이 [0])
+const bfToState=()=>bfMonthList().map(b=>({_uid:b.id.slice(8),label:b.label,items:bfItems(b.id).map(it=>({_uid:it.id,name:it.name||'',copy:it.copy||'',status:it.status||'',expiryDate:it.expiryDate||''}))}));
 
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
@@ -3259,6 +3484,7 @@ render();
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
   db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
+  db.collection('evt_trash').onSnapshot(s=>{evtTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!evPurged){evPurged=true;evPurge();}evTrashDraw();if(state.mode==='eventops')render();},onErr);
   db.collection('parts').onSnapshot(s=>{
     if(s.docs.length){PARTS=s.docs.map(x=>{const d=x.data();return {k:x.id,label:d.name||'이름 없음',c:d.color||PART_COLORS[4],order:d.order??0};}).sort((a,b)=>a.order-b.order);partsStored=true;}
     else{PARTS=DEFAULT_PARTS.slice();partsStored=false;}

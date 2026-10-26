@@ -845,6 +845,21 @@ a.rms:hover{text-decoration:underline}
 .trMain b{font-size:13px;font-weight:600;overflow-wrap:anywhere}
 .trActs{display:flex;gap:4px;flex:none}
 @media (max-width:600px){.trItem{flex-wrap:wrap}.trActs{width:100%;justify-content:flex-end}}
+/* ---------- 업무 목록: 지연 표시 · 상태 바로 바꾸기 · 등록 카드 ---------- */
+.postRow.is-late{box-shadow:inset 3px 0 0 var(--bad-strong)}
+.lateTag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--bad-soft);color:var(--bad);font-size:11px;font-weight:700}
+.stSel{height:26px;border-radius:999px;border:1px solid transparent;padding:0 8px;font-size:12px;font-weight:700;cursor:pointer;width:auto}
+.stSel:hover{border-color:var(--line)}.stSel:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.pnRow{flex-wrap:wrap}
+.pnRow select.sel{flex:0 0 auto;width:auto;max-width:100%}
+.pnRow #pnTitle{order:-1;flex:1 1 100%}
+.pnToggle{all:unset;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;cursor:default}
+.pnToggle .chevron{display:none}
+@media (max-width:600px){
+  .pnToggle{cursor:pointer;width:100%}.pnToggle .chevron{display:inline;margin-left:auto;color:var(--muted)}
+  .postNew:not(.open) .pnRow,.postNew:not(.open) .err{display:none}
+  .postNew:not(.open){padding-block:10px}
+}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1216,12 +1231,13 @@ const stamp=s=>(s||'').slice(0,16).replace('T',' ');
 function openPost(id){state.post=id;persistUI();render();window.scrollTo(0,0);}
 
 // 맨 위 '프로젝트 등록하기' 카드: 게시물(최상위 업무)을 바로 만듦
+let pnOpen=false; // 모바일에서 등록 카드를 펼쳤는지(데스크톱은 늘 펼침)
 function renderPostNew(){
   const box=$('#postNew');
   box.hidden=!canWrite||!storeReady||!projects.length;
   if(box.hidden||box.contains(document.activeElement))return; // 입력 중엔 다시 그리지 않음
   const people=[...new Set([...members.map(m=>m.name),...tasks.map(x=>x.requester)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
-  keepVals(box,`<form class="postNew" id="pnForm" novalidate><h3>프로젝트 등록하기</h3><div class="pnRow">
+  keepVals(box,`<form class="postNew${pnOpen?' open':''}" id="pnForm" novalidate><h3><button type="button" class="pnToggle" id="pnToggle" aria-expanded="${pnOpen}" aria-controls="pnRowBox">프로젝트 등록하기<span class="chevron" aria-hidden="true">${pnOpen?'▲':'▼'}</span></button></h3><div class="pnRow" id="pnRowBox">
     <select class="sel" id="pnProj" aria-label="서비스">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'?state.project:projects[0].id)}</select>
     <input class="sel" id="pnTitle" placeholder="제목" maxlength="200" aria-label="제목">
     <select class="sel" id="pnPart" aria-label="파트">${optH(PARTS.map(p=>[p.k,p.label]),state.part!=='all'?state.part:PARTS[0].k)}</select>
@@ -1232,6 +1248,7 @@ function renderPostNew(){
     <button class="btn primary" type="submit" id="pnSave">등록하기</button></div>
     <datalist id="pnPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><span class="err" id="pnErr"></span></form>`);
 }
+$('#postNew').addEventListener('click',e=>{if(!e.target.closest('#pnToggle')||!matchMedia('(max-width:600px)').matches)return;pnOpen=!pnOpen;const f=$('#pnForm');f.classList.toggle('open',pnOpen);e.target.closest('#pnToggle').setAttribute('aria-expanded',String(pnOpen));f.querySelector('.chevron').textContent=pnOpen?'▲':'▼';if(pnOpen)$('#pnTitle').focus();});
 $('#postNew').addEventListener('submit',async e=>{
   e.preventDefault();if(!canWrite)return;
   const v=id=>$('#'+id).value.trim(), m=memOf($('#pnAs').value), now=new Date().toISOString();
@@ -1252,15 +1269,17 @@ function postList(){
   const key=p=>(p.requestDate||(p.createdAt||'').slice(0,10))+'|'+(p.createdAt||'');
   return [...byRoot.values()].sort((a,b)=>key(b).localeCompare(key(a)));
 }
+const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
 function postRow(p){
   const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
-  return `<li class="postRow${isLate(p)&&!k.length?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
+  const late=k.length?k.some(isLate):isLate(p),own=!k.length&&canWrite;
+  return `<li class="postRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     ${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}
     <span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>
-    <span class="pMeta num">${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>
+    <span class="pMeta num">${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:''}</span>
     <span class="pMeta">${who(p.assignee,p.assigneeId,22,'담당 미지정')}</span>
     <span class="pMeta">${k.length?`요청 ${k.length}건${doing?` · 진행 ${doing}`:''}`:'요청 없음'}</span>
-    <span class="pill s-${st.k}">${st.label}</span></li>`;
+    ${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</li>`;
 }
 function renderList(){
   const posts=postList();
@@ -1283,7 +1302,7 @@ function renderPost(p){
       <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   const html=`<div class="postView">
     <div class="postHead"><button class="btn ghost" type="button" id="postBack">← 목록</button>${canWrite?'<button class="btn" type="button" id="postEdit">수정</button>':''}</div>
-    <div class="panel postCard"><div class="pcTop">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pill s-${st.k}">${st.label}</span>${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}</div>
+    <div class="panel postCard"><div class="pcTop">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}${!k.length&&canWrite?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}</div>
       <h2 class="pcTitle">${esc(p.title)}</h2>
       <div class="pcMeta"><span>요청자 ${who(p.requester,'',22,'—')}</span><span>담당자 ${who(p.assignee,p.assigneeId,22)} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
       ${p.note?`<p class="pcNote">${esc(p.note)}</p>`:''}</div>
@@ -1353,7 +1372,7 @@ $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;const cm=customOf(b.dataset.mode);if(cm?.newTab&&safeUrl(cm.url)){window.open(safeUrl(cm.url),'_blank','noopener');return;}if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnLeaveAdd').addEventListener('click',()=>openSched());
 $('#main').addEventListener('click',async e=>{
-  if(e.target.closest('a'))return;
+  if(e.target.closest('a,select'))return;
   const yh=e.target.closest('[data-year]');if(yh){const f=new Set(state.yfold||[]),y=yh.dataset.year;f.has(y)?f.delete(y):f.add(y);state.yfold=[...f];persistUI();render();return;}
   if(e.target.id==='postBack'){openPost(null);return;}
   const p=state.post&&tasks.find(x=>x.id===state.post);
@@ -3528,7 +3547,7 @@ render();
   let w=null;try{w=u?await u.can('data.write'):null;}catch(e){}
   canWrite=w!==false;userCap=u;try{actorId=u?await u.id():null;}catch(e){}
   if(w===false){$('#banner').textContent='보기 전용 권한입니다. 업무를 등록·수정하려면 공유한 사람에게 편집 권한을 요청하세요.';$('#banner').hidden=false;}
-  let got=0;const ready=()=>{if(++got>=10)storeReady=true;};
+  let got=0;const ready=()=>{if(++got>=10&&!storeReady){storeReady=true;render();}}; // 마지막에 온 구독이 다시 그리지 않아도 로딩 화면에서 넘어가게
   const onErr=e=>{if(e?.code!=='revoked'){$('#banner').textContent='업무 목록을 불러오지 못했습니다. 페이지를 새로 고쳐 주세요.';$('#banner').hidden=false;}};
   let pr=false,tr=false,ar=false,mr=false,lr=false,rr=false,sr=false;
   db.collection('assignments').onSnapshot(s=>{assigns=s.docs.map(x=>({id:x.id,...x.data()}));if(!sr){sr=true;ready();}render();},onErr);

@@ -891,6 +891,14 @@ a.rms:hover{text-decoration:underline}
 .gateForm input,.gateForm select{height:36px;padding:0 12px;font-size:13px}
 .gateForm .btn{height:38px;margin-top:10px}
 .gateCard>p:last-child,.gateCard .err{text-align:center}
+.gateTabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.gateTab{all:unset;box-sizing:border-box;text-align:center;padding:8px 0;border-radius:calc(var(--r) - 2px);font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer}
+.gateTab[aria-selected="true"]{background:var(--surface);color:var(--accent-dark);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.gateTab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.gateForm label .legend{font-weight:400;margin-left:4px}
+.gatePw{position:relative}
+.gateForm .gatePw input{padding-right:64px}
+.gateForm .gatePw .btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0;height:28px;padding:0 8px}
 @media (max-width:420px){.gateCard{padding:28px 20px}}
 </style>
 </head>
@@ -1081,48 +1089,112 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
     listAdmins:async()=>{const {data,error}=await sb.rpc('wb_admin_ids');if(error)throw toErr(error);return data||[];},
     setAdmin:async(uid,on)=>{const {error}=await sb.rpc('wb_set_admin',{p_user:uid,p_on:on});if(error)throw Object.assign(new Error(error.message),{code:'admin'});if(uid===me.id)isAdmin=on;}};
 
-  /* ---------- 로그인 화면 (회사 메일로 받은 6자리 코드) ---------- */
-  // 링크 대신 코드를 쓰는 이유: 회사 메일 보안 검사가 로그인 링크를 미리 열어 버려 링크가 무효가 되는 경우가 있어서
-  // 비밀번호 없음. 처음 오는 메일이면 코드 확인 뒤 이름·파트를 정하는 마무리 화면으로 이어짐
+  /* ---------- 로그인 화면 (회사 메일 + 비밀번호) ---------- */
+  // 회원가입 확인·비밀번호 찾기는 링크 대신 메일로 받은 6자리 코드로 해요. 회사 메일 보안 검사가 링크를 미리 열어 무효가 되는 경우가 있어서
+  // 가입 뒤 처음 들어오면 파트·소속 프로젝트를 고르는 마무리 화면으로 이어짐(로그인 전에는 파트·프로젝트 목록을 읽을 수 없어서)
   const gate=document.createElement('div');gate.id='authGate';document.body.appendChild(gate);
   const card=html=>{gate.innerHTML=`<div class="gateCard"><h1>업무 관리 대시보드</h1>${html}</div>`;gate.hidden=false;};
   const $g=s=>gate.querySelector(s);
+  const PW_MIN=8;
   const authErr=e=>{const m=String(e?.message||'');
-    if(e?.status===429||/rate|security purposes/i.test(m))return '잠시 후 다시 시도해 주세요. 코드는 1분에 한 번 보낼 수 있어요.';
+    if(e?.status===429||/rate|security purposes/i.test(m))return '잠시 후 다시 시도해 주세요. 메일은 1분에 한 번 보낼 수 있어요.';
     if(isNetErr(e))return PAUSED_HINT;
+    if(/invalid login credentials/i.test(m))return "메일 또는 비밀번호가 맞지 않아요. 예전에 코드로 들어오던 분은 '비밀번호 찾기'로 비밀번호를 먼저 만들어 주세요.";
+    if(/same password|different from the old/i.test(m))return '지금 쓰는 비밀번호와 다른 비밀번호를 넣어 주세요.';
+    if(/password/i.test(m)&&/weak|at least|should/i.test(m))return `비밀번호가 너무 쉬워요. ${PW_MIN}자 이상으로 영문·숫자를 섞어 주세요.`;
+    if(/signups? not allowed|signup.*disabled/i.test(m))return '지금은 회원가입을 받지 않아요. 관리자에게 문의해 주세요.';
     return m||'잠시 후 다시 시도해 주세요.';};
   const savedEmail=()=>{try{return localStorage.getItem('wb-email')||'';}catch(e){return '';}};
   const keepEmail=e=>{try{localStorage.setItem('wb-email',e);}catch(x){}};
-  const sendCode=email=>sb.auth.signInWithOtp({email,options:{shouldCreateUser:true}});
+  const emailOk=email=>{if(isStaffEmail(email))return true;$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return false;};
+  const tabs=t=>`<div class="gateTabs" role="tablist" aria-label="로그인 또는 회원가입"><button type="button" role="tab" class="gateTab" data-gt="login" aria-selected="${t==='login'}">로그인</button><button type="button" role="tab" class="gateTab" data-gt="signup" aria-selected="${t==='signup'}">회원가입</button></div>`;
+  const emailField=v=>`<label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="username" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(v)}">`;
+  const pwField=(id,lab,ac)=>`<label for="${id}">${lab}</label><div class="gatePw"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="btn ghost sm" data-pw="${id}" aria-label="비밀번호 보기" aria-pressed="false">보기</button></div>`;
+  gate.addEventListener('click',e=>{
+    const t=e.target.closest('[data-gt]');if(t){const em=$g('#gEmail')?.value.trim()||'';t.dataset.gt==='login'?loginStep('',em):signupStep(em);return;}
+    const b=e.target.closest('[data-pw]');if(b){const i=$g('#'+b.dataset.pw),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'숨기기':'보기';b.setAttribute('aria-pressed',String(show));}
+  });
+  // 비밀번호 두 칸 확인(가입·새 비밀번호)
+  const pwPair=()=>{const p=$g('#gPw').value;if(p.length<PW_MIN)return `비밀번호는 ${PW_MIN}자 이상으로 만들어 주세요.`;if(p!==$g('#gPw2').value)return '비밀번호 확인이 달라요.';return '';};
 
   function loginStep(msg,prefill){
-    card(`<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})을 넣으면 로그인 코드를 보내 드려요. 처음이면 같은 방법으로 가입돼요.</p>
-      <form id="gEmailF" class="gateForm" novalidate><label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="email" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(prefill||savedEmail())}">
-      <button class="btn primary" type="submit" id="gGo">로그인 코드 받기</button><p class="err" id="gErr">${escH(msg||'')}</p></form>`);
-    $g('#gEmail').focus();
-    $g('#gEmailF').addEventListener('submit',async e=>{e.preventDefault();
-      const email=$g('#gEmail').value.trim().toLowerCase();
-      if(!isStaffEmail(email)){$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return;}
-      $g('#gGo').disabled=true;$g('#gErr').textContent='';
-      const {error}=await sendCode(email);
-      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
-      keepEmail(email);codeStep(email);});
+    card(`${tabs('login')}<form id="gLoginF" class="gateForm" novalidate>${emailField(prefill??savedEmail())}${pwField('gPw','비밀번호','current-password')}
+      <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr" role="alert">${escH(msg||'')}</p></form>
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gForgot">비밀번호 찾기 · 처음 만들기</button></div>`);
+    ($g('#gEmail').value?$g('#gPw'):$g('#gEmail')).focus();
+    $g('#gForgot').onclick=()=>resetStep($g('#gEmail').value.trim());
+    $g('#gLoginF').addEventListener('submit',async e=>{e.preventDefault();$g('#gErr').textContent='';
+      const email=$g('#gEmail').value.trim().toLowerCase(),password=$g('#gPw').value;
+      if(!emailOk(email))return;if(!password){$g('#gErr').textContent='비밀번호를 입력해 주세요.';return;}
+      $g('#gGo').disabled=true;
+      const {data,error}=await sb.auth.signInWithPassword({email,password});
+      if(error){
+        // 가입 확인을 안 끝낸 메일: 코드를 다시 보내고 코드 화면으로
+        if(/not confirmed/i.test(error.message||'')){const r=await sb.auth.resend({type:'signup',email});keepEmail(email);codeStep(email,'signup',r.error?authErr(r.error):'가입 확인이 아직 안 끝났어요. 메일로 받은 코드를 넣어 주세요.');return;}
+        $g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
+      keepEmail(email);enter(data.session);});
   }
 
-  function codeStep(email){
-    card(`<p><b>${escH(email)}</b>로 로그인 코드를 보냈어요. 메일에 있는 숫자를 넣어 주세요.</p>
-      <form id="gCodeF" class="gateForm" novalidate><label for="gCode">인증 코드</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="숫자 6자리">
-      <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr"></p>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">처음으로</button></div></form>`);
+  function signupStep(prefill){
+    card(`${tabs('signup')}<p>회사 메일(${escH(STAFF_DOMAIN_TEXT)})로 가입해요. 가입하면 메일로 확인 코드를 보내 드려요.</p>
+      <form id="gSignF" class="gateForm" novalidate><label for="gName">이름</label><input id="gName" maxlength="20" autocomplete="name" placeholder="예: 홍길동">
+      ${emailField(prefill||'')}${pwField('gPw',`비밀번호 <span class="legend">${PW_MIN}자 이상</span>`,'new-password')}${pwField('gPw2','비밀번호 확인','new-password')}
+      <button class="btn primary" type="submit" id="gGo">회원가입</button><p class="err" id="gErr" role="alert"></p></form>`);
+    $g('#gName').focus();
+    $g('#gSignF').addEventListener('submit',async e=>{e.preventDefault();$g('#gErr').textContent='';
+      const name=$g('#gName').value.trim(),email=$g('#gEmail').value.trim().toLowerCase();
+      if(!name){$g('#gErr').textContent='이름을 입력해 주세요.';return;}
+      if(!emailOk(email))return;const bad=pwPair();if(bad){$g('#gErr').textContent=bad;return;}
+      $g('#gGo').disabled=true;
+      const {data,error}=await sb.auth.signUp({email,password:$g('#gPw').value,options:{data:{name}}});
+      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
+      keepEmail(email);
+      // 이미 가입된 메일이면 Supabase가 identities를 비워서 돌려줌
+      if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){loginStep("이미 가입된 메일이에요. 로그인하거나, 비밀번호를 모르면 '비밀번호 찾기'를 눌러 주세요.",email);return;}
+      if(data.session){enter(data.session);return;} // 메일 확인을 끈 프로젝트
+      codeStep(email,'signup');});
+  }
+
+  // 메일로 받은 코드 확인: signup = 가입 확인, recovery = 비밀번호 다시 만들기
+  function codeStep(email,type,msg){
+    const rec=type==='recovery';
+    card(`<p><b>${escH(email)}</b>로 ${rec?'비밀번호 확인 코드':'가입 확인 코드'}를 보냈어요. 메일에 있는 숫자를 넣어 주세요.</p>
+      <form id="gCodeF" class="gateForm" novalidate><label for="gCode">확인 코드</label><input id="gCode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="숫자 6자리">
+      <button class="btn primary" type="submit" id="gGo">${rec?'다음':'확인하고 시작'}</button><p class="err" id="gErr" role="alert">${escH(msg||'')}</p></form>
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gResend">코드 다시 받기</button><button class="btn ghost" type="button" id="gBack">로그인으로</button></div>`);
     $g('#gCode').focus();
     $g('#gBack').onclick=()=>loginStep('',email);
-    $g('#gResend').onclick=async()=>{const {error}=await sendCode(email);$g('#gErr').textContent=error?authErr(error):'코드를 다시 보냈어요.';};
+    $g('#gResend').onclick=async()=>{const {error}=rec?await sb.auth.resetPasswordForEmail(email):await sb.auth.resend({type:'signup',email});$g('#gErr').textContent=error?authErr(error):'코드를 다시 보냈어요.';};
     $g('#gCodeF').addEventListener('submit',async e=>{e.preventDefault();
       const token=$g('#gCode').value.replace(/\s/g,'');if(!token){$g('#gErr').textContent='코드를 입력해 주세요.';return;}
       $g('#gGo').disabled=true;
-      const {data,error}=await sb.auth.verifyOtp({email,token,type:'email'});
+      const {data,error}=await sb.auth.verifyOtp({email,token,type});
       if(error||!data.session){$g('#gGo').disabled=false;$g('#gErr').textContent='코드가 맞지 않거나 시간이 지났어요. 코드를 다시 받아 주세요.';return;}
-      enter(data.session);});
+      rec?newPwStep(data.session):enter(data.session);});
+  }
+
+  function resetStep(prefill){
+    card(`<p><b>비밀번호 찾기 · 처음 만들기</b><br>회사 메일로 확인 코드를 보내 드려요. 코드를 넣으면 새 비밀번호를 만들 수 있어요. 예전에 코드로만 들어오던 분도 여기서 비밀번호를 만들어요.</p>
+      <form id="gResetF" class="gateForm" novalidate>${emailField(prefill||savedEmail())}
+      <button class="btn primary" type="submit" id="gGo">확인 코드 받기</button><p class="err" id="gErr" role="alert"></p></form>
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gBack">로그인으로</button></div>`);
+    $g('#gEmail').focus();$g('#gBack').onclick=()=>loginStep('',$g('#gEmail').value.trim());
+    $g('#gResetF').addEventListener('submit',async e=>{e.preventDefault();$g('#gErr').textContent='';
+      const email=$g('#gEmail').value.trim().toLowerCase();if(!emailOk(email))return;
+      $g('#gGo').disabled=true;const {error}=await sb.auth.resetPasswordForEmail(email);
+      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
+      keepEmail(email);codeStep(email,'recovery');});
+  }
+
+  function newPwStep(session){
+    card(`<p><b>새 비밀번호 만들기</b> · ${escH(session.user.email||'')}</p><form id="gPwF" class="gateForm" novalidate>
+      ${pwField('gPw',`새 비밀번호 <span class="legend">${PW_MIN}자 이상</span>`,'new-password')}${pwField('gPw2','새 비밀번호 확인','new-password')}
+      <button class="btn primary" type="submit" id="gGo">저장하고 시작</button><p class="err" id="gErr" role="alert"></p></form>`);
+    $g('#gPw').focus();
+    $g('#gPwF').addEventListener('submit',async e=>{e.preventDefault();const bad=pwPair();if(bad){$g('#gErr').textContent=bad;return;}
+      $g('#gGo').disabled=true;const {error}=await sb.auth.updateUser({password:$g('#gPw').value});
+      if(error){$g('#gGo').disabled=false;$g('#gErr').textContent=authErr(error);return;}
+      enter(session);});
   }
 
   /* ---------- 첫 방문: 본인이 프로필(구성원)을 등록 ---------- */
@@ -1238,7 +1310,7 @@ const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보�
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
-function syncItems(list=menuCfg.custom){CUSTOM=Array.isArray(list)?list:[];MENU_ITEMS=[...BASE_ITEMS,...CUSTOM.map(c=>[c.id,MENU_GRPS.some(g=>g[0]===c.grp)?c.grp:'work',c.name||'새 메뉴'])];}
+function syncItems(list=menuCfg.custom,grps=menuCfg.groups){CUSTOM=Array.isArray(list)?list:[];const okG=g=>MENU_GRPS.some(x=>x[0]===g);MENU_ITEMS=[...BASE_ITEMS.map(([k,g,...r])=>[k,g!=='admin'&&okG(grps?.[k])?grps[k]:g,...r]),...CUSTOM.map(c=>[c.id,MENU_GRPS.some(g=>g[0]===c.grp)?c.grp:'work',c.name||'새 메뉴'])];}
 const customOf=k=>CUSTOM.find(c=>c.id===k);
 const safeUrl=u=>/^https?:\/\/[^\s]+$/i.test(String(u||'').trim())?String(u).trim():'';
 const NAV_ICO={"eventops":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z\"/><path d=\"M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
@@ -2842,12 +2914,12 @@ const bfToState=()=>bfMonthList().map(b=>({_uid:b.id.slice(8),label:b.label,item
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
 const mstate={sel:'tasks'};
-const mDraftOf=cfg=>({order:Object.fromEntries(MENU_GRPS.map(([g])=>[g,menuOrder(g,cfg)])),names:{...(cfg.names||{})},access:Object.fromEntries(Object.entries(cfg.access||{}).map(([k,v])=>[k,accOf(v)])),home:cfg.home||'',custom:(cfg.custom||[]).map(c=>({...c}))});
+const mDraftOf=cfg=>({groups:{...(cfg.groups||{})},order:Object.fromEntries(MENU_GRPS.map(([g])=>[g,menuOrder(g,cfg)])),names:{...(cfg.names||{})},access:Object.fromEntries(Object.entries(cfg.access||{}).map(([k,v])=>[k,accOf(v)])),home:cfg.home||'',custom:(cfg.custom||[]).map(c=>({...c}))});
 const mNodes=d=>MENU_GRPS.flatMap(([g])=>['grp:'+g,...d.order[g]]);
 const mLabel=(d,k)=>String(d.names[k]||'').trim()||defName(k);
 function renderMenus(){
   const area=$('#menusArea');if(!isAdminUser()){area.innerHTML='';return;}if(['mnName','mnUrl'].includes(document.activeElement?.id))return; // 이름·주소 입력 중엔 다시 그리지 않음
-  const d=mDraft||(mDraft=mDraftOf(menuCfg));syncItems(d.custom);const nodes=mNodes(d);if(!nodes.includes(mstate.sel))mstate.sel=nodes[1];
+  const d=mDraft||(mDraft=mDraftOf(menuCfg));syncItems(d.custom,d.groups);const nodes=mNodes(d);if(!nodes.includes(mstate.sel))mstate.sel=nodes[1];
   const k=mstate.sel, isGrp=k.startsWith('grp:'), g=isGrp?k.slice(4):MENU_ITEMS.find(x=>x[0]===k)[1], o=d.order[g]||[], i=o.indexOf(k), lock=g==='admin';
   const node=n=>{const grp=n.startsWith('grp:'),adm=!grp&&(d.access[n]||[]).length>0&&MENU_ITEMS.find(x=>x[0]===n)?.[1]!=='admin';
     return `<div class="mnNode ${grp?'grp':'item'}" role="treeitem" data-sel="${n}" tabindex="${n===k?0:-1}" aria-selected="${n===k}">${NAV_ICO[n]||(grp?'':NAV_ICO.link)}<span class="lbl">${esc(mLabel(d,n))}</span>${grp?'':`${d.home===n?'<span class="tag">기본</span>':''}${adm?'<span class="tag">일부 공개</span>':''}`}</div>`;};
@@ -2861,6 +2933,7 @@ function renderMenus(){
     +(lock?row('공개설정','<span class="legend">관리자 묶음 메뉴는 관리자에게만 보여요.</span>'):row('공개설정',(()=>{const sel=d.access[k]||[],full=!sel.length;return `<label class="cfItem"><input type="checkbox" id="mnAll" ${full?'checked':''}>전체</label>`+ROLES.map(([r,l])=>`<label class="cfItem"><input type="checkbox" name="mnRole" value="${r}" ${r==='admin'||full||sel.includes(r)?'checked':''} ${r==='admin'?'disabled':''}>${l}</label>`).join('')+'<span class="legend">관리자는 항상 볼 수 있어요</span>';})()))
     +'<div class="mnSep"></div>'
     +row('메뉴 정렬',mv('top','맨위',i<=0)+mv('up','위',i<=0)+mv('down','아래',i>=o.length-1)+mv('bottom','맨아래',i>=o.length-1))
+    +row('묶음 이동',BASE_ITEMS.some(x=>x[0]===k&&x[1]==='admin')?'<span class="legend">관리자 메뉴는 관리자 묶음에서 옮길 수 없어요.</span>':`<select class="sel" id="mnGrp" aria-label="옮길 묶음">${MENU_GRPS.map(([gg])=>`<option value="${gg}" ${gg===g?'selected':''}>${esc(mLabel(d,'grp:'+gg))}</option>`).join('')}</select><span class="legend">고르면 그 묶음 맨 아래로 옮겨요.${lock?'':' 관리자 묶음으로 옮기면 관리자에게만 보여요.'}</span>`)
     +'<div class="mnSep"></div>'
     +`<label class="cfItem"><input type="checkbox" id="mnHome" ${d.home===k?'checked':''}>로그인하면 이 메뉴를 먼저 보여줍니다.</label>`
     +(customOf(k)?'<div class="mnSep"></div><div><button class="btn danger sm" type="button" id="mnDel">이 메뉴 삭제</button></div>':'');
@@ -2870,11 +2943,11 @@ function renderMenus(){
       <div class="panel mnRight">${form}</div>
     </div>
     <div class="mnFoot"><span class="err" id="mnErr"></span><button class="btn" type="button" id="mnReset">기본값으로 되돌리기</button><button class="btn primary" type="button" id="mnSave">확인</button></div>
-    <div class="mnTip"><b>도움말</b><ul><li>메뉴를 일부 역할에만 공개해도 화면에서만 숨겨질 뿐, 데이터 권한은 바뀌지 않아요.</li><li>메뉴 순서는 같은 묶음 안에서만 바꿀 수 있어요.</li><li>URL 메뉴를 '화면 안에 열기'로 두었는데 비어 보이면, 그 사이트가 다른 페이지 안에 열리는 것을 막은 거예요. '새 창으로 열기'로 바꾸세요.</li><li>기본 화면은 이 브라우저에서 처음 열 때(이전에 보던 화면이 없을 때) 먼저 보여 줘요.</li></ul></div>`;
+    <div class="mnTip"><b>도움말</b><ul><li>메뉴를 일부 역할에만 공개해도 화면에서만 숨겨질 뿐, 데이터 권한은 바뀌지 않아요.</li><li>메뉴를 다른 묶음으로 옮기려면 메뉴를 고른 뒤 '묶음 이동'에서 묶음을 고르세요. 관리자 메뉴는 옮길 수 없어요.</li><li>URL 메뉴를 '화면 안에 열기'로 두었는데 비어 보이면, 그 사이트가 다른 페이지 안에 열리는 것을 막은 거예요. '새 창으로 열기'로 바꾸세요.</li><li>기본 화면은 이 브라우저에서 처음 열 때(이전에 보던 화면이 없을 때) 먼저 보여 줘요.</li></ul></div>`;
 }
 async function saveMenus(patch,btn){
   if(btn)btn.disabled=true;
-  try{const before={...menuCfg},next={order:menuCfg.order||{},names:menuCfg.names||{},access:menuCfg.access||{},home:menuCfg.home||'',custom:menuCfg.custom||[],...patch,updatedAt:new Date().toISOString()};
+  try{const before={...menuCfg},next={groups:menuCfg.groups||{},order:menuCfg.order||{},names:menuCfg.names||{},access:menuCfg.access||{},home:menuCfg.home||'',custom:menuCfg.custom||[],...patch,updatedAt:new Date().toISOString()};
     await db.doc('settings/menus').set(next);menuCfg=next;mDraft=null;syncItems();navKey='';logChange('site','update','menus','메뉴 설정',before,next);toast('저장했어요');render();}
   catch(err){handleWriteError(err,'#mnErr');render();}finally{if(btn)btn.disabled=false;}
 }
@@ -2882,6 +2955,10 @@ const mFocus=()=>document.querySelector('#menusArea .mnNode[tabindex="0"]')?.foc
 onArea('#menusArea','input',e=>{if(e.target.id==='mnUrl'&&mDraft){const c=mDraft.custom.find(x=>x.id===mstate.sel);if(c)c.url=e.target.value;return;}if(e.target.id!=='mnName'||!mDraft)return;const k=e.target.dataset.k;mDraft.names[k]=e.target.value;const l=document.querySelector(`#menusArea .mnNode[data-sel="${k}"] .lbl`);if(l)l.textContent=mLabel(mDraft,k);});
 onArea('#menusArea','change',e=>{
   if(!mDraft)return;const k=mstate.sel;
+  if(e.target.id==='mnGrp'){const from=MENU_ITEMS.find(x=>x[0]===k)[1],to=e.target.value;if(from===to)return;
+    mDraft.order[from]=(mDraft.order[from]||[]).filter(x=>x!==k);mDraft.order[to]=[...(mDraft.order[to]||[]).filter(x=>x!==k),k];
+    const c=mDraft.custom.find(x=>x.id===k);if(c)c.grp=to;else if(BASE_ITEMS.find(x=>x[0]===k)[1]===to)delete mDraft.groups[k];else mDraft.groups[k]=to;
+    render();$('#mnGrp')?.focus();toast(`'${mLabel(mDraft,'grp:'+to)}' 묶음으로 옮겼어요. '확인'을 눌러야 저장돼요.`);return;}
   if(e.target.id==='mnAll'){mDraft.access[k]=e.target.checked?[]:['admin'];render();return;}
   if(e.target.name==='mnRole'){const on=[...document.querySelectorAll('#menusArea [name="mnRole"]:checked:not(:disabled)')].map(x=>x.value);mDraft.access[k]=on.length===ROLES.length-1?[]:on.length?on:['admin'];render();return;}
   if(e.target.id==='mnHome'){mDraft.home=e.target.checked?k:'';render();return;}
@@ -2900,11 +2977,11 @@ onArea('#menusArea','click',e=>{
   if(mv&&mDraft){const k=mstate.sel,g=MENU_ITEMS.find(x=>x[0]===k)[1],o=mDraft.order[g],i=o.indexOf(k),dir=mv.dataset.mv;o.splice(i,1);
     o.splice(dir==='top'?0:dir==='bottom'?o.length:dir==='up'?i-1:i+1,0,k);render();
     (document.querySelector(`#menusArea [data-mv="${dir}"]:not(:disabled)`)||mFocus());return;}
-  if(e.target.id==='mnReset'){mDraft=mDraftOf({custom:mDraft.custom});render();return;}
+  if(e.target.id==='mnReset'){syncItems(mDraft.custom,{});mDraft=mDraftOf({custom:mDraft.custom});render();return;}
   if(e.target.id==='mnAdd'&&mDraft){const g=mstate.sel.startsWith('grp:')?mstate.sel.slice(4):(MENU_ITEMS.find(x=>x[0]===mstate.sel)?.[1]||'work'),id='c'+Date.now().toString(36);
     mDraft.custom.push({id,grp:g,name:'새 메뉴',url:'',newTab:false});mDraft.order[g]=[...(mDraft.order[g]||[]),id];mstate.sel=id;render();$('#mnName')?.focus();return;}
   if(e.target.id==='mnDel'&&mDraft){const k=mstate.sel;mDraft.custom=mDraft.custom.filter(c=>c.id!==k);for(const g in mDraft.order)mDraft.order[g]=mDraft.order[g].filter(x=>x!==k);delete mDraft.names[k];delete mDraft.access[k];if(mDraft.home===k)mDraft.home='';mstate.sel='tasks';render();return;}
-  if(e.target.id==='mnSave')saveMenus({order:mDraft.order,names:Object.fromEntries(Object.entries(mDraft.names).map(([k,v])=>[k,String(v).trim()]).filter(([,v])=>v)),access:mDraft.access,home:mDraft.home,custom:mDraft.custom.map(c=>({...c,url:String(c.url||'').trim()}))},e.target);
+  if(e.target.id==='mnSave')saveMenus({groups:mDraft.groups,order:mDraft.order,names:Object.fromEntries(Object.entries(mDraft.names).map(([k,v])=>[k,String(v).trim()]).filter(([,v])=>v)),access:mDraft.access,home:mDraft.home,custom:mDraft.custom.map(c=>({...c,url:String(c.url||'').trim()}))},e.target);
 });
 
 

@@ -847,8 +847,6 @@ a.rms:hover{text-decoration:underline}
 .evTable tr[draggable="true"]{cursor:grab}
 .evMissBtn{all:unset;cursor:pointer;font:inherit}
 .evMissBtn[aria-pressed="true"]{text-decoration:underline}
-.evHist{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:8px}
-.evHistHead{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .req{color:var(--accent-dark)}
 /* ---------- 이벤트 운영: 배너 구좌 · 프리마케팅 ---------- */
 .bnTable .bnf{width:100%;min-width:110px;height:30px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 6px;font-size:13px;color:var(--fg)}
@@ -2224,7 +2222,7 @@ const evSettings=()=>evtMonths.find(m=>m.id==='settings')||{};
 const evCols=()=>[...EV_COLS,...(evSettings().customEventColumns||[]).map(c=>[c.key,c.label])];
 const evMonthList=()=>evtMonths.filter(m=>m.kind==='event_month').sort((a,b)=>(a.sortKey||'')<(b.sortKey||'')?-1:1);
 const evRowsOf=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='event').sort((a,b)=>(a.sortOrder-b.sortOrder)||(a.id<b.id?-1:1));
-const est={month:null,filter:'전체',sel:new Set(),missing:false,open:new Set()};
+const est={month:null,filter:'전체',sel:new Set(),missing:false};
 // 처음 보이는 달: 다음 달 시트가 있으면 그 달, 없으면 가장 최근 달(원본 getDefaultActiveEventMonthKey)
 function evDefaultMonth(){const L=evMonthList();if(!L.length)return null;const d=new Date(),n=`${d.getMonth()===11?d.getFullYear()+1:d.getFullYear()}-${String(d.getMonth()===11?1:d.getMonth()+2).padStart(2,'0')}`;return L.some(m=>m.key===n)?n:L[L.length-1].key;}
 const evMissing=(r,f)=>EV_REQ.includes(f)&&r.status!=='비노출'&&!String(r[f]??'').trim();
@@ -2275,18 +2273,14 @@ function renderEventOps(){
   const body=!rows.length?`<tr class="mEmpty"><td colspan="${cols}">아직 등록된 이벤트가 없어요. '+ 행 추가'로 시작하세요.</td></tr>`
     :!vis.length?`<tr class="mEmpty"><td colspan="${cols}">'${esc(est.filter)}' 상태의 이벤트가 없어요.</td></tr>`
     :vis.map(r=>evRowHtml(r,rows.indexOf(r),true)).join('');
-  const others=L.filter(m=>m.key!==est.month).reverse();
   const bulk=canWrite&&est.sel.size?`<div class="bulkBar evBulk" role="region" aria-label="선택한 이벤트 한꺼번에 바꾸기"><b>${est.sel.size}건 선택</b>${EV_STATUS.map(s=>`<button type="button" class="btn sm" data-bulk="${s}">${s}로 변경</button>`).join('')}<button type="button" class="btn danger sm" id="evBulkDel">선택 삭제</button></div>`:'';
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
     ${statTable([[esc(mo.label),'<span style="font-size:15px">이벤트 현황</span>',''],['이벤트 수',`${rows.length}<small>건</small>`,''],['완료',`${cnt('완료')}<small>건</small>`,''],['진행',`${cnt('진행')}<small>건</small>`,''],['대기',`${cnt('대기')}<small>건</small>`,''],['연장',`${cnt('연장')}<small>건</small>`,''],['다음 ID',`${evMaxId()+1}`,''],[`미입력${est.missing?' · 표시 중':''}`,`<button type="button" class="evMissBtn" id="evMissing" aria-pressed="${est.missing}" title="시작일·종료일·이벤트ID·이벤트명이 빈 행 (누르면 표에 표시)">${miss}<small>건</small></button>`,miss?'alert':'']])}
-    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="evAddRow">+ 행 추가</button><button class="btn primary" type="button" id="evAddMonth">새 달 만들기</button>':''}</div>
+    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`<button class="btn ghost" type="button" data-evdelm="${esc(mo.key)}">이 달 삭제</button><button class="btn" type="button" id="evAddRow">+ 행 추가</button><button class="btn primary" type="button" id="evAddMonth">새 달 만들기</button>`:''}</div>
       <div class="chips evChips">${['전체',...EV_STATUS].map(f=>`<button type="button" class="chip" data-evf="${f}" aria-pressed="${est.filter===f}">${f} <span class="num">${f==='전체'?rows.length:cnt(f)}</span></button>`).join('')}</div>
       ${bulk}
       <div class="tablebox"><table class="stable evTable" data-mid="${esc(mid)}">${evHead(true)}<tbody>${body}</tbody></table></div>
       <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 엑셀에서 여러 칸을 복사해 붙여넣을 수 있어요. 행은 끌어서 순서를 바꿀 수 있어요.</p></div>
-    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>
-      ${others.length?others.map(m=>{const open=est.open.has(m.key),rs=evRowsOf(m.id);return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-evopen="${esc(m.key)}" aria-expanded="${open}">${esc(m.label)}<span class="legend">${rs.length}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-evcur="${esc(m.key)}">이 달 보기</button>${canWrite?`<button type="button" class="btn ghost sm" data-evdelm="${esc(m.key)}">이 달 삭제</button>`:''}</div>
-        ${open?`<div class="tablebox"><table class="stable evTable" data-mid="${esc(m.id)}">${evHead(false)}<tbody>${rs.length?rs.map((r,i)=>evRowHtml(r,i,false)).join(''):`<tr class="mEmpty"><td colspan="${cols-1}">등록된 이벤트가 없어요.</td></tr>`}</tbody></table></div>`:''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 달 이력이 없어요.</p>'}</div>
     <datalist id="evLinkOpts">${Object.keys(EV_LINKS).map(k=>`<option value="${esc(k)}">`).join('')}</datalist>`;
   const all=$('#evAll');if(all)all.checked=vis.length>0&&vis.every(r=>est.sel.has(r.id));
 }
@@ -2366,8 +2360,6 @@ onArea('#eventOpsArea','click',async e=>{
   if(id==='evImport'){$('#evFile').click();return;}
   if(id==='evJson'||id==='evXlsx'||id==='evSum'){evExport(id);return;}
   const fl=e.target.closest('[data-evf]');if(fl){est.filter=fl.dataset.evf;est.sel.clear();render();return;}
-  const op=e.target.closest('[data-evopen]');if(op){const k=op.dataset.evopen;est.open.has(k)?est.open.delete(k):est.open.add(k);render();return;}
-  const cu=e.target.closest('[data-evcur]');if(cu){est.month=cu.dataset.evcur;est.sel.clear();render();window.scrollTo(0,0);return;}
   const lk=e.target.closest('.evLink');if(lk){const u=evIdUrl(evRowById(lk.closest('tr').dataset.uid)?.eid);if(u)window.open(u,'_blank','noopener');return;}
   if(!canWrite)return;
   try{
@@ -2480,7 +2472,7 @@ function bnAnchor(key){const [y,m]=key.split('-').map(Number),dow=new Date(y,m-1
 // 현재 관리 주차(원본 computeCurrentWeek)
 function bnWeek(mo){const a=new Date(String(mo.weekAnchor||'').replace(' ','T'));if(isNaN(a))return 1;const c=mo.cycleWeeks||4;return Math.max(1,Math.min(c,1+Math.floor((Date.now()-a)/864e5/7)));}
 const bnMaxRank=(mo,pms)=>Math.max(6,pms.length?Math.max(...pms.map(p=>p.rankInWeek||1)):0,mo.pmRankCount||0);
-const bst={month:null,open:new Set(),popen:new Set()};
+const bst={month:null};
 function bnDefaultMonth(){const L=bnMonthList();if(!L.length)return null;const d=new Date(),n=`${d.getMonth()===11?d.getFullYear()+1:d.getFullYear()}-${String(d.getMonth()===11?1:d.getMonth()+2).padStart(2,'0')}`;return L.some(m=>m.key===n)?n:L[L.length-1].key;}
 
 function bnRankRow(mo,r,i,cur){
@@ -2519,15 +2511,11 @@ function bnRender(area,tabs){
     ${exportMenu(downloads&&(L.length||evMonthList().length)?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장']]:[])}${adm?'<button class="btn" type="button" id="bnMapEdit">파트너명 매핑</button>':''}`;
   const conv=canWrite?`<button class="btn" type="button" id="bnConvert">사업팀 원본파일 변환</button><input type="file" id="bnRawFile" accept=".xlsx,.xlsm,.xls,.csv" hidden>`:'';
   if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 배너 달이 없어요</h2><p>관리대장 데이터를 가져오거나, 이번 달 시트를 만들거나, 사업팀 원본파일을 변환해 시작하세요.</p><div class="evHead" style="justify-content:center">${conv}${canWrite?'<button class="btn primary" type="button" id="bnFirst">이번 달 시트 만들기</button>':''}</div></div>`;return;}
-  const mo=L.find(m=>m.key===bst.month),others=L.filter(m=>m.key!==bst.month).reverse();
-  const head=`<div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`${pm?'':'<button class="btn" type="button" id="bnAddRow">+ 행 추가</button><button class="btn" type="button" id="bnCols">구좌 편집</button>'}${conv}<button class="btn primary" type="button" id="bnAddMonth">새 달 만들기</button>`:''}</div>`;
-  const hist=others.length?others.map(m=>{const open=(pm?bst.popen:bst.open).has(m.key),cnt=pm?bnPms(m.id).filter(p=>p.name).length:bnRanks(m.id).length;
-    return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-bopen="${esc(m.key)}" aria-expanded="${open}">${esc(m.label)}<span class="legend">${cnt}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-bcur="${esc(m.key)}">이 달 보기</button>${canWrite&&!pm?`<button type="button" class="btn ghost sm" data-bdelm="${esc(m.key)}">이 달 삭제</button>`:''}</div>
-      ${open?(pm?bnPmGrid(m,false):bnRankTable(m,false)):''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 달 이력이 없어요.</p>';
+  const mo=L.find(m=>m.key===bst.month);
+  const head=`<div class="evHead"><h3>현재 현황 · ${esc(mo.label)}</h3><span class="spacer"></span>${canWrite?`${pm?'':`<button class="btn ghost" type="button" data-bdelm="${esc(mo.key)}">이 달 삭제</button>`}${pm?'':'<button class="btn" type="button" id="bnAddRow">+ 행 추가</button><button class="btn" type="button" id="bnCols">구좌 편집</button>'}${conv}<button class="btn primary" type="button" id="bnAddMonth">새 달 만들기</button>`:''}</div>`;
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
     <div class="panel evPanel">${head}${pm?bnPmGrid(mo,true)+bnPmStatus(mo):bnRankTable(mo,true)}
-      <p class="legend" style="margin:0">${pm?'배너 구좌와 같은 달을 함께 써요. 새 달을 만들면 배너 구좌에도 같은 달이 생겨요.':'칸을 고친 뒤 다른 곳을 누르면 저장돼요. 파트너명 매핑에 있는 원본 이름은 표시 이름으로 바뀌어요.'}</p></div>
-    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>${hist}</div>`;
+      <p class="legend" style="margin:0">${pm?'배너 구좌와 같은 달을 함께 써요. 새 달을 만들면 배너 구좌에도 같은 달이 생겨요.':'칸을 고친 뒤 다른 곳을 누르면 저장돼요. 파트너명 매핑에 있는 원본 이름은 표시 이름으로 바뀌어요.'}</p></div>`;
 }
 async function bnSetMonthDoc(id,patch){await db.collection('evt_months').doc(id).update(patch);const m=evtMonths.find(x=>x.id===id);if(m)Object.assign(m,patch);}
 async function bnCreateMonth(key,base){ // base가 있으면 이전 달 구성을 복사(원본 addNewBannerMonth)
@@ -2675,8 +2663,6 @@ onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.bnf,.pmf'))setTime
 onArea('#eventOpsArea','click',async e=>{
   if(evtTab!=='banner'&&evtTab!=='pm')return;
   const id=e.target.closest('button')?.id;
-  const op=e.target.closest('[data-bopen]');if(op){const s=evtTab==='pm'?bst.popen:bst.open,k=op.dataset.bopen;s.has(k)?s.delete(k):s.add(k);render();return;}
-  const cu=e.target.closest('[data-bcur]');if(cu){bst.month=cu.dataset.bcur;render();window.scrollTo(0,0);return;}
   if(id==='bnMapEdit'){bnOpenMap();return;}
   if(!canWrite)return;
   try{
@@ -2718,7 +2704,7 @@ const EV_TRASH_DAYS=30;
 const EV_TRASH_TYPE={rows:'행',event_month:'이벤트 달',banner_month:'배너·프리마케팅 달',benefit_block:'혜택 블록',banner_cols:'배너 구좌 칸'};
 const bfMonthList=()=>evtMonths.filter(m=>m.kind==='benefit_block').sort((a,b)=>(+b.sortKey||0)-(+a.sortKey||0));
 const bfItems=mid=>evtRowsAll.filter(r=>r.monthId===mid&&r.kind==='benefit_item').sort((a,b)=>(a.sortOrder-b.sortOrder)||(a.id<b.id?-1:1));
-const bfst={cur:null,open:new Set()};
+const bfst={cur:null};
 // 블록 이름 → 'YYYY-MM'(원본 benefitBlockMonthKey), 'M월'만 있으면 'YY년 M월'로 보여 줌(원본 formatBenefitLabel)
 function bfMonthKey(label){const m=String(label||'').match(/(?:(\d{2,4})년\s*)?(\d{1,2})월/);if(!m||+m[2]<1||+m[2]>12)return null;const y=m[1]?(m[1].length===2?2000+ +m[1]:+m[1]):new Date().getFullYear();return `${y}-${String(+m[2]).padStart(2,'0')}`;}
 const bfLabel=l=>{const m=String(l||'').match(/^(\d{1,2})월$/);return m?`${(est.month||todayStr()).slice(2,4)}년 ${m[1]}월`:l||'';};
@@ -2740,15 +2726,13 @@ function bfRender(area,tabs){
   const tools=`${L.length?`<select class="sel" id="bfBlock" aria-label="혜택 블록">${L.map(b=>`<option value="${esc(b.id)}" ${b.id===bfst.cur?'selected':''}>${esc(bfLabel(b.label))}</option>`).join('')}</select>`:''}${evSearchHtml()}<span class="spacer"></span>${evCommonBtns()}
     ${exportMenu(downloads&&(L.length||evMonthList().length)?[['evJson','JSON 내보내기'],['evXlsx','엑셀 저장']]:[])}`;
   if(!L.length){area.innerHTML=`<div class="rtool">${tools}</div>${tabs}<div class="empty"><h2>아직 혜택 블록이 없어요</h2><p>관리대장 데이터를 가져오거나, 다음 달 블록을 만들어 시작하세요.</p>${canWrite?'<button class="btn primary" type="button" id="bfFirst">새 달 만들기</button>':''}</div>`;return;}
-  const b=L.find(x=>x.id===bfst.cur),its=bfItems(b.id),others=L.filter(x=>x.id!==b.id);
+  const b=L.find(x=>x.id===bfst.cur),its=bfItems(b.id);
   const warn=its.filter(it=>{const d=bfDays(it.expiryDate);return d!=null&&d<=7;}).length;
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
-    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(bfLabel(b.label))}${b.id!==L[0].id?' <span class="legend">(이전 블록 보는 중)</span>':''}</h3><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="bfAddRow">+ 행 추가</button><button class="btn primary" type="button" id="bfAddBlock">새 달 만들기</button>':''}</div>
+    <div class="panel evPanel"><div class="evHead"><h3>현재 현황 · ${esc(bfLabel(b.label))}${b.id!==L[0].id?' <span class="legend">(이전 블록 보는 중)</span>':''}</h3><span class="spacer"></span>${canWrite?`<button class="btn ghost" type="button" data-fdelm="${esc(b.id)}">블록 삭제</button><button class="btn" type="button" id="bfAddRow">+ 행 추가</button><button class="btn primary" type="button" id="bfAddBlock">새 달 만들기</button>`:''}</div>
       ${warn?`<div class="banner" role="status">곧 종료되거나 이미 지난 혜택이 ${warn}건 있어요 — 아래에서 확인하세요.</div>`:''}
       ${bfTable(b,true)}
-      <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 종료일이 7일 안이면 주황, 지났으면 빨강으로 표시해요. 새 달을 만들면 가장 최근 블록의 혜택을 복사해요.</p></div>
-    <div class="panel evPanel"><h3>이력 <span class="legend">${others.length}건</span></h3>
-      ${others.length?others.map(x=>{const open=bfst.open.has(x.id);return `<section class="evHist"><div class="evHistHead"><button type="button" class="yHead" data-fopen="${esc(x.id)}" aria-expanded="${open}">${esc(bfLabel(x.label))}<span class="legend">${bfItems(x.id).length}건</span><span aria-hidden="true">${open?'▲':'▼'}</span></button><span class="spacer"></span><button type="button" class="btn ghost sm" data-fcur="${esc(x.id)}">이 달 보기</button>${canWrite?`<button type="button" class="btn ghost sm" data-fdelm="${esc(x.id)}">블록 삭제</button>`:''}</div>${open?bfTable(x,false):''}</section>`;}).join(''):'<p class="legend" style="margin:0">아직 다른 블록 이력이 없어요.</p>'}</div>`;
+      <p class="legend" style="margin:0">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 종료일이 7일 안이면 주황, 지났으면 빨강으로 표시해요. 새 달을 만들면 가장 최근 블록의 혜택을 복사해요.</p></div>`;
 }
 // 새 달 블록: 가장 최근 블록의 다음 달, 그 블록 혜택을 복사(원본 addNewBenefitMonth). silent면 만든 이름만 돌려줌
 async function bfNewBlock(silent){
@@ -2777,8 +2761,6 @@ onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.bff'))setTimeout((
 onArea('#eventOpsArea','click',async e=>{
   if(evtTab!=='benefit')return;
   const id=e.target.closest('button')?.id;
-  const op=e.target.closest('[data-fopen]');if(op){const k=op.dataset.fopen;bfst.open.has(k)?bfst.open.delete(k):bfst.open.add(k);render();return;}
-  const cu=e.target.closest('[data-fcur]');if(cu){bfst.cur=cu.dataset.fcur;render();window.scrollTo(0,0);return;}
   if(!canWrite)return;
   try{
     if(id==='bfFirst'||id==='bfAddBlock'){await bfNewBlock();return;}

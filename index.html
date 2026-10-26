@@ -3420,11 +3420,16 @@ function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `
   ln(`■ 진행 ${a.counts.doing}건`);a.lists.doing.forEach(t=>ln(`${pl(t)}${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`));ln('');
   ln(`■ 접수(검토 중) ${a.counts.recv}건`);a.lists.recv.forEach(t=>ln(`${pl(t)}${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`));ln('');
   ln('----------');ln('');return L;}
+// 본문 소제목(■ 반영 N건 · ■ 진행 N건 · ■ 접수… N건)의 숫자 = 운영 건수. 한쪽을 고치면 다른 쪽도 같이 바뀜
+const V3_HEAD={done:/^(■\s*반영\s*)(\d+)(\s*건)/,doing:/^(■\s*진행\s*)(\d+)(\s*건)/,recv:/^(■\s*접수[^\d]*?)(\d+)(\s*건)/};
+function v3HeadCounts(lines){const o={};lines.forEach(l=>{for(const k in V3_HEAD){const m=String(l.t||'').match(V3_HEAD[k]);if(m&&!(k in o))o[k]=+m[2];}});return o;}
+const v3SetHeads=(lines,counts)=>lines.map(l=>{for(const k in V3_HEAD)if(V3_HEAD[k].test(l.t||''))return {...l,t:l.t.replace(V3_HEAD[k],(_,a,n,b)=>a+(+counts[k]||0)+b)};return l;});
 function v3Data(){
   const thu=rstate.week3,doc=v3Doc();
   const cats=[...projects.map(p=>({id:p.id,name:p.name,color:p.color,inCount:true,project:true})),...v3Custom(doc).map(c=>({...c,project:false}))];
   return {thu,doc,cats:cats.map(c=>{const sec=doc?.sections?.[c.id]||{};
-    return {...c,sec,counts:sec.countsEdited&&sec.counts?sec.counts:v3Auto(c,thu).counts,lines:Array.isArray(sec.lines)?sec.lines:v3Draft(c,thu)};})};
+    const base=sec.countsEdited&&sec.counts?sec.counts:v3Auto(c,thu).counts;
+    return Array.isArray(sec.lines)?{...c,sec,counts:{...base,...v3HeadCounts(sec.lines)},lines:sec.lines}:{...c,sec,counts:base,lines:v3Draft(c,thu)};})};
 }
 // 편집칸은 줄 목록(lines: [{t, hl}])으로만 저장하고 다시 그림 — 서식·스크립트가 섞이지 않게
 const linesHtml=L=>L.map(l=>`<div${l.hl?' class="hl"':''}>${l.t?esc(l.t):'<br>'}</div>`).join('');
@@ -3453,7 +3458,7 @@ function renderReport(){
   const tot=k=>inc.reduce((n,c)=>n+(+c.counts[k]||0),0);
   const old=reports.filter(r=>r.kind!=='v3'&&r.week&&r.week>=mondayOf(thu)&&r.week<=mondayOf(addDays(thu,6)));
   const sum=`<h3 class="rsubt">${rWeekLabel(thu).slice(4)} 운영 건수</h3><div class="statWrap rsum-wrap"><table class="statTable rsum"><thead><tr><th>구분</th>${inc.map(c=>`<th title="${esc(c.name)}">${esc(c.name)}</th>`).join('')}<th>합계</th></tr></thead><tbody>
-    ${R_KINDS.map(([k,l])=>`<tr><th scope="row">${l}</th>${inc.map(c=>`<td class="num">${+c.counts[k]||0}</td>`).join('')}<td class="num"><b>${tot(k)}</b></td></tr>`).join('')}</tbody></table></div>`;
+    ${R_KINDS.map(([k,l])=>`<tr><th scope="row">${l}</th>${inc.map(c=>`<td class="num" data-rc="${esc(c.id)}|${k}">${+c.counts[k]||0}</td>`).join('')}<td class="num"><b data-rt="${k}">${tot(k)}</b></td></tr>`).join('')}</tbody></table></div>`;
   const secs=cats.map(c=>{const fold=rstate.fold.has(c.id),s=c.sec;
     return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${c.color?`<span class="rdot" style="background:${esc(c.color)}"></span>`:''}${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>
@@ -3479,13 +3484,18 @@ function renderReport(){
     ${rstate.view==='detail'?secs:sum+simple}${addCat}
     ${!doc&&old.length?`<div class="rold"><span class="legend">이전 형식 보고서 보기:</span>${old.map(r=>`<button class="btn ghost sm" type="button" data-oldrep="${esc(r.id)}">${esc(projOf(r.projectId)?.name||'전체 프로젝트')} · ${esc(md(r.week))} 주</button>`).join('')}</div>`:''}`;
 }
-onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&canWrite)v3Queue(ed.closest('[data-cid]').dataset.cid);});
+// 본문을 고치는 중: 소제목 숫자를 운영 건수 표·건수 칸에 바로 반영(저장은 1초 뒤)
+function v3Live(sec){const hc=v3HeadCounts(readLines(sec.querySelector('.rEditor'))),cid=sec.dataset.cid;
+  for(const k in hc){const td=document.querySelector(`#reportArea [data-rc="${CSS.escape(cid)}|${k}"]`);if(td)td.textContent=hc[k];const inp=sec.querySelector(`.rcnt[data-k="${k}"]`);if(inp)inp.value=hc[k];}
+  R_KINDS.forEach(([k])=>{const t=document.querySelector(`#reportArea [data-rt="${k}"]`);if(t)t.textContent=[...document.querySelectorAll(`#reportArea [data-rc$="|${k}"]`)].reduce((n,x)=>n+(+x.textContent||0),0);});}
+onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&canWrite){const sec=ed.closest('[data-cid]');v3Live(sec);v3Queue(sec.dataset.cid);}});
 onArea('#reportArea','paste',e=>{if(!e.target.closest?.('.rEditor'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));});
 onArea('#reportArea','mousedown',e=>{if(e.target.closest('[data-hl],[data-hr]'))e.preventDefault();});
 onArea('#reportArea','change',e=>{const t=e.target;
   if(t.id==='rWeek3'||t.id==='rWeek3Y'){v3Flush();rstate.week3=t.id==='rWeek3'?t.value:latestIn('rweek',+t.value);render();return;}
-  if(t.classList.contains('rcnt')){const sec=t.closest('[data-cid]'),counts={};sec.querySelectorAll('.rcnt').forEach(x=>counts[x.dataset.k]=Math.max(0,Math.round(+x.value||0)));
-    v3Save(sec.dataset.cid,{counts,countsEdited:true}).catch(err=>handleWriteError(err));}
+  if(t.classList.contains('rcnt')){const sec=t.closest('[data-cid]'),cid=sec.dataset.cid,counts={};sec.querySelectorAll('.rcnt').forEach(x=>counts[x.dataset.k]=Math.max(0,Math.round(+x.value||0)));
+    const ed=sec.querySelector('.rEditor'),lines=v3SetHeads(readLines(ed),counts);ed.innerHTML=linesHtml(lines);clearTimeout(v3Timer[cid]);delete v3Timer[cid];
+    v3Save(cid,{counts,countsEdited:true,lines}).catch(err=>handleWriteError(err));}
 });
 // 보고서 내보내기용 텍스트 줄(강조 줄은 ✔ 유지)
 function v3Text(d){const L=[`■ ${rWeekLabel(d.thu)} 주간 업무 보고 (${rRange(d.thu)})`,'','[운영 건수]'],inc=d.cats.filter(c=>c.inCount);
@@ -3511,7 +3521,7 @@ onArea('#reportArea','click',async e=>{
   if(e.target.closest('[data-fold]')){rstate.fold.has(cid)?rstate.fold.delete(cid):rstate.fold.add(cid);render();return;}
   if(e.target.closest('[data-hl]')){toggleHl(sec.querySelector('.rEditor'));v3Queue(cid);return;}
   if(e.target.closest('[data-hr]')){insertHr(sec.querySelector('.rEditor'));v3Queue(cid);return;}
-  if(e.target.closest('[data-refill]')){const c=v3Data().cats.find(x=>x.id===cid);try{await v3Save(cid,{counts:v3Auto(c,rstate.week3).counts,countsEdited:false});}catch(err){handleWriteError(err);}return;}
+  if(e.target.closest('[data-refill]')){const c=v3Data().cats.find(x=>x.id===cid),counts=v3Auto(c,rstate.week3).counts;try{await v3Save(cid,{counts,countsEdited:false,...(Array.isArray(c.sec.lines)?{lines:v3SetHeads(c.sec.lines,counts)}:{})});}catch(err){handleWriteError(err);}return;}
   if(e.target.closest('[data-cdel]')){const c=v3Data().cats.find(x=>x.id===cid);if(!confirm(`'${c?.name}' 카테고리를 이 주 보고서에서 삭제할까요?`))return;
     try{await v3SaveDoc({cats:v3Custom(v3Doc()).filter(x=>x.id!==cid)});}catch(err){handleWriteError(err);}return;}
   const ob=e.target.closest('[data-oldrep]');if(ob){const r=reports.find(x=>x.id===ob.dataset.oldrep);if(!r)return;

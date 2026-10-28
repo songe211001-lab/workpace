@@ -722,7 +722,7 @@ a.rms:hover{text-decoration:underline}
 .postNew h3{margin:0;font-size:15px;font-weight:800}
 .pnRow{display:flex;gap:8px;align-items:center}
 .pnRow .sel{min-width:0}
-.pnRow #pnTitle{flex:1 1 200px}
+
 .pnRow #pnReq{width:110px}
 .pnD{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);white-space:nowrap}
 .pnD .sel{width:136px}
@@ -755,7 +755,7 @@ a.rms:hover{text-decoration:underline}
 .composer textarea{width:100%;box-sizing:border-box;min-height:72px;resize:vertical;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px;background:var(--surface)}
 .cpRow,.cpFields{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .cpFields[hidden]{display:none}
-@media (max-width:900px){.pnRow{flex-wrap:wrap}.pnRow #pnTitle{flex-basis:100%}}
+@media (max-width:900px){.pnRow{flex-wrap:wrap}.pnF.pnT{flex-basis:100%}}
 /* ---------- 관리자/일반 뱃지 · 메뉴 관리 ---------- */
 .roleBadge{display:inline-flex;align-items:center;height:18px;padding:0 7px;margin-left:6px;border-radius:999px;font-size:11px;font-weight:700;background:var(--sunk);color:var(--ink-soft);white-space:nowrap;vertical-align:middle}
 .roleBadge.adm{background:var(--accent-soft);color:var(--accent-dark)}
@@ -895,7 +895,6 @@ a.rms:hover{text-decoration:underline}
 .stSel:hover{border-color:var(--line)}.stSel:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .pnRow{flex-wrap:wrap}
 .pnRow select.sel{flex:0 0 auto;width:auto;max-width:100%}
-.pnRow #pnTitle{order:-1;flex:1 1 100%}
 .pnToggle{all:unset;display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800;cursor:default}
 .pnToggle .chevron{display:none}
 @media (max-width:600px){
@@ -903,6 +902,126 @@ a.rms:hover{text-decoration:underline}
   .postNew:not(.open) .pnRow,.postNew:not(.open) .err{display:none}
   .postNew:not(.open){padding-block:10px}
 }
+/* ---------- 매뉴얼 관리 ---------- */
+.mnCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.mnCard{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);cursor:pointer;min-width:0}
+.mnCard:hover,.mnCard:focus-visible{border-color:var(--accent);outline:none}
+.mnCard b{font-size:15px;overflow-wrap:anywhere}
+.mnCardTop{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mnSum{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.mnHits{padding:12px 14px;display:flex;flex-direction:column;gap:4px}.mnHits h3{margin:0 0 4px;font-size:15px}
+.mnHit{all:unset;box-sizing:border-box;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:var(--r);cursor:pointer}
+.mnHit:hover,.mnHit:focus-visible{background:var(--accent-soft);outline:none}
+.mnGrid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px;align-items:start}
+.mnToc{position:sticky;top:72px;padding:12px;display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 96px);overflow:auto}
+.mnToc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.mnTocBtn{all:unset;box-sizing:border-box;display:block;width:100%;padding:5px 8px;border-radius:6px;font-size:13px;cursor:pointer;overflow-wrap:anywhere}
+.mnTocBtn:hover,.mnTocBtn:focus-visible{background:var(--accent-soft);outline:none}
+.mnMain{display:flex;flex-direction:column;gap:12px;min-width:0}
+.mnHead,.mnStep{padding:14px 16px;display:flex;flex-direction:column;gap:10px;scroll-margin-top:72px}
+.mnHead h2{margin:0;font-size:20px}
+.mnStepHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.mnStepHead h3{margin:0;font-size:16px}
+.mnStepHead input{flex:1 1 200px;font-weight:700}
+.mnNo{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-fg);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:800}
+.mnBody{white-space:pre-wrap;font-size:13px;line-height:1.75;overflow-wrap:anywhere}.mnH{display:inline-block;margin-top:4px}
+.mnTable th{width:32%;text-align:left;vertical-align:top;font-weight:600}.mnTable td{white-space:pre-wrap;font-size:13px;vertical-align:top;overflow-wrap:anywhere}
+.mnChecks{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:13px}.mnChecks li::marker{content:'☐ '}
+.mnLinks{display:flex;gap:6px;flex-wrap:wrap}.mnLink{text-decoration:none}
+.mnEd label,.mnFld{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft)}
+.mnEd textarea.sel,.mnEd input.sel,.mnFld .sel{width:100%;max-width:none;height:auto;min-height:34px;padding:7px 10px;font-size:13px;font-weight:400;color:var(--fg);line-height:1.6;resize:vertical}
+.mnStepHead input.sel{width:auto}
+.mnTwo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mnTblEd{display:flex;flex-direction:column;gap:6px}.mnLab{font-size:12px;font-weight:600;color:var(--ink-soft)}
+.mnRowEd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:6px;align-items:start}
+.mnTblEd>.btn{align-self:flex-start}
+.mnTpl{display:flex !important;flex-direction:row !important;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-weight:400 !important}
+.mnTpl span{display:flex;flex-direction:column;gap:2px;color:var(--fg)}.mnTpl:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.mnVer summary{cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap}.mnVer[open]{flex-direction:column;align-items:stretch}
+.lateTag.mnChanged{background:var(--warn-soft);color:var(--warn)}.lateTag.mnNew{background:var(--accent-soft);color:var(--accent-dark)}
+@media (max-width:900px){.mnGrid{grid-template-columns:1fr}.mnToc{position:static;max-height:200px}.mnTwo{grid-template-columns:1fr}}
+@media (max-width:600px){.mnRowEd{grid-template-columns:1fr auto}.mnRowEd textarea{grid-column:1/2}}
+/* ---------- 매뉴얼 진행 · 패널 ---------- */
+.mnBar{display:inline-block;width:120px;height:8px;border-radius:999px;background:var(--line);overflow:hidden;vertical-align:middle}
+.mnBar>span{display:block;height:100%;background:var(--ok-strong,#2f8a5b)}
+.mnProg{display:flex;align-items:center;gap:8px}
+.mnRuns{display:flex;flex-direction:column;gap:4px}
+.mnRunRow{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer}
+.mnRunRow b{flex:1 1 160px;font-size:13px}.mnRunRow:hover,.mnRunRow:focus-visible{border-color:var(--accent);outline:none}
+.mnCardRun{color:var(--ok-strong,#2f8a5b);font-weight:700}
+.mnChks{display:flex;flex-direction:column;gap:6px}
+.mnChk{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-size:13px}
+.mnChk input{width:18px;height:18px;flex:none}.mnChk>span:first-of-type{flex:1 1 200px}
+.mnChk.on{background:var(--bg)}.mnChk.on>span:first-of-type{text-decoration:line-through;color:var(--muted)}
+.mnStepDone .mnNo{background:var(--ok-strong,#2f8a5b)}
+.mnMore summary{cursor:pointer;font-size:12px;color:var(--ink-soft)}.mnMore[open]{display:flex;flex-direction:column;gap:8px}
+.mnLinkTo{display:flex;gap:10px;flex-wrap:wrap;font-weight:400}
+.mnPanel{position:fixed;top:0;right:0;bottom:0;z-index:35;width:min(440px,100vw);background:var(--surface);border-left:1px solid var(--line);box-shadow:-8px 0 24px rgba(0,0,0,.1);display:flex;flex-direction:column}
+.mnPanel>header{display:flex;align-items:center;gap:6px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.mnPBody{flex:1;overflow:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.mnPTitle{margin:0;font-size:17px}
+.mnPBody>*{flex:none}
+.mnTaskRuns{display:flex;flex-direction:column;gap:4px}
+/* ---------- 메뉴 선택 화면 ---------- */
+.menuPick{position:fixed;inset:0;z-index:38;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;background:linear-gradient(135deg,#eef1fb 0%,#f3f5fb 50%,#f6f6f8 100%)}
+.mpCard{margin:auto;width:100%;max-width:380px;background:var(--surface);border-radius:var(--r-lg);box-shadow:0 12px 32px rgba(20,30,60,.10);padding:36px 40px;display:flex;flex-direction:column;gap:10px}
+.mpCard h1{margin:0;font-size:20px;font-weight:800}
+.mpCard>p{margin:0 0 8px;font-size:13px;color:var(--ink-soft)}
+.mpList{display:flex;flex-direction:column;gap:8px}
+.mpGrp{font-size:11px;font-weight:700;color:var(--muted);margin-top:6px}
+.mpItem{all:unset;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 18px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;background:var(--surface)}
+.mpItem b{font-size:14px}.mpItem span{font-size:12px;color:var(--ink-soft);white-space:nowrap}
+.mpItem:hover,.mpItem:focus-visible{border-color:var(--accent);outline:none;background:var(--accent-soft)}
+.mpOut{all:unset;align-self:center;margin-top:10px;font-size:12px;color:var(--ink-soft);cursor:pointer;padding:4px 8px;border-radius:6px}
+.mpOut:hover,.mpOut:focus-visible{color:var(--fg);outline:2px solid var(--line)}
+.sidePick{flex:none}
+@media (max-width:420px){.mpCard{padding:28px 20px}}
+/* ---------- 업무 상세(게시판형 수정) ---------- */
+.tfPage{gap:18px}
+.tfHead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.tfHead .hlink{flex:none;font-size:13px;color:var(--ink-soft)}
+.tfTitle{flex:1 1 auto;min-width:0;font-size:22px;font-weight:800;border:1px solid transparent;background:transparent;border-radius:6px;padding:4px 8px;color:var(--fg)}
+.tfTitleRo{flex:1;margin:0;font-size:22px;font-weight:800;overflow-wrap:anywhere}
+.tfRows{display:flex;flex-direction:column}
+.tfRow{display:grid;grid-template-columns:130px minmax(0,1fr);align-items:center;gap:12px;min-height:42px}
+.tfLab{font-size:13px;color:var(--ink-soft)}
+.tfCtl{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.tfIn{height:32px;border:1px solid transparent;background:transparent;border-radius:6px;padding:0 8px;font-size:14px;color:var(--fg);max-width:100%}
+input.tfIn[type=text]{width:260px}.tfNum{width:90px}
+.tfIn:hover:not(:disabled),.tfTitle:hover{border-color:var(--line)}
+.tfIn:focus,.tfTitle:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.tfIn:disabled{color:var(--muted)}
+.tfVal{font-size:14px;padding:0 8px;overflow-wrap:anywhere}
+.tfSec{display:flex;flex-direction:column;gap:8px}
+.tfSecHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tfSecHead h3{margin:0;font-size:16px;font-weight:800}
+.tfLive{color:var(--ok-strong,#2f8a5b);font-size:12px}
+.tfNote{width:100%;min-height:220px;border:1px solid var(--line);border-radius:var(--r-lg);padding:16px 18px;font:inherit;font-size:14px;line-height:1.8;resize:vertical;background:var(--surface);color:var(--fg);box-sizing:border-box}
+.tfNote:focus{outline:none;border-color:var(--accent)}
+.tfNoteRo{white-space:pre-wrap;min-height:auto}
+.tfPage .rmsRule{display:inline-flex;gap:6px;align-items:center}.tfPage .rmsRule[hidden]{display:none}.tfPage .rmsRule input{width:280px;max-width:100%}
+@media (max-width:600px){.tfRow{grid-template-columns:1fr;gap:2px;padding:4px 0}.tfHead{flex-wrap:wrap;gap:6px}.tfTitle,.tfTitleRo{font-size:18px;flex-basis:100%}input.tfIn[type=text]{width:100%}.tfPage .wlAdd{grid-template-columns:1fr 1fr}}
+/* ---------- 업무 목록(회의록 목록형) ---------- */
+.pnRow{align-items:flex-end;gap:10px}
+.pnF{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft);min-width:0}
+.pnF.pnT{flex:2 1 220px}.pnF.pnT .sel{width:100%;max-width:none}
+.pnRow .pnF .sel{flex:none}.pnRow .pnF select.sel{width:auto}
+.listTitle{margin:6px 0 0;font-size:16px;font-weight:800;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.ltBar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
+.ltBar .searchBox{margin:0;width:280px;max-width:100%}
+.ltBar .ptabs{flex:0 1 auto;flex-wrap:wrap;overflow:visible;gap:6px}
+.ltBar .ptab{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:var(--surface);color:var(--ink-soft)}
+.ltBar .ptab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.ltBar .ptab[aria-selected="true"] .c{color:inherit;background:rgba(255,255,255,.25)}
+.ltBar .ptab[aria-selected="true"] .dot{box-shadow:0 0 0 1.5px #fff}
+.ltBar .ptabAdd{border-style:dashed}
+.postOpen>.ltBar,.postOpen>.listTitle{display:none}
+.postList{background:transparent;border:0;border-radius:0;border-top:1px solid var(--line)}
+.postRow{display:grid;grid-template-columns:minmax(0,2fr) 220px minmax(0,1.6fr) auto;align-items:center;gap:6px 16px;padding:14px 12px;border-top:0;border-bottom:1px solid var(--line)}
+.prMain{display:flex;align-items:center;gap:8px;min-width:0}.prMain .pTitle{flex:1 1 auto}
+.postRow .pMeta{white-space:normal;min-width:0}
+.prDate{white-space:nowrap}
+.prWho{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+@media (max-width:900px){.postRow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main main" "date st" "who who"}.prMain{grid-area:main}.prDate{grid-area:date}.prWho{grid-area:who}.postRow>.stSel,.postRow>.pill{grid-area:st;justify-self:end}}
+@media (max-width:600px){.ltBar .searchBox{width:100%}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -930,7 +1049,7 @@ a.rms:hover{text-decoration:underline}
 <!-- 화면 틀: 왼쪽 세로 메뉴(섹션 아코디언·접기, 좁은 화면에서는 서랍) + 위 헤더 + 본문 카드 -->
 <div class="shell" id="shell">
   <aside class="side" id="side" aria-label="메뉴">
-    <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button></div>
+    <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button><button type="button" class="sideFold sidePick" id="sidePick" aria-label="메뉴 선택 화면 열기" title="메뉴 선택 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button></div>
     <nav class="sideNav" id="modeTabs" role="tablist" aria-orientation="vertical" aria-label="화면">
     </nav>
   </aside>
@@ -940,7 +1059,7 @@ a.rms:hover{text-decoration:underline}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 서비스 · 담당자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
       <span class="meChip" id="btnProfile" hidden></span><button class="btn ghost" type="button" id="btnNotify" hidden>알림 설정</button>
@@ -954,14 +1073,13 @@ a.rms:hover{text-decoration:underline}
 
   <div id="postNew" hidden></div>
 
-  <!-- 프로젝트 탭: 등록 카드 아래 -->
-  <div class="ptRow">
-  <div class="ptabs" id="ptabs" role="tablist"></div>
-  </div>
-
-  <div class="filters">
-    <div class="chips" id="partChips"></div>
+  <!-- 업무 목록: 검색 · 프로젝트 칩 · 파트 칩 · 목록/보드 한 줄 -->
+  <h3 class="listTitle">업무 목록</h3>
+  <div class="ltBar">
+    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label>
+    <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
+    <div class="chips" id="partChips"></div>
     <div class="seg" id="viewSeg">
       <button type="button" data-view="list">목록</button>
       <button type="button" data-view="board">보드</button>
@@ -979,6 +1097,7 @@ a.rms:hover{text-decoration:underline}
   <div class="area" id="accountsArea" hidden></div>
   <div class="area" id="linkArea" hidden></div>
   <div class="area" id="eventOpsArea" hidden></div>
+  <div class="area" id="manualsArea" hidden></div>
   <div class="area" id="annualArea" hidden></div>
   <div class="area" id="menusArea" hidden></div>
 </div>
@@ -1318,7 +1437,7 @@ const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',
 let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 화면(settings/menus.home)을 쓰지 않음
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;}}
+{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold}));}catch(e){}}
@@ -1328,14 +1447,14 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const MENU_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
-const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['leave','people','일정 관리'],['annual','people','연차 관리'],
+const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['leave','people','일정 관리'],['annual','people','연차 관리'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
 function syncItems(list=menuCfg.custom,grps=menuCfg.groups){CUSTOM=Array.isArray(list)?list:[];const okG=g=>MENU_GRPS.some(x=>x[0]===g);MENU_ITEMS=[...BASE_ITEMS.map(([k,g,...r])=>[k,g!=='admin'&&okG(grps?.[k])?grps[k]:g,...r]),...CUSTOM.map(c=>[c.id,MENU_GRPS.some(g=>g[0]===c.grp)?c.grp:'work',c.name||'새 메뉴'])];}
 const customOf=k=>CUSTOM.find(c=>c.id===k);
 const safeUrl=u=>/^https?:\/\/[^\s]+$/i.test(String(u||'').trim())?String(u).trim():'';
-const NAV_ICO={"eventops":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z\"/><path d=\"M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
+const NAV_ICO={"manuals":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z\"/><path d=\"M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5\"/><path d=\"M8 7h8M8 11h6\"/></svg>","eventops":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z\"/><path d=\"M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
 let menuCfg={}, navKey='', sideDraw=()=>{};
 // 관리자: 서버는 wb_admins(adminUI), 아티팩트는 편집 권한(canWrite)
 const isAdminUser=()=>canWrite&&(typeof adminUI!=='function'||adminUI());
@@ -1473,7 +1592,8 @@ function applyMode(){
   renderNav();
   if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea'};
+  if(storeReady&&!pickShown&&!pickDone())setTimeout(openMenuPick,0); // 새로 들어올 때 메뉴 선택 화면
+  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='tasks';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
@@ -1506,6 +1626,8 @@ function renderBody(){
   if(state.mode!=='menus'&&mDraft){mDraft=null;syncItems();}
   if(state.mode==='leave'){renderLeave();return;}
   if(customOf(state.mode)){renderLink(customOf(state.mode));return;}
+  if(state.mode!=='eventops')$('#mnPanel')?.remove();
+  if(state.mode==='manuals'){renderManuals();return;}
   if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
@@ -1591,7 +1713,7 @@ function keepVals(box,html){
 }
 const optH=(arr,cur)=>arr.map(([k,l])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(l)}</option>`).join('');
 const stamp=s=>(s||'').slice(0,16).replace('T',' ');
-function openPost(id){state.post=id;persistUI();render();window.scrollTo(0,0);}
+function openPost(id){tfSavedMsg='';state.post=id;persistUI();render();window.scrollTo(0,0);}
 
 // 맨 위 '프로젝트 등록하기' 카드: 게시물(최상위 업무)을 바로 만듦
 let pnOpen=false; // 모바일에서 등록 카드를 펼쳤는지(데스크톱은 늘 펼침)
@@ -1601,13 +1723,13 @@ function renderPostNew(){
   if(box.hidden||box.contains(document.activeElement))return; // 입력 중엔 다시 그리지 않음
   const people=[...new Set([...members.map(m=>m.name),...tasks.map(x=>x.requester)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   keepVals(box,`<form class="postNew${pnOpen?' open':''}" id="pnForm" novalidate><h3><button type="button" class="pnToggle" id="pnToggle" aria-expanded="${pnOpen}" aria-controls="pnRowBox">프로젝트 등록하기<span class="chevron" aria-hidden="true">${pnOpen?'▲':'▼'}</span></button></h3><div class="pnRow" id="pnRowBox">
-    <select class="sel" id="pnProj" aria-label="서비스">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'?state.project:projects[0].id)}</select>
-    <input class="sel" id="pnTitle" placeholder="제목" maxlength="200" aria-label="제목">
-    <select class="sel" id="pnPart" aria-label="파트">${optH(PARTS.map(p=>[p.k,p.label]),state.part!=='all'?state.part:PARTS[0].k)}</select>
-    <select class="sel" id="pnAs" aria-label="담당자"><option value="">담당자 미지정</option>${optH(members.map(m=>[m.id,m.name]),'')}</select>
-    <input class="sel" id="pnReq" list="pnPeople" placeholder="요청자" aria-label="요청자">
-    <label class="pnD">요청일<input class="sel" type="date" id="pnReqD" value="${todayStr()}"></label>
-    <label class="pnD">마감일<input class="sel" type="date" id="pnDue"></label>
+    <label class="pnF"><span>프로젝트</span><select class="sel" id="pnProj">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'?state.project:projects[0].id)}</select></label>
+    <label class="pnF pnT"><span>제목</span><input class="sel" id="pnTitle" placeholder="업무 제목을 입력해 주세요" maxlength="200"></label>
+    <label class="pnF"><span>파트</span><select class="sel" id="pnPart">${optH(PARTS.map(p=>[p.k,p.label]),state.part!=='all'?state.part:PARTS[0].k)}</select></label>
+    <label class="pnF"><span>담당자</span><select class="sel" id="pnAs"><option value="">담당자 미지정</option>${optH(members.map(m=>[m.id,m.name]),'')}</select></label>
+    <label class="pnF"><span>요청자</span><input class="sel" id="pnReq" list="pnPeople" placeholder="이름 또는 부서"></label>
+    <label class="pnF"><span>요청일</span><input class="sel" type="date" id="pnReqD" value="${todayStr()}"></label>
+    <label class="pnF"><span>마감일</span><input class="sel" type="date" id="pnDue"></label>
     <button class="btn primary" type="submit" id="pnSave">등록하기</button></div>
     <datalist id="pnPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><span class="err" id="pnErr"></span></form>`);
 }
@@ -1633,15 +1755,15 @@ function postList(){
   return [...byRoot.values()].sort((a,b)=>key(b).localeCompare(key(a)));
 }
 const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
+// 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
+const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
 function postRow(p){
   const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
   const late=k.length?k.some(isLate):isLate(p),own=!k.length&&canWrite;
   return `<li class="postRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
-    ${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}
-    <span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>
-    <span class="pMeta num">${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:''}</span>
-    <span class="pMeta">${who(p.assignee,p.assigneeId,22,'담당 미지정')}</span>
-    <span class="pMeta">${k.length?`요청 ${k.length}건${doing?` · 진행 ${doing}`:''}`:'요청 없음'}</span>
+    <span class="prMain">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span></span>
+    <span class="pMeta num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:''}</span>
+    <span class="pMeta prWho">${k.length?`(요청 ${k.length}건${doing?` · 진행 ${doing}`:''}) `:''}${esc(partOf(p.part).label)} · ${who(p.assignee,p.assigneeId,22,'담당 미지정')}${p.requester?` · 요청 ${esc(p.requester)}`:''}</span>
     ${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</li>`;
 }
 function renderList(){
@@ -1655,36 +1777,102 @@ function renderList(){
 }
 
 // 게시물 상세: 머리 + 댓글·요청 타임라인 + 작성칸
+// 게시물·요청 상세 = 수정 화면(게시판형). 칸을 고치고 다른 곳을 누르면 그 칸만 저장
+const tfFold=new Set();let tfSavedMsg='';
+const tfWlSum=list=>Math.round(list.reduce((a,w)=>a+(+w.hours||0),0)*100)/100;
 function renderPost(p){
-  const k=kidsOf(p), pj=projOf(p.projectId), st=statusOf(postStatus(p,k)), cms=comments.filter(c=>c.taskId===p.id);
+  const main=$('#main');
+  if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf]'))return; // 칸 입력 중엔 다시 그리지 않음
+  const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
   const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
     :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${who(t.assignee,t.assigneeId,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
-      <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select>${canWrite?`<button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">수정</button>`:''}</div>
+      <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select><button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">${canWrite?'수정':'보기'}</button></div>
       <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
-  const html=`<div class="postView">
-    <div class="postHead"><button class="btn ghost" type="button" id="postBack">← 목록</button>${canWrite?'<button class="btn" type="button" id="postEdit">수정</button>':''}</div>
-    <div class="panel postCard"><div class="pcTop">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}${!k.length&&canWrite?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}</div>
-      <h2 class="pcTitle">${esc(p.title)}</h2>
-      <div class="pcMeta"><span>요청자 ${who(p.requester,'',22,'—')}</span><span>담당자 ${who(p.assignee,p.assigneeId,22)} · ${esc(partOf(p.part).label)}</span><span class="num">기간 ${fmtDate(p.requestDate)} ~ ${fmtDate(p.dueDate)}</span>${p.link?`<a href="${esc(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link)}" target="_blank" rel="noopener">관련 링크 ↗</a>`:''}</div>
-      ${p.note?`<p class="pcNote">${esc(p.note)}</p>`:''}</div>
-    <h3 class="tlTitle">댓글 · 업무 요청 <span class="legend">${items.length}</span></h3>
-    <ul class="cmList">${tl||'<li class="legend">아직 댓글이나 업무 요청이 없어요</li>'}</ul>
-    ${canWrite?`<div class="composer"><textarea id="cpText" rows="3" maxlength="1000" aria-label="댓글 또는 요청 내용" placeholder="댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요"></textarea>
-      <div class="cpRow"><label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
+  // 칸 만들기: 편집 권한이 없으면 글자로만
+  const txt=(f,v,lab,extra='')=>ro?`<span class="tfVal">${esc(v||'—')}</span>`:`<input type="text" class="tfIn" data-tf="${f}" value="${esc(v??'')}" aria-label="${lab}" ${extra}>`;
+  const sel=(f,arr,cur,lab)=>ro?`<span class="tfVal">${esc((arr.find(([x])=>String(x)===String(cur))||[,'—'])[1])}</span>`:`<select class="tfIn" data-tf="${f}" aria-label="${lab}">${optH(arr,cur)}</select>`;
+  const date=(f,v,lab)=>ro?`<span class="tfVal num">${v?fmtDate(v):'—'}</span>`:`<input type="date" class="tfIn" data-tf="${f}" value="${esc(v||'')}" aria-label="${lab}">`;
+  const num=(f,v,lab,dis)=>ro?`<span class="tfVal num">${v!==''&&v!=null?esc(v)+'h':'—'}</span>`:`<input type="number" class="tfIn tfNum" data-tf="${f}" min="0" step="0.5" inputmode="decimal" value="${esc(v??'')}" placeholder="시간(h)" aria-label="${lab}" ${dis?'disabled title="작업 시간 기록 합계로 자동 계산돼요"':''}>`;
+  const row=(lab,ctl)=>`<div class="tfRow"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
+  const cm=taskMember(p),orphan=p.assignee&&!cm?p.assignee:'',lv=cm&&leaveOn(cm.id,p.dueDate),rh=rmsHref(p),wl=wlogs.filter(w=>w.taskId===p.id).sort((x,y)=>x.date.localeCompare(y.date));
+  const people=[...new Set([...members.map(m=>m.name),...tasks.flatMap(x=>[x.assignee,x.requester])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const link=p.link?(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link):'';
+  const wlKeep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||cm?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
+  const fold=tfFold.has(p.id),np=nextPart(p.part);
+  const html=`<div class="postView tfPage">
+    <div class="tfHead"><button class="hlink" type="button" id="postBack" data-back="${isReq?esc(p.parentId):''}">← ${isReq?'게시물':'목록'}</button>${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}<span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span></div>
+    ${isReq?`<p class="legend" style="margin:0">게시물: ${esc(rootOf(p).title)}</p>`:''}
+    <div class="tfRows">
+      ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
+      ${row('진행 현황',!isReq&&k.length?`<span class="pill s-${st.k}" title="요청 업무들의 상태로 정해져요">${st.label}</span><span class="legend">요청 업무들의 상태로 정해져요</span>`:sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
+      ${row('파트',sel('part',PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
+      ${row('담당자',sel('assignee',[['','미지정'],...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.map(m=>[m.id,m.name])],cm?.id||(orphan?'name:'+orphan:''),'담당자')+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
+      ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
+      ${row('기간',`${date('requestDate',p.requestDate,'요청일')}<span class="legend">~</span>${date('dueDate',p.dueDate,'마감일')}${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}`)}
+      ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
+      ${row('우선순위',sel('priority',PRIS.map((l,i)=>[i,l]),p.priority??2,'우선순위'))}
+      ${row('소요시간',`<span class="legend">예상</span>${num('estHours',p.estHours,'예상 소요시간')}<span class="legend">실제</span>${num('actHours',p.actHours,'실제 소요시간',wl.length>0)}<span class="hint">1MD = 8h</span>`)}
+      ${row('Jira · RMS',`${txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"')}${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false"')}${rh?`<a class="rms" href="${esc(rh)}" target="_blank" rel="noopener">RMS 바로가기 ↗</a>`:''}`)}
+      ${row('RMS 링크',`${txt('rmsUrl',p.rmsUrl,'RMS 바로가기 링크',`placeholder="${site?.rmsTemplate?'비워 두면 주소 규칙으로 자동 연결':'RMS 화면 주소 붙여넣기'}" spellcheck="false"`)}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn">주소 규칙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
+      ${row('관련 링크',`${txt('link',p.link,'관련 링크','placeholder="Figma, 설계서, Jira 등 URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
+      ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
+    </div>
+    <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+    <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="tfLive">실시간 연결됨</span>${p.updatedAt?`<span class="legend">마지막 수정: ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}<span class="spacer"></span>
+      <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'▼':'▲'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
+      ${fold?'':ro?`<div class="tfNote tfNoteRo">${esc(p.note||'')||'<span class="legend">내용이 없어요.</span>'}</div>`:`<textarea class="tfNote" data-tf="note" aria-label="내용" placeholder="요청 배경, 변경 이력, 이슈">${esc(p.note||'')}</textarea>`}
+      <span class="err" id="tErr"></span></section>
+    <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span>${canWrite&&np?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(np.label)}(으)로 넘기기</button>`:''}</div>
+      ${wl.length?`<ul class="hitems">${wl.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
+      ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
+      <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span></section>
+    ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
+    <h3 class="tlTitle">${isReq?'댓글':'댓글 · 업무 요청'} <span class="legend">${items.length}</span></h3>
+    <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 업무 요청이'} 없어요</li>`}</ul>
+    ${canWrite?`<div class="composer"><textarea id="cpText" rows="3" maxlength="1000" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}" placeholder="${isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요"}"></textarea>
+      <div class="cpRow">${isReq?'':`<label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
       <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="파트">${optH(PARTS.map(x=>[x.k,x.label]),(nextPart(p.part)||partOf(p.part)).k)}</select>
       <select class="sel" id="cpAs" aria-label="담당자"><option value="">담당자 미지정</option>${optH(members.map(m=>[m.id,m.name]),'')}</select>
-      <label class="pnD">마감<input class="sel" type="date" id="cpDue"></label></span>
+      <label class="pnD">마감<input class="sel" type="date" id="cpDue"></label></span>`}
       <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
   </div>`;
-  const main=$('#main');
   if(main.dataset.post===p.id)keepVals(main,html);else main.innerHTML=html;
   main.dataset.post=p.id;
   if($('#cpFields'))$('#cpFields').hidden=!$('#cpReq').checked;
 }
+// 칸 하나 저장(그 칸만 update — 다른 사람이 다른 칸을 고쳐도 둘 다 남음)
+async function tfSave(p,f,raw){
+  const patch={};
+  if(f==='title'){const v=raw.trim();if(!v){toast('제목을 입력해 주세요.');render();return;}patch.title=v;}
+  else if(f==='assignee'){const m=raw.startsWith('name:')?null:memOf(raw);patch.assignee=m?m.name:raw.slice(5);patch.assigneeId=m?m.id:'';}
+  else if(f==='priority')patch.priority=+raw;
+  else if(f==='estHours'||f==='actHours')patch[f]=raw===''?'':Math.max(0,+raw);
+  else if(f==='jiraKey')patch.jiraKey=raw.trim().toUpperCase();
+  else if(f==='note')patch.note=raw.replace(/\s+$/,'');
+  else patch[f]=raw.trim();
+  if(f==='status'&&raw==='done'&&!p.doneDate)patch.doneDate=todayStr();
+  if(Object.keys(patch).every(x=>sameVal(p[x],patch[x])))return;
+  Object.assign(patch,{updatedAt:new Date().toISOString(),updatedByName:myMember()?.name||''});
+  const sv=$('#tfSaved');if(sv)sv.textContent='저장 중…';
+  try{await db.collection('tasks').doc(p.id).update(patch);logChange('task','update',p.id,patch.title||p.title,p,{...p,...patch});tfSavedMsg=`저장됨 ${new Date().toTimeString().slice(0,5)}`;const s2=$('#tfSaved');if(s2)s2.textContent=tfSavedMsg;}
+  catch(err){if($('#tfSaved'))$('#tfSaved').textContent='';handleWriteError(err,'#tErr');render();}
+}
+async function tfSyncAct(p,list){const sum=list.length?tfWlSum(list):'';await db.collection('tasks').doc(p.id).update({actHours:sum,updatedAt:new Date().toISOString()});}
+async function tfAddWl(p){
+  const h=+$('#wlH').value,d=$('#wlDate').value,m=memOf($('#wlMem').value);
+  if(!d||!m){$('#wlErr').textContent='날짜와 작업한 사람을 골라 주세요.';return;}
+  if(!(h>0)||h>24){$('#wlErr').textContent='시간은 0보다 크고 24 이하로 입력해 주세요.';return;}
+  $('#wlAddBtn').disabled=true;
+  try{const w={taskId:p.id,memberId:m.id,member:m.name,date:d,hours:h,note:$('#wlNote').value.trim(),by:actorId||'',createdAt:new Date().toISOString()};
+    await db.collection('worklogs').add(w);$('#wlH').value='';$('#wlNote').value='';
+    await tfSyncAct(p,[...wlogs.filter(x=>x.taskId===p.id&&!(x.date===w.date&&x.createdAt===w.createdAt)),w]);
+    logChange('task','update',p.id,p.title,null,null,`작업 시간 기록 ${md(d)} ${m.name} ${hrs(h)}h`);toast('작업 시간을 기록했어요');}
+  catch(err){handleWriteError(err,'#wlErr');}finally{if($('#wlAddBtn'))$('#wlAddBtn').disabled=false;}
+}
 async function sendPost(p,btn){
-  const text=$('#cpText').value.trim(), isReq=$('#cpReq').checked;
+  const text=$('#cpText').value.trim(), isReq=!!$('#cpReq')?.checked;
   if(!text){$('#cpErr').textContent=isReq?'요청 내용을 입력해 주세요.':'댓글 내용을 입력해 주세요.';return;}
   if(!isReq&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
   btn.disabled=true;
@@ -1694,7 +1882,7 @@ async function sendPost(p,btn){
         jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,updatedAt:now,createdAt:now};
       const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);toast('업무 요청을 등록했어요');}
     else await db.collection('comments').add({taskId:p.id,text,by:actorId,at:new Date().toISOString()});
-    $('#cpText').value='';$('#cpDue').value='';$('#cpAs').value='';$('#cpReq').checked=false;$('#cpFields').hidden=true;$('#cpErr').textContent='';
+    $('#cpText').value='';if($('#cpReq')){$('#cpDue').value='';$('#cpAs').value='';$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
   }catch(err){handleWriteError(err,'#cpErr');}finally{btn.disabled=false;}
 }
 async function setReqStatus(id,st){
@@ -1739,23 +1927,42 @@ $('#btnLeaveAdd').addEventListener('click',()=>openSched());
 $('#main').addEventListener('click',async e=>{
   if(e.target.closest('a,select'))return;
   const yh=e.target.closest('[data-year]');if(yh){const f=new Set(state.yfold||[]),y=yh.dataset.year;f.has(y)?f.delete(y):f.add(y);state.yfold=[...f];persistUI();render();return;}
-  if(e.target.id==='postBack'){openPost(null);return;}
+  const pb=e.target.closest('#postBack');if(pb){openPost(pb.dataset.back||null);return;}
+  const mr=e.target.closest('[data-mrun]');if(mr){mnGoRun(mr.dataset.mrun);return;}
   const p=state.post&&tasks.find(x=>x.id===state.post);
   if(p){
-    if(e.target.id==='postEdit'){openTask(p);return;}
     if(e.target.id==='cpSend'){sendPost(p,e.target);return;}
-    const ed=e.target.closest('[data-rqe]');if(ed){openTask(tasks.find(x=>x.id===ed.dataset.rqe));return;}
+    const ed=e.target.closest('[data-rqe]');if(ed){openPost(ed.dataset.rqe);return;}
+    const bid=e.target.closest('button')?.id;
+    if(bid==='tfFold'){tfFold.has(p.id)?tfFold.delete(p.id):tfFold.add(p.id);render();return;}
+    if(bid==='rmsRuleBtn'){$('#rmsRule').hidden=!$('#rmsRule').hidden;if(!$('#rmsRule').hidden)$('#rmsTpl').focus();return;}
+    if(bid==='rmsTplSave'){const tpl=$('#rmsTpl').value.trim();
+      if(tpl&&!tpl.includes('{no}')){$('#tErr').textContent='주소 규칙에 {no}를 넣어 주세요. 예: https://rms.회사.com/request/{no}';return;}
+      try{const before={...site};await db.doc('settings/site').set({title:site.title,subtitle:site.subtitle||'',rmsTemplate:tpl,updatedAt:new Date().toISOString()});site={...site,rmsTemplate:tpl};logChange('site','update','site','RMS 주소 규칙',before,site);
+        $('#tErr').textContent='';toast('RMS 주소 규칙을 저장했습니다');render();}catch(err){handleWriteError(err,'#tErr');}return;}
+    if(bid==='tNext'){const np=nextPart(p.part),pt=partOf(p.part);
+      openTask(null,{projectId:p.projectId,part:np.k,title:p.title,jiraKey:p.jiraKey||'',rmsNo:p.rmsNo||'',rmsUrl:p.rmsUrl||'',link:p.link||'',requester:p.assignee||p.requester||'',priority:p.priority??2,parentId:rootOf(p).id,prevId:p.id,note:`이전 단계: ${pt.label} · ${p.title}`});return;}
+    if(bid==='tfDel'){const back=p.parentId&&tasks.some(x=>x.id===p.parentId)?p.parentId:null;
+      evConfirm(`'${p.title||'업무'}'을(를) 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('tasks','task',`업무 · ${p.title||'(제목 없음)'}`,[wbDocOf('tasks',p)]);logChange('task','delete',p.id,p.title,null,null,'휴지통으로 옮김');openPost(back);toast('휴지통으로 옮겼어요');});return;}
+    if(bid==='wlAddBtn'){tfAddWl(p);return;}
+    const wd=e.target.closest('.wlDel');
+    if(wd){if(!wd.dataset.sure){wd.dataset.sure='1';wd.textContent='정말 삭제';return;}
+      try{const id=wd.dataset.wl;await db.collection('worklogs').doc(id).delete();await tfSyncAct(p,wlogs.filter(x=>x.taskId===p.id&&x.id!==id));toast('기록을 삭제했어요');}catch(err){handleWriteError(err,'#wlErr');}return;}
     const del=e.target.closest('.cmDel');if(!del)return;
     if(!del.dataset.sure){del.dataset.sure='1';del.textContent='정말 삭제';return;}
     try{await wbDropComment(del.dataset.cm);}catch(err){handleWriteError(err,'#cpErr');}
     return;
   }
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
-  const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(rootOf(t).id);
+  const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(row.dataset.post?rootOf(t).id:t.id);
 });
-$('#main').addEventListener('keydown',e=>{if(e.key!=='Enter')return;const row=e.target.closest('[data-post],.card[data-id]');if(row&&row===e.target)row.click();});
+$('#main').addEventListener('keydown',e=>{if(e.key!=='Enter')return;
+  if(e.target.matches?.('input[data-tf]')){e.preventDefault();e.target.blur();return;}
+  if(e.target.tagName==='INPUT'&&e.target.closest('.wlAdd')){e.preventDefault();const p=tasks.find(x=>x.id===state.post);if(p)tfAddWl(p);return;}
+ const row=e.target.closest('[data-post],.card[data-id]');if(row&&row===e.target)row.click();});
 $('#main').addEventListener('change',e=>{
   const el=e.target;
+  if(el.dataset.tf&&canWrite){const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,el.dataset.tf,el.value);if(el.tagName==='SELECT'||el.type==='date')el.blur();return;}
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
   if(el.id==='cpReq')$('#cpFields').hidden=!el.checked;
 });
@@ -1850,6 +2057,7 @@ function askClose(){if(modalDirty&&!closeWarned){closeWarned=true;toast('저장�
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#modalRoot').innerHTML)askClose();});
 
 function openTask(t,prefill){
+  if(t&&t.id){closeModal();state.mode='tasks';openPost(t.id);return;} // 기존 업무는 게시판형 상세에서 수정
   if(!projects.length){openProject(null);return;}
   const isNew=!t;
   t=t||{projectId:state.project!=='all'?state.project:projects[0].id,part:state.part!=='all'?state.part:PARTS[0].k,status:'wait',priority:2,requestDate:todayStr(),...prefill};
@@ -2381,7 +2589,7 @@ onArea('#eventOpsArea','change',async e=>{
 // 칸에서 나가면(저장 뒤) 다시 그림
 onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.evf'))setTimeout(()=>{if(!document.activeElement?.matches?.('#eventOpsArea .evf'))render();},0);});
 onArea('#eventOpsArea','click',async e=>{
-  const t=e.target.closest('[data-evtab]');if(t){evtTab=t.dataset.evtab;try{localStorage.setItem('wb-evtab',evtTab);}catch(er){}render();return;}
+  const t=e.target.closest('[data-evtab]');if(t){evtTab=t.dataset.evtab;try{localStorage.setItem('wb-evtab',evtTab);}catch(er){}render();if($('#mnPanel')){mnPanel.sel=null;mnPanel();}return;}
   const id=e.target.closest('button')?.id;
   if(id==='evMissing'){est.missing=!est.missing;render();return;}
   if(id==='evImport'){$('#evFile').click();return;}
@@ -2849,9 +3057,9 @@ let evPurged=false;
 /* ----- 휴지통(업무 관리 · 주간 보고): trash 컬렉션 문서 하나 = 지운 묶음 하나 {at, area, type, label, payload, by}
    payload.docs = 지운 문서 그대로 [{coll, id, data}] → 복구하면 같은 id로 다시 씀. 보고서 카테고리는 payload {docId, cat, idx} ----- */
 let wbTrash=[],wbPurged=false;
-const WB_TRASH_TYPE={task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
+const WB_TRASH_TYPE={manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
 const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
-const wbLocal=c=>({tasks,projects,assignments:assigns,comments})[c]||[];
+const wbLocal=c=>({tasks,projects,assignments:assigns,comments,manuals,manual_versions:manualVers,manual_runs:manualRuns})[c]||[];
 // 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
 async function wbDrop(area,type,label,docs,extra={}){
   await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});
@@ -2868,12 +3076,13 @@ async function wbRestore(t){
     // 원래 있던 곳(프로젝트·업무)이 없으면 막음
     for(const d of docs){
       if(d.coll==='tasks'&&d.data.projectId&&!has('projects',d.data.projectId))fail(`원래 프로젝트가 없어서 '${d.data.title||'업무'}'을(를) 복구할 수 없어요. 프로젝트를 먼저 복구해 주세요.`);
+      if(d.coll==='manual_runs'&&!has('manuals',d.data.manualId))fail('매뉴얼이 없어서 진행 건을 복구할 수 없어요. 매뉴얼을 먼저 복구해 주세요.');
       if(d.coll==='comments'&&!has('tasks',d.data.taskId))fail('댓글이 달려 있던 업무가 없어서 복구할 수 없어요. 업무를 먼저 복구해 주세요.');}
     let n=0;for(const d of docs){if(wbLocal(d.coll).some(x=>x.id===d.id))continue;await db.collection(d.coll).doc(d.id).set(d.data);n++;}
     if(!n){await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);return '이미 복구된 항목이라 휴지통에서만 지웠어요.';}
   }
   await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);
-  logChange(t.area==='report'?'report':'task','create',t.id,t.label,null,null,'휴지통에서 복구');
+  logChange(t.area==='report'?'report':t.area==='manual'?'manual':'task','create',t.id,t.label,null,null,'휴지통에서 복구');
   return `'${t.label}'을(를) 복구했어요.`;
 }
 async function wbDropComment(id){const c=comments.find(x=>x.id===id);if(!c){await db.collection('comments').doc(id).delete();return;}
@@ -2888,6 +3097,7 @@ const trashBtn=(id,n)=>`<button class="btn trBtn" type="button" id="${id}">${TRA
 const TRASH_SRC={
   evt:{list:()=>evtTrash,restore:t=>evRestore(t),coll:'evt_trash',types:EV_TRASH_TYPE,count:t=>evTrashCount(t),note:'지운 달·블록·행',ent:'evt',drop:id=>{evtTrash=evtTrash.filter(x=>x.id!==id);}},
   tasks:{list:()=>wbTrash.filter(t=>t.area==='tasks'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:t=>(t.payload?.docs||[]).filter(d=>d.coll==='tasks').length,note:'지운 업무·프로젝트·댓글',ent:'task',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
+  manual:{list:()=>wbTrash.filter(t=>t.area==='manual'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 매뉴얼·진행 건',ent:'manual',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
   report:{list:()=>wbTrash.filter(t=>t.area==='report'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 보고서 카테고리',ent:'report',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}}};
 let trashOpen=null;
 function trashDraw(){
@@ -2927,7 +3137,7 @@ async function evNextAll(){
 /* ----- 전체 검색(원본 searchAll · goToHit): 이벤트·배너·프리마케팅·혜택 모든 달에서 찾아 그 자리로 이동 ----- */
 let evQ='',evHits=[],evHi=0;
 const evSearchHtml=()=>`<div class="evSearchWrap"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="evSearch" type="search" value="${esc(evQ)}" placeholder="전체 검색 (이벤트·배너·혜택)" aria-label="이벤트 운영 전체 검색" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="evDrop"></label><div class="evDrop" id="evDrop" role="listbox" hidden></div></div>`;
-const evCommonBtns=()=>`${trashBtn('evTrashBtn',evtTrash.length)}${canWrite?'<button class="btn" type="button" id="evNextAll" title="이벤트·배너·프리마케팅·혜택의 다음 달을 한 번에 만들어요. 이미 있는 달은 건너뛰어요.">다음 달 한 번에 만들기</button>':''}`;
+const evCommonBtns=()=>`<button class="btn" type="button" id="evManualBtn">매뉴얼${manuals.some(m=>(m.linkTo||[]).includes('evt:'+evtTab))?' <span class="num">●</span>':''}</button>${trashBtn('evTrashBtn',evtTrash.length)}${canWrite?'<button class="btn" type="button" id="evNextAll" title="이벤트·배너·프리마케팅·혜택의 다음 달을 한 번에 만들어요. 이미 있는 달은 건너뛰어요.">다음 달 한 번에 만들기</button>':''}`;
 function evSearch(q){
   q=q.trim().toLowerCase();if(!q)return [];const H=[],has=v=>String(v??'').toLowerCase().includes(q);
   evMonthList().slice().reverse().forEach(m=>evRowsOf(m.id).forEach((r,i)=>{if(['name','eid','category','note','opUrl'].some(f=>has(r[f])))H.push({tab:'events',kind:'이벤트',title:r.name||'(이벤트명 없음)',where:`${m.label} ${i+1}행${r.eid?` · ID ${r.eid}`:''}`,month:m.key,uid:r.id});}));
@@ -2965,10 +3175,313 @@ onArea('#eventOpsArea','click',async e=>{
   const h=e.target.closest('[data-hit]');if(h){evGoHit(evHits[+h.dataset.hit]);return;}
   const id=e.target.closest('button')?.id;
   if(id==='evTrashBtn'){openTrash('evt');return;}
+  if(id==='evManualBtn'){$('#mnPanel')?$('#mnPanel').remove():mnPanel();return;}
   if(id==='evNextAll'&&canWrite){const b=e.target.closest('button');b.disabled=true;try{await evNextAll();}catch(err){handleWriteError(err);render();}}
 });
 // 원본 JSON의 benefitBlocks 모양(최신 블록이 [0])
 const bfToState=()=>bfMonthList().map(b=>({_uid:b.id.slice(8),label:b.label,items:bfItems(b.id).map(it=>({_uid:it.id,name:it.name||'',copy:it.copy||'',status:it.status||'',expiryDate:it.expiryDate||''}))}));
+
+/* ---------- 매뉴얼 관리: 단계형 매뉴얼(단계마다 설명 · 항목 표 · 체크 항목 · 링크 · 피그마 프레임) ----------
+   manuals 문서 {title, category, version, summary, figmaUrl, links:[{label,url}], steps:[{id, title, body, table:[{label,rule}], checks:[문장], links:[{label,url}], figmaUrl}], updatedAt, updatedBy}
+   manual_versions 문서 {manualId, version, note, at, by, snapshot} — '버전 올리기' 때 올리기 전 내용을 그대로 보관
+   편집 중에는 사본(mnDraft)을 고치고 1초 뒤 통째로 저장(같은 매뉴얼을 두 사람이 동시에 고치면 나중 저장이 남음) */
+let manuals=[],manualVers=[];
+const mnst={id:null,run:null,edit:false,cat:'전체',q:''};
+let mnDraft=null,mnTimer=null,mnForce=false;
+const mnUid=()=>'s'+Math.random().toString(36).slice(2,9);
+const MN_BOARD='https://www.figma.com/board/ZU6nQA9PHPC35cAeAmK08t/?node-id=',MN_DECK='https://www.figma.com/deck/OPll03c39SAoDJx3wPgaPe';
+const MN_RNR=[['알닷 PM (MVNO사업팀)',''],['알닷 PL (MVNO사업팀)',''],
+  ['기획','기능 개선 기획\n상시 SI 요구 사항 분석/ UI 기획\n제휴 요금제 연동 기능 관리\n배너,팝업 관리\n이벤트, 혜택 관리\n쿠폰함 기능 관리'],
+  ['기획 (협력)','기능 개선 기획\n상시 SI 요구 사항 분석/ UI 기획\nVOC, VOE 모니터링\n1:1 문의 확인\n리포트 작성 및 개선 사항 도출\n상시 운영 지원'],
+  ['디자인 PL',''],['퍼블리싱 PL (협력)',''],
+  ['미디어로그 PM의 역할','운영 전반 이슈, 일정 조율 및 업무 배분 체계 운영 관리\n기획, 디자인, 퍼블리싱 등 간의 교차 검수\n휴먼 에러, 요청 사항 누락 방지를 위한 최종 검수\n사업 요청사항 및 우선순위 협의 후 실무 수행조직에 공유·전파\n서비스 정책 및 기준 준수 여부에 대한 상시 점검 및 관리'],
+  ['미디어로그 PL의 역할','업무 일정 및 마감 기한 관리\n요청사항에 따른 업무 수행의 정확성 및 완료 여부 확인\n업무 변경사항, 일정 조율 및 요청 내역의 정확한 수행\n현장 이슈·장애·리스크 발생 시 즉시 보고 및 대응 방안을 제안\n서비스 정책 및 기준 준수 여부에 대한 상시 점검 및 관리']];
+const mnRows=a=>a.map(([label,rule])=>({label,rule}));
+const mnL=(label,url)=>({label,url});
+// 템플릿: 피그마 '알닷 운영 메뉴얼'(덱) · '이벤트 등록 매뉴얼'(보드)의 글을 그대로 옮김
+const MN_TPL={
+  ops:{title:'알닷 운영 메뉴얼',category:'운영 공통',summary:"'26년 Consumer부문/MVNO사업담당 · 미디어로그/디지털서비스2팀",figmaUrl:MN_DECK,links:[],steps:[
+    {title:'업무 담당자',body:'MVNO사업팀과 미디어로그의 담당자·역할이에요.',table:mnRows(MN_RNR)},
+    {title:'사업팀 업무 요청 (U+)',body:'- JIRA(IT) : 커머스 업무 접수 채널\n\n• 정확한 요건을 명시, 문서(PPT, Figma 등)로 명세화하여 전달 요청\n  예) 선(先) 티켓 등록 요청 → 추후 요구 사항 제공\n  - 요건 확정이 지연 되어 일정 조율이 어려움\n  - 따라서 요청 시점에 필수 자료/정보를 함께 제공하고, 변경 사항은 문서 기준으로 이력 관리 필요'},
+    {title:'업무 접수 및 배분 (PM)',body:'- JIRA 업무 티켓 확인\n- 요구사항 분석\n- 기획 담당자 업무 배분\n\n• JIRA, 티켓 접수 시 PM/PL이 업무 내용 확인\n• 확인 완료 후, 기획 담당자에게 티켓을 이관하여 상세 기획 검토 및 후속 진행\n• 사업 측에서 요청 목적·범위·일정이 명확하지 않을 경우 보완 후 진행 → 모호한 정책·소스에 대한 범위 재확인\n• 구두 및 메신저 요청은 별도 기록'},
+    {title:'업무 진행 (PL)',body:'- 요구사항 확인/보완(w/U+)\n- 화면기획, 디/퍼 일정 확인, 업무 요청\n- 운영기 BO 셋팅\n\n• 업무 요청 커뮤니케이션은 RMS를 통해 요청\n  - 업무 현황 가시성 저하 및 인력 관리 어려움\n• 업무 진행 중 중요 안건(범위/일정/우선순위 조정/리스크 등)\n• 업무 협의는 PM과 사전 논의 후 진행'},
+    {title:'DEV 검수 (U+ · ML)',body:'- DEV 반영, 검수\n- U+ 검수 요청/Feedback\n\n• 검수자 부재 시, 대무자(대체 검수자) 지정\n• 검수 완료 후, 검수 결과를 공식 채널 (E-Mail, JIRA 티켓)로 회신'},
+    {title:'운영기 검수 (U+ · ML)',body:'- 운영기 반영, 검수\n\n• 좌동'},
+    {title:'업무 종료 (ML)',body:'- JIRA 반영 내용 작성\n- Task 종료 처리\n\n• 운영 검수 회신 수신 후, JIRA 티켓을 종료 처리',checks:['운영 검수 회신 수신','JIRA 반영 내용 작성','JIRA 티켓 종료 처리']},
+    {title:'(기/디/퍼/개) 업무 프로세스',body:'■ 흐름\nLG유플러스 MVNO제휴영업팀 → (Jira, e-mail) → 디지털서비스 2팀 PM: 업무 접수, 분석, 배분, 협의, 컨펌\n→ (Jira, RMS) → 기) 현장대리인/팀원: 업무 확인, 진행\n→ (RMS) → UX디자인팀 디) PL: 업무 접수, 분석, 배분, 협의, 컨펌 → 디) 현장대리인/팀원\n→ (RMS · 퍼블 진행 중 문의사항) → 퍼) 현장대리인 → (RMS · 개발 업무 진행 문의) → 개발 PM\n일정 문의 절차 단계화 (기 → 디 → 퍼)\n\n■ 검수\n담당자 검수 (기, 디, 퍼) → PM 최종 검수 → LG유플러스 컨펌 → 반영\n\n1. 디자인 작업 및 관리 기준\n• Figma 업데이트를 운영 계정으로 단일화\n• 디자인 담당 : 최종 산출물 업로드 및 퍼블리셔 전달\n• 퍼블리셔 전달 이후 변경 시 이력 관리 기준 정립\n• 전달 완료본 수정 시 재전달 원칙 적용\n\n2. 디자인 검수 및 퍼블리셔 전달 기준\n• 디자인 검수 완료 후 전달 원칙 (디자인(내부) → 운영(내부) → 사업)\n• 퍼블리셔 전달 시, 작업 범위·적용 위치 명시\n\n3. 퍼블리싱 작업 기준\n• 퍼블리싱은 전달한 DEV에서 작업 진행',
+     table:mnRows([['1. 오픈 및 리스크 관리 기준','QA 완료 후 오픈 원칙 유지 여부\n반복 이슈 발생 시 원인 분석 및 프로세스 개선 체계'],['2. 최종 검수 기준','최종 Service Acceptance 수행 범위\n· 요구사항 동작 여부\n· 정책·문구·노출 위치 적정성\n· 운영 시나리오 적합성\n· 고객 영향 검토\n최종 판단 기준: "서비스로 내보내도 되는가"']])}]},
+  event:{title:'이벤트 등록 매뉴얼',category:'이벤트 운영',summary:'미디어로그 · 2026.04.23 -',figmaUrl:MN_BOARD+'0-1',links:[],steps:[
+    {title:'업무 요청 확인',body:'■ 신규/수정 작업\n1. 관리 시트 작성 : 이전 달 월말 2주 전 탭 생성\n2. 작업 사항 확인 : 사업 요청 (담당 : )\n\n■ (수시) 신규/수정 작업\n1. 사업 신규/수정 작업 요청 : 요구사항 확인\n2. 관리 시트 작성 : 작업 사항 기입',figmaUrl:MN_BOARD+'2084-1613'},
+    {title:'디자인/퍼블리싱 작업 요청',body:'1. 요청서 작성 : 사업 요구사항 확인 후, 요청서 작성 ( Figma 혹은 PPT)\n   버튼 영역 퍼블리싱 요청 시, GA 코드 전달\n2. RMS 요청 : RMS 요청서 작성 (디자인 :  / 퍼블리싱 : )',figmaUrl:MN_BOARD+'2077-526'},
+    {title:'(BO) 이벤트 정보 등록',body:'셋팅 전 이미지 최적화 : https://squoosh.app/\n담당자:  | MVNO 영업팀\n\n■ 이벤트 목록\n➊ 추천순서 : 목록에서 추천 순서 변경 => [추천순서 저장] 버튼 선택\n➋ 추가 : 선택 시, 신규 이벤트 상세 등록 이동\n➌ 수정 : 목록에서 해당 이벤트 선택 시, 수정 페이지로 이동\n\n■ 이벤트 상세 항목 (아래 표)',figmaUrl:MN_BOARD+'24-1385',table:mnRows([
+      ['➊ 유형','선택 : 일반, 특가전\n일반 => 일반 이벤트\n특가전 => 룰렛 이벤트'],['구분','선택: 알닷 / 파트너사\n알닷 : 알닷 이벤트 등록할 경우\n파트너사 : 파트너사 이벤트 등록할 경우, 지정된 이벤트 일 경우에는 목록에서 해당 파트너사 입력'],['노출 여부','Y/N'],['➋ 이벤트 명','대표 타이틀 입력 OR 배너 명 입력'],
+      ['이벤트 기간 (예약기간)','시작일 : 시간은 항상 00:00:00 으로 셋팅\n종료일 : 시간은 항상 23:59:59 으로 셋팅'],['응모 이벤트 여부','팝업 이벤트할 경우 사용\n별도 요청 없을 경우, N으로 선택'],['댓글 사용','별도 요청 없을 경우, N으로 선택'],['검색어','대표 타이틀, 상품명, 이벤트 명 등으로 작성'],['➌ 썸네일 이미지','FO 이벤트 목록 배너'],['이미지 대체 텍스트','이벤트 명으로 입력'],
+      ['카테고리 선택','알닷 혜택 : 알닷 이벤트\n서비스 안내 : 기능 안내\n해외로밍/인터넷 결합 혜택 : 해외로밍 이벤트와 인터넷 결합 이벤트\n파트너사 혜택 : 파트너사 이벤트\n제휴 혜택 : 제휴 이벤트\n친구추천 혜택 : 친구추천 이벤트\n이번달 혜택 : 알닷 이벤트'],['➍ 플래그 선택','직접입력으로 등록 : 이벤트 명 입력'],['인터넷 결합 플로팅 사용','인터넷 결합 플로팅 이벤트 외엔 모두 N으로 선택'],
+      ['➎ 이벤트 상세','등록 방식 : 직접 입력, 이벤트 URL 등록, 이미지 등록\n직접 입력 : HTML 삽입\n이벤트 URL 등록 : 외부 링크\n이미지 등록 : 이미지 파일 등록'],['➏ 관련 요금제','요금제 선택 팝업 선택 후, 사업이 요청한 요금제 적용'],['➐ 관련 이벤트','일반적으로 메인 이벤트 노출 (EX. 알닷 위크 /  알닷 온리 / 알닷 온리 플러스 / 라이프팩 이벤트)\n사업에서 별도 요청 시 요청사항대로 노출']])},
+    {title:'(BO) 이벤트 카테고리 등록',body:'(FO) 이벤트 카테고리에 노출돼요.',figmaUrl:MN_BOARD+'2010-1498',table:mnRows([['➊ 추천순서','목록에서 추천 순서 변경 => [추천순서 저장] 버튼 선택'],['➋ 추가','선택 시, 신규 이벤트 상세 등록 이동'],['➌ 수정','목록에서 해당 이벤트 선택 시, 수정 페이지로 이동']])},
+    {title:'(BO) 친구추천 이벤트 정보 등록',body:'추천인 · 피추천인 화면을 각각 등록해요.',figmaUrl:MN_BOARD+'2085-2131',table:mnRows([['(추천인) ➊ 추천 이벤트 안내 영역','상품 변경 요청 시, 디자인 이미지 수정'],['(추천인) ➋ 혜택 안내 영역','노출여부 : Y/N\n등록방식 : 직접입력, 이벤트 URL 등록, 이미지 등록\n월초 정보 수정'],['(추천인) ➌ 유의사항','월초 날짜 수정'],
+      ['(피추천인) ➊ 추천 이벤트 안내 영역','상품 변경 요청 시, 디자인 이미지 수정'],['(피추천인) ➋ 관련 요금제','사업 별도 요청 시, 수정'],['(피추천인) ➌ 혜택 안내 영역','노출여부 : Y/N\n등록방식 : 직접입력, 이벤트 URL 등록, 이미지 등록'],['(피추천인) ➍ 유의사항','월초 날짜 수정']])},
+    {title:'(BO) 제휴카드 이벤트 정보 등록',body:'(FO) 혜택 > 제휴카드 혜택에 노출돼요.',figmaUrl:MN_BOARD+'2085-2421',table:mnRows([['요금제 제휴 카드 관리 상세','월초 날짜 변경']])},
+    {title:'DEV 검수',body:'URL 접근 확인',figmaUrl:MN_BOARD+'2077-453',links:[mnL('DEV FO','https://dev.uplusmvno.com/')],
+      checks:['등록 완료 : 이벤트 혜택 → 이벤트 노출 확인, URL 접근 확인','사업 검수 : 반드시 DEV 사업 검수 후 운영기 오픈 세팅 시작']},
+    {title:'운영기 검수',body:'URL 접근 확인',figmaUrl:MN_BOARD+'2077-453',links:[mnL('운영 FO','https://www.uplusmvno.com/')],
+      checks:['등록 완료 : 노출 정보 상세 확인, URL 접근 확인','담당자 검수 : STG 사업 검수 후, 운영기 상세 검수는 업무 담당자가 진행','오픈 : 노출 일자 당겨서 세팅 후 수기로 노출 Y 전환, 이벤트 노출 확인','사업 검수 : 노출 Y, 이벤트 노출 확인 완료 시 사업 검수 요청','종료 : 반드시 사업 검수 완료 메일 확인 후 업무 종료']},
+    {title:'업무 종료',body:'반드시 사업 검수 완료 메일 확인 후 업무 종료',checks:['사업 검수 완료 메일 확인']}]}};
+const mnStepOf=s=>({id:mnUid(),title:s.title||'',body:s.body||'',table:(s.table||[]).map(r=>({...r})),checks:[...(s.checks||[])],links:(s.links||[]).map(l=>({...l})),figmaUrl:s.figmaUrl||''});
+const mnCur=()=>mnst.edit&&mnDraft&&mnDraft.id===mnst.id?mnDraft:manuals.find(m=>m.id===mnst.id);
+const mnCats=()=>[...new Set(manuals.map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+const mnNextVer=v=>{const [a,b]=String(v||'1.0').split('.').map(Number);return `${a||1}.${(b||0)+1}`;};
+const mnFmt=s=>s?fmtDT(s):'';
+// '이름 | 주소' 한 줄에 하나. 주소만 쓰면 피그마는 '피그마', 그 밖은 주소 앞부분을 이름으로
+function mnParseLinks(t){return String(t||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.lastIndexOf('|');let label=i>0?l.slice(0,i).trim():'';const url=(i>0?l.slice(i+1):l).trim();if(!label)label=/figma\.com/i.test(url)?'피그마':url.replace(/^https?:\/\//,'').slice(0,40);return {label,url};});}
+const mnLinksText=L=>(L||[]).map(x=>`${x.label} | ${x.url}`).join('\n');
+// 본문: 줄 그대로, 주소는 링크로, '■'로 시작하는 줄은 소제목
+const mnText=s=>String(s||'').split('\n').map(l=>{const h=esc(l).replace(/https?:\/\/[^\s<]+/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`);return l.trim().startsWith('■')?`<b class="mnH">${h}</b>`:h;}).join('\n');
+const mnLinks=L=>(L||[]).filter(x=>safeUrl(x.url)).map(x=>`<a class="chip mnLink" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.label)} ↗</a>`).join('');
+const mnFig=u=>safeUrl(u)?`<a class="btn ghost sm" href="${esc(safeUrl(u))}" target="_blank" rel="noopener">피그마에서 보기 ↗</a>`:'';
+
+function renderManuals(){
+  const area=$('#manualsArea');
+  if(area.contains(document.activeElement)&&document.activeElement.matches('input,textarea'))return; // 입력 중엔 다시 그리지 않음
+  if(document.activeElement?.id==='mnQ'&&!mnForce)return; // 검색어 입력 중(헤더로 옮겨 간 칸)
+  mnForce=false;
+  if(mnst.id&&!manuals.some(m=>m.id===mnst.id)){mnst.id=null;mnst.edit=false;mnDraft=null;}
+  if(mnst.run&&!manualRuns.some(r=>r.id===mnst.run))mnst.run=null;
+  if(mnst.id&&mnst.run){mnRunView(area);return;}
+  if(mnst.id){mnDetail(area);return;}
+  const cats=mnCats(),q=mnst.q.trim().toLowerCase();
+  const tools=`<label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="mnQ" type="search" value="${esc(mnst.q)}" placeholder="매뉴얼 · 단계 · 표 내용 검색" aria-label="매뉴얼 검색"></label><span class="spacer"></span>${trashBtn('mnTrashBtn',TRASH_SRC.manual.list().length)}${canWrite?'<button class="btn primary" type="button" id="mnNew">+ 매뉴얼 등록</button>':''}`;
+  let body;
+  if(q){const H=[];const has=v=>String(v||'').toLowerCase().includes(q),snip=v=>{const s=String(v||''),i=s.toLowerCase().indexOf(q);return (i>20?'…':'')+s.slice(Math.max(0,i-20),i+60).replace(/\n/g,' ');};
+    manuals.forEach(m=>{if(has(m.title)||has(m.summary))H.push({m,s:null,t:snip(has(m.title)?m.title:m.summary)});
+      (m.steps||[]).forEach((s,i)=>{const f=[s.title,s.body,...(s.table||[]).flatMap(r=>[r.label,r.rule]),...(s.checks||[])].find(has);if(f!=null)H.push({m,s,i,t:snip(f)});});});
+    body=`<div class="panel mnHits"><h3>검색 결과 <span class="legend">${H.length}건</span></h3>${H.length?H.map(h=>`<button type="button" class="mnHit" data-mopen="${esc(h.m.id)}"${h.s?` data-mstep="${esc(h.s.id)}"`:''}><b>${esc(h.m.title)}${h.s?` · ${h.i+1}. ${esc(h.s.title)}`:''}</b><span class="legend">${esc(h.t)}</span></button>`).join(''):'<p class="legend" style="margin:0">찾는 내용이 없어요.</p>'}</div>`;}
+  else{const L=manuals.filter(m=>mnst.cat==='전체'||m.category===mnst.cat).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
+    body=`<div class="chips evChips">${['전체',...cats].map(c=>`<button type="button" class="chip" data-mcat="${esc(c)}" aria-pressed="${mnst.cat===c}">${esc(c)} <span class="num">${c==='전체'?manuals.length:manuals.filter(m=>m.category===c).length}</span></button>`).join('')}</div>
+      ${L.length?`<div class="mnCards">${L.map(m=>`<button type="button" class="mnCard" data-mopen="${esc(m.id)}"><span class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}</span></span><b>${esc(m.title||'(제목 없음)')}</b>${m.summary?`<span class="legend mnSum">${esc(m.summary)}</span>`:''}<span class="legend">단계 ${(m.steps||[]).length}개 · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}${mnRunsOf(m.id).length?` · <span class="mnCardRun">진행 중 ${mnRunsOf(m.id).length}건</span>`:''}</span></button>`).join('')}</div>`
+        :`<div class="empty"><h2>${manuals.length?'이 분류에 매뉴얼이 없어요':'아직 등록된 매뉴얼이 없어요'}</h2><p>${canWrite?"'+ 매뉴얼 등록'에서 템플릿(운영 업무 프로세스 · 이벤트 등록)으로 시작해 보세요.":'등록된 매뉴얼이 생기면 여기에 보여요.'}</p></div>`}`;}
+  area.innerHTML=`<div class="rtool">${tools}</div>${body}`;
+}
+const mnStepView=(s,i)=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}"><div class="mnStepHead"><span class="mnNo">${i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}</div>
+      ${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}
+      ${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><thead><tr><th>항목</th><th>입력 기준</th></tr></thead><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label||'')}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}
+      ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+      ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
+function mnDetail(area){
+  const m=mnCur(),ed=mnst.edit&&canWrite,vers=manualVers.filter(v=>v.manualId===m.id),steps=m.steps||[];
+  const tools=`<button class="btn ghost" type="button" id="mnBack">← 목록</button><span class="spacer"></span><span class="legend" id="mnSaveSt" aria-live="polite"></span>
+    ${canWrite?(ed?'<button class="btn primary" type="button" id="mnEditEnd">편집 끝내기</button>':'<button class="btn primary" type="button" id="mnRunStart">진행 시작</button><button class="btn" type="button" id="mnEdit">편집</button><button class="btn" type="button" id="mnVerUp">버전 올리기</button>'):''}
+    <button class="btn" type="button" id="mnVers">이전 버전${vers.length?` <span class="num">${vers.length}</span>`:''}</button>${canWrite&&!ed?'<button class="btn ghost" type="button" id="mnDel">삭제</button>':''}`;
+  const toc=`<nav class="mnToc panel" aria-label="단계 목차"><b>${esc(m.title||'(제목 없음)')}</b><ol>${steps.map((s,i)=>`<li><button type="button" class="mnTocBtn" data-mgo="${esc(s.id)}">${i+1}. ${esc(s.title||'(제목 없음)')}</button></li>`).join('')}</ol></nav>`;
+  const head=ed?`<section class="panel mnHead mnEd"><label>제목<input class="sel" data-mf="title" value="${esc(m.title||'')}" maxlength="80"></label>
+      <div class="mnTwo"><label>분류<input class="sel" data-mf="category" value="${esc(m.category||'')}" list="mnCatList" maxlength="30"></label><label>피그마 주소<input class="sel" data-mf="figmaUrl" value="${esc(m.figmaUrl||'')}" placeholder="https://www.figma.com/…" spellcheck="false"></label></div>
+      <label>요약<input class="sel" data-mf="summary" value="${esc(m.summary||'')}" maxlength="200"></label>
+      <label>관련 링크 <span class="legend">한 줄에 하나 · 이름 | 주소</span><textarea class="sel" data-mf="links" rows="2" spellcheck="false">${esc(mnLinksText(m.links))}</textarea></label>
+      <div class="mnFld">연결할 화면 <span class="legend">고른 화면의 '매뉴얼' 버튼에서 이 매뉴얼이 열려요</span><div class="mnLinkTo">${MN_LINKS().map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-mlink="${k}" ${(m.linkTo||[]).includes(k)?'checked':''}>${esc(l)}</label>`).join('')}</div></div>
+      <datalist id="mnCatList">${mnCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></section>`
+    :`<section class="panel mnHead"><div class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')} · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${mnFig(m.figmaUrl)}</div>
+      <h2>${esc(m.title||'(제목 없음)')}</h2>${m.summary?`<p class="legend" style="margin:0">${esc(m.summary)}</p>`:''}${(m.links||[]).length?`<div class="mnLinks">${mnLinks(m.links)}</div>`:''}
+      ${(m.linkTo||[]).length?`<span class="legend">연결된 화면: ${esc(MN_LINKS().filter(([k])=>m.linkTo.includes(k)).map(([,l])=>l).join(', '))}</span>`:''}
+      ${mnRunsOf(m.id).length?`<div class="mnRuns"><span class="mnLab">진행 중 ${mnRunsOf(m.id).length}건</span>${mnRunsOf(m.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}</section>`;
+  const card=(s,i)=>ed?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
+      <div class="mnStepHead"><span class="mnNo">${i+1}</span><input class="sel" data-sf="title" value="${esc(s.title||'')}" placeholder="단계 제목" aria-label="단계 제목" maxlength="80">
+        <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-sdel>삭제</button></div>
+      <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span><textarea class="sel" data-sf="body" rows="${Math.min(14,Math.max(3,String(s.body||'').split('\n').length+1))}">${esc(s.body||'')}</textarea></label>
+      <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표를 복사해 칸에 붙여넣으면 행이 생겨요</span></span>
+        ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></div>`).join('')}
+        <button type="button" class="btn sm" data-radd>+ 행 추가</button></div>
+      <div class="mnTwo"><label>체크 항목 <span class="legend">한 줄에 하나</span><textarea class="sel" data-sf="checks" rows="3">${esc((s.checks||[]).join('\n'))}</textarea></label>
+        <label>링크 <span class="legend">한 줄에 하나 · 이름 | 주소</span><textarea class="sel" data-sf="links" rows="3" spellcheck="false">${esc(mnLinksText(s.links))}</textarea></label></div>
+      <label>피그마 프레임 주소<input class="sel" data-sf="figmaUrl" value="${esc(s.figmaUrl||'')}" placeholder="https://www.figma.com/…?node-id=…" spellcheck="false"></label></section>`
+    :mnStepView(s,i);
+  area.innerHTML=`<div class="rtool">${tools}</div><div class="mnGrid">${toc}<div class="mnMain">${head}${steps.map(card).join('')||'<div class="empty"><h2>단계가 없어요</h2></div>'}${ed?'<button class="btn" type="button" id="mnStepAdd">+ 단계 추가</button>':''}</div></div>`;
+  if(mnTimer)$('#mnSaveSt').textContent='저장 중…';
+}
+// 저장: 편집 사본을 통째로(1초 뒤). 단계 추가·삭제·순서는 바로
+function mnQueue(now){clearTimeout(mnTimer);const st=$('#mnSaveSt');if(st)st.textContent='저장 중…';mnTimer=setTimeout(mnSave,now?0:1000);}
+async function mnSave(){clearTimeout(mnTimer);mnTimer=null;const d=mnDraft;if(!d)return;
+  const {id,...data}=d;try{await db.collection('manuals').doc(id).update({...data,updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''});const st=$('#mnSaveSt');if(st)st.textContent=`저장됨 ${new Date().toTimeString().slice(0,5)}`;}
+  catch(err){handleWriteError(err);}}
+function mnOpen(id,step){mnst.id=id;mnst.edit=false;mnDraft=null;document.activeElement?.blur();mnForce=true;render();window.scrollTo(0,0);if(step)mnFlash(step);}
+function mnFlash(sid){const el=document.getElementById('mn-'+sid);if(!el)return;el.scrollIntoView({block:'start'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
+function mnNewModal(){
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>매뉴얼 등록</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><label class="mnFld">시작 방식${[['blank','빈 매뉴얼','단계 하나에서 시작'],['ops','운영 업무 프로세스','알닷 운영 메뉴얼(덱)의 담당자 R&R · 6단계 · 수시 업무 흐름'],['event','이벤트 등록','이벤트 등록 매뉴얼(보드)의 요청 확인 · BO 세팅 항목 표 · 검수 체크']].map(([v,l,d],i)=>`<label class="mnTpl"><input type="radio" name="mnTpl" value="${v}" ${i?'':'checked'}><span><b>${l}</b><span class="legend">${d}</span></span></label>`).join('')}</label>
+      <label class="mnFld">제목<input class="sel" id="mnNTitle" maxlength="80" placeholder="예: 이벤트 등록 매뉴얼"></label>
+      <label class="mnFld">분류<input class="sel" id="mnNCat" maxlength="30" list="mnNCats" placeholder="예: 이벤트 운영"><datalist id="mnNCats">${mnCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label></div>
+    <footer><span class="err" id="mnNErr"></span><div class="r"><button class="btn" type="button" id="mnNNo">취소</button><button class="btn primary" type="button" id="mnNYes">만들고 편집</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#mnNNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  const fill=()=>{const t=MN_TPL[document.querySelector('[name=mnTpl]:checked').value];$('#mnNTitle').placeholder=t?t.title:'예: 이벤트 등록 매뉴얼';$('#mnNCat').placeholder=t?t.category:'예: 이벤트 운영';};
+  document.querySelectorAll('[name=mnTpl]').forEach(r=>r.onchange=fill);
+  $('#mnNYes').onclick=async()=>{const k=document.querySelector('[name=mnTpl]:checked').value,t=MN_TPL[k];
+    const title=$('#mnNTitle').value.trim()||t?.title||'',category=$('#mnNCat').value.trim()||t?.category||'';if(!title){$('#mnNErr').textContent='제목을 입력해 주세요.';return;}
+    const id='mn'+evUid(),doc={title,category,version:'1.0',summary:t?.summary||'',figmaUrl:t?.figmaUrl||'',links:(t?.links||[]).map(l=>({...l})),steps:t?t.steps.map(mnStepOf):[mnStepOf({title:'1단계'})],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''};
+    $('#mnNYes').disabled=true;
+    try{await db.collection('manuals').doc(id).set(doc);evKeep(manuals,{id,...doc});logChange('manual','create',id,title,null,doc,t?`템플릿: ${t.title}`:'');closeModal();mnst.id=id;mnst.edit=true;mnDraft=JSON.parse(JSON.stringify({id,...doc}));render();toast('매뉴얼을 만들었어요. 내용을 고쳐 주세요.');}
+    catch(err){$('#mnNYes').disabled=false;handleWriteError(err,'#mnNErr');}};
+  $('#mnNTitle').focus();
+}
+function mnVerUpModal(){const m=mnCur(),nv=mnNextVer(m.version);
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:440px"><header><h2>버전 올리기 · v${esc(m.version||'1.0')} → v${esc(nv)}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">지금 내용은 v${esc(m.version||'1.0')}로 보관되고, 이 매뉴얼은 v${esc(nv)}가 돼요. '이전 버전'에서 언제든 비교할 수 있어요.</p>
+      <label class="mnFld">변경 메모<textarea class="sel" id="mnVNote" rows="3" maxlength="300" placeholder="예: 친구추천 혜택 안내 영역 기준 변경"></textarea></label></div>
+    <footer><span class="err" id="mnVErr"></span><div class="r"><button class="btn" type="button" id="mnVNo">취소</button><button class="btn primary" type="button" id="mnVYes">v${esc(nv)}로 올리기</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#mnVNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#mnVYes').onclick=async()=>{$('#mnVYes').disabled=true;const {id,...snap}=m;
+    try{await db.collection('manual_versions').doc('mv'+evUid()).set({manualId:id,version:m.version||'1.0',note:$('#mnVNote').value.trim(),at:new Date().toISOString(),by:myMember()?.name||'',snapshot:JSON.parse(JSON.stringify(snap))});
+      await db.collection('manuals').doc(id).update({version:nv,updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''});
+      logChange('manual','update',id,m.title,{version:m.version},{version:nv},$('#mnVNote').value.trim());closeModal();toast(`v${nv}로 올렸어요.`);}
+    catch(err){$('#mnVYes').disabled=false;handleWriteError(err,'#mnVErr');}};
+  $('#mnVNote').focus();
+}
+// 이전 버전: 목록 → 고르면 그 버전 단계를 지금과 비교(바뀜 · 지금은 없음 · 새로 생김)
+function mnVersModal(sel){const m=mnCur(),V=manualVers.filter(v=>v.manualId===m.id).sort((a,b)=>b.at.localeCompare(a.at)),v=V.find(x=>x.id===sel);
+  const same=(a,b)=>JSON.stringify([a.title,a.body,a.table,a.checks,a.links,a.figmaUrl])===JSON.stringify([b.title,b.body,b.table,b.checks,b.links,b.figmaUrl]);
+  let body;
+  if(!V.length)body='<p class="legend" style="margin:0">아직 보관한 버전이 없어요. \'버전 올리기\'를 하면 그때 내용이 여기에 남아요.</p>';
+  else if(!v)body=`<div class="trList">${V.map(x=>`<div class="trItem"><div class="trMain"><b>v${esc(x.version)} 보관</b><span class="legend">${esc(mnFmt(x.at))}${x.by?` · ${esc(x.by)}`:''}${x.note?` · 메모: ${esc(x.note)}`:''}</span></div><div class="trActs"><button type="button" class="btn sm" data-vsel="${esc(x.id)}">보기</button></div></div>`).join('')}</div>`;
+  else{const old=v.snapshot?.steps||[],now=m.steps||[];
+    body=`<p class="legend" style="margin:0">v${esc(v.version)} (${esc(mnFmt(v.at))} 보관) 내용이에요. 지금(v${esc(m.version||'1.0')})과 다른 단계를 표시했어요.</p>
+      <div class="trList">${old.map((s,i)=>{const c=now.find(x=>x.id===s.id),tag=!c?'<span class="lateTag">지금은 없음</span>':same(s,c)?'':'<span class="lateTag mnChanged">바뀜</span>';
+        return `<details class="trItem mnVer"><summary><b>${i+1}. ${esc(s.title||'(제목 없음)')}</b>${tag}</summary>${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label)}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</details>`;}).join('')}
+      ${now.filter(c=>!old.some(s=>s.id===c.id)).map(c=>`<div class="trItem"><b>${esc(c.title||'(제목 없음)')}</b><span class="lateTag mnNew">새로 생김</span></div>`).join('')}</div>`;}
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:640px"><header><h2>이전 버전 · ${esc(m.title||'')}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr">${body}</div><footer><span></span><div class="r">${v?'<button class="btn" type="button" id="mnVBack">← 버전 목록</button>':''}<button class="btn" type="button" id="mnVClose">닫기</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#mnVClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#mnVBack')?.addEventListener('click',()=>mnVersModal());
+  document.querySelectorAll('[data-vsel]').forEach(b=>b.onclick=()=>mnVersModal(b.dataset.vsel));
+}
+// 표 칸에 여러 줄·여러 칸 붙여넣기(엑셀·피그마 표): 탭 = 칸, 줄바꿈 = 행. 엑셀이 따옴표로 감싼 칸 안 줄바꿈은 그대로
+function mnParseTsv(t){const rows=[];let row=[],cell='',q=false;t=t.replace(/\r/g,'');
+  for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'&&t[i+1]==='"'){cell+='"';i++;}else if(ch==='"')q=false;else cell+=ch;}
+    else if(ch==='"'&&cell==='')q=true;else if(ch==='\t'){row.push(cell);cell='';}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}else cell+=ch;}
+  if(cell||row.length){row.push(cell);rows.push(row);}return rows.filter(r=>r.some(c=>c.trim()));}
+onArea('#manualsArea','paste',e=>{const inp=e.target.closest?.('[data-tf]');if(!inp||!mnDraft)return;const t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\t\n]/.test(t.trim()))return;
+  e.preventDefault();const s=mnDraft.steps.find(x=>x.id===inp.closest('[data-sid]').dataset.sid),j=+inp.closest('[data-row]').dataset.row,rows=mnParseTsv(t);
+  rows.forEach((r,k)=>{const v={label:(r.length>1?r[0]:r[0]||'').trim(),rule:(r.length>1?r.slice(1).join('\n'):'').trim()};if(s.table[j+k])s.table[j+k]=v;else s.table.push(v);});
+  inp.blur();mnQueue(true);render();toast(`표에 ${rows.length}행을 넣었어요.`);});
+onArea('#manualsArea','input',e=>{const el=e.target;
+  if(el.id==='mnQ'){mnst.q=el.value;const pos=el.selectionStart;mnForce=true;render();const q=$('#mnQ');if(q){q.focus();q.setSelectionRange(pos,pos);}return;}
+  if(!mnDraft)return;
+  if(el.dataset.mf){const f=el.dataset.mf;mnDraft[f]=f==='links'?mnParseLinks(el.value):el.value;mnQueue();return;}
+  const sid=el.closest('[data-sid]')?.dataset.sid,s=sid&&mnDraft.steps.find(x=>x.id===sid);if(!s)return;
+  if(el.dataset.sf){const f=el.dataset.sf;s[f]=f==='checks'?el.value.split('\n').map(x=>x.trim()).filter(Boolean):f==='links'?mnParseLinks(el.value):el.value;
+    if(f==='title'){const b=document.querySelector(`.mnTocBtn[data-mgo="${CSS.escape(sid)}"]`);if(b)b.textContent=`${mnDraft.steps.indexOf(s)+1}. ${el.value||'(제목 없음)'}`;}mnQueue();return;}
+  if(el.dataset.tf){const r=s.table[+el.closest('[data-row]').dataset.row];if(r){r[el.dataset.tf]=el.value;mnQueue();}}
+});
+// 칸에서 나가면 다시 그림(입력 중 보호로 미뤄 둔 것)
+onArea('#manualsArea','focusout',e=>{if(e.target.matches?.('input,textarea')&&e.target.id!=='mnQ')setTimeout(()=>{if(!$('#manualsArea').contains(document.activeElement)||!document.activeElement.matches('input,textarea'))render();},0);});
+onArea('#manualsArea','click',async e=>{
+  const b=e.target.closest('button,[data-mopen]');if(!b)return;const id=b.id;
+  if(b.dataset.mopen){mnOpen(b.dataset.mopen,b.dataset.mstep);return;}
+  if(b.dataset.mcat!=null){mnst.cat=b.dataset.mcat;render();return;}
+  if(b.dataset.mgo){mnFlash(b.dataset.mgo);return;}
+  if(id==='mnTrashBtn'){openTrash('manual');return;}
+  if(id==='mnBack'){if(mnDraft)await mnSave();mnst.id=null;mnst.run=null;mnst.edit=false;mnDraft=null;render();return;}
+  if(id==='mnVers'){mnVersModal();return;}
+  if(!canWrite)return;
+  if(id==='mnNew'){mnNewModal();return;}
+  const m=mnCur();if(!m)return;
+  if(id==='mnEdit'){mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(m));render();return;}
+  if(id==='mnEditEnd'){await mnSave();logChange('manual','update',m.id,m.title,null,null,'내용 수정');mnst.edit=false;mnDraft=null;render();toast('저장했어요.');return;}
+  if(id==='mnVerUp'){mnVerUpModal();return;}
+  if(id==='mnDel'){const V=manualVers.filter(v=>v.manualId===m.id);evConfirm(`'${m.title}' 매뉴얼을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('manual','manual',`매뉴얼 · ${m.title}`,[wbDocOf('manuals',m),...V.map(v=>wbDocOf('manual_versions',v)),...manualRuns.filter(r=>r.manualId===m.id).map(r=>wbDocOf('manual_runs',r))]);manuals=manuals.filter(x=>x.id!==m.id);logChange('manual','delete',m.id,m.title,null,null,'휴지통으로 옮김');mnst.id=null;render();});return;}
+  if(!mnDraft)return;
+  if(id==='mnStepAdd'){const s=mnStepOf({title:''});mnDraft.steps.push(s);mnQueue(true);render();document.querySelector(`#mn-${s.id} [data-sf=title]`)?.focus();return;}
+  const sec=b.closest('[data-sid]'),s=sec&&mnDraft.steps.find(x=>x.id===sec.dataset.sid);if(!s)return;const i=mnDraft.steps.indexOf(s);
+  if(b.dataset.smv){const j=i+ +b.dataset.smv;if(j<0||j>=mnDraft.steps.length)return;[mnDraft.steps[i],mnDraft.steps[j]]=[mnDraft.steps[j],mnDraft.steps[i]];mnQueue(true);render();mnFlash(s.id);return;}
+  if(b.dataset.sdel!=null){if(!b.dataset.ok){b.dataset.ok='1';b.textContent='한 번 더 누르면 삭제';return;}mnDraft.steps.splice(i,1);mnQueue(true);render();toast('단계를 지웠어요.');return;}
+  if(b.dataset.radd!=null){s.table.push({label:'',rule:''});mnQueue(true);render();const rows=document.querySelectorAll(`#mn-${s.id} [data-row]`);rows[rows.length-1]?.querySelector('input')?.focus();return;}
+  if(b.dataset.rdel!=null){s.table.splice(+b.closest('[data-row]').dataset.row,1);mnQueue(true);render();return;}
+});
+
+/* ---------- 매뉴얼 관리 2단계: 체크리스트로 진행 · 이벤트 운영 패널 · 업무 연결 ----------
+   manual_runs 문서 {manualId, manualVersion, title, startedAt, by, done:{'<단계 id>:<체크 번호>' 또는 '<단계 id>:s': {at, by}}, taskId, closedAt}
+   체크를 풀면 그 칸을 null로(부분 저장이라 다른 사람의 체크는 그대로) */
+let manualRuns=[];
+const MN_LINKS=()=>EVT_TABS.map(([k,l])=>['evt:'+k,'이벤트 운영 · '+l]);
+const mnRunKeys=m=>(m?.steps||[]).flatMap(s=>(s.checks||[]).length?s.checks.map((_,i)=>`${s.id}:${i}`):[`${s.id}:s`]);
+const mnRunDone=r=>Object.entries(r.done||{}).filter(([,v])=>v).map(([k])=>k);
+function mnRunProg(r){const m=manuals.find(x=>x.id===r.manualId),keys=mnRunKeys(m),d=new Set(mnRunDone(r));const n=keys.filter(k=>d.has(k)).length;return {n,t:keys.length,pct:keys.length?Math.round(n/keys.length*100):0};}
+const mnRunsOf=mid=>manualRuns.filter(r=>r.manualId===mid&&!r.closedAt).sort((a,b)=>(b.startedAt||'').localeCompare(a.startedAt||''));
+const mnBar=p=>`<span class="mnBar" role="progressbar" aria-valuemin="0" aria-valuemax="${p.t}" aria-valuenow="${p.n}" aria-label="진행률"><span style="width:${p.pct}%"></span></span><span class="legend num">${p.n}/${p.t}</span>`;
+function mnRunView(area){
+  const r=manualRuns.find(x=>x.id===mnst.run),m=manuals.find(x=>x.id===r.manualId),p=mnRunProg(r),done=r.done||{},ro=!canWrite||!!r.closedAt,t=r.taskId&&tasks.find(x=>x.id===r.taskId);
+  const who=v=>v?`<span class="legend">${esc(v.by||'')} · ${esc(mnFmt(v.at))}</span>`:'';
+  const box=(k,label)=>`<label class="mnChk${done[k]?' on':''}"><input type="checkbox" data-rk="${esc(k)}" ${done[k]?'checked':''} ${ro?'disabled':''}><span>${label}</span>${who(done[k])}</label>`;
+  area.innerHTML=`<div class="rtool"><button class="btn ghost" type="button" id="mnRunBack">← ${esc(m?.title||'매뉴얼')}</button><span class="spacer"></span>${canWrite&&!r.closedAt&&p.n===p.t&&p.t?'<button class="btn primary" type="button" id="mnRunClose">완료로 닫기</button>':''}${canWrite?'<button class="btn ghost" type="button" id="mnRunDel">삭제</button>':''}</div>
+    <section class="panel mnHead"><div class="mnCardTop"><span class="chip">${r.closedAt?'완료':'진행 중'}</span><span class="legend">${esc(m?.title||'')} v${esc(r.manualVersion||'')} · ${esc(mnFmt(r.startedAt))} 시작 · ${esc(r.by||'')}${r.closedAt?` · ${esc(mnFmt(r.closedAt))} 완료`:''}</span></div>
+      <h2>${esc(r.title)}</h2><div class="mnProg">${mnBar(p)}</div>${t?`<button type="button" class="btn ghost sm mnTaskLink" data-mtask="${esc(t.id)}">연결 업무: ${esc(t.title)} ↗</button>`:''}</section>
+    ${(m?.steps||[]).map((s,i)=>{const ks=(s.checks||[]).length?s.checks.map((c,j)=>[`${s.id}:${j}`,esc(c)]):[[`${s.id}:s`,'이 단계 완료']],all=ks.every(([k])=>done[k]);
+      return `<section class="panel mnStep${all?' mnStepDone':''}"><div class="mnStepHead"><span class="mnNo">${all?'✓':i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}</div>
+        <div class="mnChks">${ks.map(([k,l])=>box(k,l)).join('')}</div>${s.body||(s.table||[]).length?`<details class="mnMore"><summary>단계 설명 보기</summary>${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(x=>`<tr><th scope="row">${esc(x.label)}</th><td>${mnText(x.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}</details>`:''}${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;}).join('')}`;
+}
+function mnRunStart(m){
+  const posts=tasks.filter(t=>!t.parentId).sort((a,b)=>(b.requestDate||'').localeCompare(a.requestDate||''));
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:460px"><header><h2>진행 시작 · ${esc(m.title)}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><label class="mnFld">진행 건 제목<input class="sel" id="mnRTitle" maxlength="80" value="${esc(evLabelOf(todayStr().slice(0,7))+' '+m.title)}"></label>
+      <label class="mnFld">연결할 업무 <span class="legend">선택 · 업무 상세에 진행률이 보여요</span><select class="sel" id="mnRTask"><option value="">연결 안 함</option>${posts.map(t=>`<option value="${esc(t.id)}">${esc((projOf(t.projectId)?.name?projOf(t.projectId).name+' · ':'')+t.title)}</option>`).join('')}</select></label></div>
+    <footer><span class="err" id="mnRErr"></span><div class="r"><button class="btn" type="button" id="mnRNo">취소</button><button class="btn primary" type="button" id="mnRYes">시작</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#mnRNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#mnRYes').onclick=async()=>{const title=$('#mnRTitle').value.trim();if(!title){$('#mnRErr').textContent='제목을 입력해 주세요.';return;}$('#mnRYes').disabled=true;
+    const id='mr'+evUid(),doc={manualId:m.id,manualVersion:m.version||'1.0',title,startedAt:new Date().toISOString(),by:myMember()?.name||'',done:{},taskId:$('#mnRTask').value,closedAt:''};
+    try{await db.collection('manual_runs').doc(id).set(doc);evKeep(manualRuns,{id,...doc});logChange('manual','create',id,`${m.title} 진행: ${title}`);closeModal();mnst.run=id;render();window.scrollTo(0,0);}
+    catch(err){$('#mnRYes').disabled=false;handleWriteError(err,'#mnRErr');}};
+  $('#mnRTitle').focus();
+}
+function mnGoRun(id){const r=manualRuns.find(x=>x.id===id);if(!r)return;state.mode='manuals';mnst.id=r.manualId;mnst.run=id;mnst.edit=false;mnDraft=null;closeModal();persistUI();render();window.scrollTo(0,0);}
+onArea('#manualsArea','change',async e=>{const el=e.target;
+  if(el.dataset.rk){const r=manualRuns.find(x=>x.id===mnst.run);if(!r||!canWrite)return;const v=el.checked?{at:new Date().toISOString(),by:myMember()?.name||''}:null;
+    r.done={...(r.done||{}),[el.dataset.rk]:v};el.closest('.mnChk').classList.toggle('on',el.checked);
+    try{await db.collection('manual_runs').doc(r.id).update({done:{[el.dataset.rk]:v}});}catch(err){handleWriteError(err);}el.blur();render();return;}
+  if(el.dataset.mlink&&mnDraft){const on=new Set(mnDraft.linkTo||[]);el.checked?on.add(el.dataset.mlink):on.delete(el.dataset.mlink);mnDraft.linkTo=[...on];mnQueue(true);}
+});
+onArea('#manualsArea','click',async e=>{
+  const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.mrun){mnGoRun(b.dataset.mrun);return;}
+  if(b.dataset.mtask){state.mode='tasks';openPost(b.dataset.mtask);return;}
+  if(b.id==='mnRunBack'){mnst.run=null;render();return;}
+  if(!canWrite)return;
+  if(b.id==='mnRunStart'){mnRunStart(mnCur());return;}
+  const r=manualRuns.find(x=>x.id===mnst.run);if(!r)return;
+  if(b.id==='mnRunClose'){try{await db.collection('manual_runs').doc(r.id).update({closedAt:new Date().toISOString()});r.closedAt=new Date().toISOString();logChange('manual','update',r.id,`진행 완료: ${r.title}`);toast('완료로 닫았어요.');render();}catch(err){handleWriteError(err);}return;}
+  if(b.id==='mnRunDel'){evConfirm(`'${r.title}' 진행 건을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('manual','run',`진행 건 · ${r.title}`,[wbDocOf('manual_runs',r)]);manualRuns=manualRuns.filter(x=>x.id!==r.id);mnst.run=null;render();});}
+});
+// 이벤트 운영 '매뉴얼' 패널: 지금 탭에 연결된 매뉴얼을 오른쪽에 띄움(표에서 계속 작업 가능)
+function mnPanel(){
+  const key='evt:'+evtTab,L=manuals.filter(m=>(m.linkTo||[]).includes(key)),sel=L.find(m=>m.id===mnPanel.sel)||L[0];
+  let p=$('#mnPanel');if(!p){p=document.createElement('aside');p.id='mnPanel';p.className='mnPanel';p.setAttribute('aria-label','연결된 매뉴얼');document.body.appendChild(p);
+    p.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='mnPClose'){p.remove();return;}if(b.dataset.psel){mnPanel.sel=b.dataset.psel;mnPanel();return;}if(b.id==='mnPGo'){p.remove();state.mode='manuals';mnst.id=sel?.id||null;mnst.run=null;persistUI();render();}if(b.dataset.mrun){p.remove();mnGoRun(b.dataset.mrun);}});}
+  const tab=EVT_TABS.find(t=>t[0]===evtTab)?.[1]||'';
+  p.innerHTML=`<header><b>매뉴얼 · ${esc(tab)}</b><span class="spacer"></span><button class="btn ghost sm" type="button" id="mnPGo">${sel?'매뉴얼 관리에서 열기':'매뉴얼 관리로'}</button><button class="btn ghost sm" type="button" id="mnPClose" aria-label="닫기">닫기</button></header>
+    <div class="mnPBody">${!sel?`<div class="empty"><h2>이 탭에 연결된 매뉴얼이 없어요</h2><p>매뉴얼 관리에서 매뉴얼을 편집할 때 '연결할 화면'에서 '${esc(tab)}'를 골라 주세요.</p></div>`
+      :`${L.length>1?`<div class="chips">${L.map(m=>`<button type="button" class="chip" data-psel="${esc(m.id)}" aria-pressed="${m.id===sel.id}">${esc(m.title)}</button>`).join('')}</div>`:''}
+      <h2 class="mnPTitle">${esc(sel.title)} <span class="legend">v${esc(sel.version||'1.0')}</span></h2>${mnRunsOf(sel.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}
+      ${(sel.steps||[]).map(mnStepView).join('')}`}</div>`;
+}
+
+/* ---------- 메뉴 선택 화면: 새로 들어올 때마다(같은 탭 새로 고침은 제외) 볼 수 있는 메뉴를 고르고 들어감 ---------- */
+let pickShown=false;
+const pickDone=()=>{try{return sessionStorage.getItem('wb-picked')==='1';}catch(e){return false;}};
+function openMenuPick(){
+  pickShown=true;let box=$('#menuPick');if(!box){box=document.createElement('div');box.id='menuPick';box.className='menuPick';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');box.setAttribute('aria-labelledby','mpTitle');document.body.appendChild(box);}
+  const grps=MENU_GRPS.map(([g])=>[g,menuOrder(g).filter(menuOpen)]).filter(([,L])=>L.length),nm=myMember()?.name;
+  box.innerHTML=`<div class="mpCard"><h1 id="mpTitle">메뉴 선택</h1><p>${nm?`${esc(nm)}님, 이동할 메뉴를 선택해 주세요.`:'반가워요. 이동할 메뉴를 선택해 주세요.'}</p>
+    <div class="mpList">${grps.map(([g,L])=>`${grps.length>1?`<span class="mpGrp">${esc(String(menuCfg.names?.['grp:'+g]||'').trim()||MENU_GRPS.find(x=>x[0]===g)[1])}</span>`:''}${L.map(k=>`<button type="button" class="mpItem" data-pick="${esc(k)}"><b>${esc(menuName(k))}</b><span>바로가기 →</span></button>`).join('')}`).join('')}</div>
+    ${window.wbAuth?'<button type="button" class="mpOut" id="mpOut">로그아웃</button>':''}</div>`;
+  box.hidden=false;box.querySelector('.mpItem')?.focus();
+}
+function closeMenuPick(k){try{sessionStorage.setItem('wb-picked','1');}catch(e){}$('#menuPick')?.remove();if(k&&k!==state.mode){state.mode=k;state.post=null;persistUI();}render();window.scrollTo(0,0);}
+document.addEventListener('click',e=>{
+  if(e.target.closest('#sidePick')){openMenuPick();return;}
+  const box=e.target.closest('#menuPick');if(!box)return;
+  const it=e.target.closest('[data-pick]');if(it){closeMenuPick(it.dataset.pick);return;}
+  if(e.target.closest('#mpOut'))window.wbAuth?.signOut();
+});
+document.addEventListener('keydown',e=>{const box=$('#menuPick');if(!box)return;const L=[...box.querySelectorAll('.mpItem')],i=L.indexOf(document.activeElement);
+  if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();const n=L.length;if(n)L[((i<0?-1:i)+(e.key==='ArrowDown'?1:-1)+n)%n].focus();}
+  else if(e.key==='Escape'){e.preventDefault();closeMenuPick();}
+  else if(e.key==='Tab'){const f=[...box.querySelectorAll('button')];if(!f.length)return;const a=f[0],z=f[f.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}}});
 
 /* ---------- 메뉴 관리(관리자): 왼쪽 메뉴 목록 + 오른쪽 설정(이름·공개설정·정렬·기본 화면). '확인' 전까지는 mDraft에서만 바꿈 ---------- */
 let mDraft=null;
@@ -3810,7 +4323,7 @@ function renderBrand(){document.title=`${menuName(state.mode==='hours'?'staff':s
 let actorId=null, userCap=null, historyItems=[], historyReady=false, historySub=null;
 const nameCache={}, nameAsked=new Set();
 const hstate={entity:'all',action:'all',actor:'all',range:'30',q:''};
-const HFIELDS={evt:[['status','작업상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']],
+const HFIELDS={manual:[['title','제목'],['category','분류'],['version','버전']],evt:[['status','작업상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']],
   task:[['projectId','프로젝트'],['part','파트'],['title','요청내용'],['jiraKey','Jira 키'],['rmsNo','RMS 번호'],['rmsUrl','RMS 링크'],['assignee','담당자'],['requester','요청자'],['status','진행 현황'],['priority','우선순위'],['requestDate','요청일자'],['dueDate','완료 일정'],['doneDate','실제 완료일'],['estHours','예상 소요(h)'],['actHours','실제 소요(h)'],['link','관련 링크'],['note','메모']],
   project:[['name','이름'],['client','고객사·기간'],['color','색상']],
   part:[['name','이름'],['color','색상'],['order','순서']],
@@ -3820,7 +4333,7 @@ const HFIELDS={evt:[['status','작업상태'],['name','이벤트명'],['workType
   site:[['title','제목'],['subtitle','설명'],['rmsTemplate','RMS 주소 규칙']],
   report:[]
 };
-const HENT={evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
+const HENT={manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
 const HACT={create:['등록','s-done'],update:['수정','s-doing'],delete:['삭제','h-del'],confirm:['확정','s-review'],unconfirm:['확정 해제','s-wait'],restore:['복원','s-review']};
 function hval(f,v){
   if(v===''||v==null)return '';
@@ -3925,7 +4438,10 @@ render();
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
   db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
-  db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');}trashDraw();wbTrashPaint();if(state.mode==='report')render();},onErr);
+  db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals')render();},onErr);
+  db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
+  db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);
+  db.collection('manual_versions').onSnapshot(s=>{manualVers=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();},onErr);
   db.collection('evt_trash').onSnapshot(s=>{evtTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!evPurged){evPurged=true;trashPurge('evt');}trashDraw();if(state.mode==='eventops')render();},onErr);
   db.collection('parts').onSnapshot(s=>{
     if(s.docs.length){PARTS=s.docs.map(x=>{const d=x.data();return {k:x.id,label:d.name||'이름 없음',c:d.color||PART_COLORS[4],order:d.order??0};}).sort((a,b)=>a.order-b.order);partsStored=true;}

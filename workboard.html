@@ -1155,7 +1155,7 @@ const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:MENU_GRPS.
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
   $('#modeTabs').innerHTML=MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
-    return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}">${NAV_ICO['grp:'+g]||NAV_ICO['grp:work']}<span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
+    return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}"><span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="gnbBody" id="grp-${g}">${items.map(k=>`<button type="button" role="tab" class="navItem" title="${esc(menuName(k))}" data-mode="${k}">${NAV_ICO[k]||NAV_ICO.link}<span class="lbl">${esc(menuName(k))}</span></button>`).join('')}</div></section>`;}).join('');
   sideDraw();
 }

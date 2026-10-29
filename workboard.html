@@ -803,6 +803,7 @@ a.rms:hover{text-decoration:underline}
 .evArr .btn{padding:0;width:22px;height:22px;color:var(--muted);border-color:transparent}
 .evArr .btn:hover:not(:disabled){color:var(--accent-dark);background:var(--accent-soft)}
 .btn .arw{width:15px;height:15px;flex:none}
+.arw{width:15px;height:15px;flex:none;vertical-align:middle;pointer-events:none} /* 아이콘을 눌러도 버튼이 눌린 것으로(id로 고르는 처리 유지) */.chev .arw,.caret .arw,.chevron .arw{width:14px;height:14px}.yHead .arw{width:14px;height:14px}
 .evId{display:flex;align-items:center;gap:2px}.evId .evf{min-width:90px}
 .evTable tr[draggable="true"]{cursor:grab}
 .evMissBtn{all:unset;cursor:pointer;font:inherit}
@@ -1123,7 +1124,7 @@ const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:MENU_GRPS.
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access]);if(key===navKey)return;navKey=key;
   $('#modeTabs').innerHTML=MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
-    return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}">${NAV_ICO['grp:'+g]}<span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true">▾</span></button>
+    return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}">${NAV_ICO['grp:'+g]}<span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="gnbBody" id="grp-${g}">${items.map(k=>`<button type="button" role="tab" class="navItem" title="${esc(menuName(k))}" data-mode="${k}">${NAV_ICO[k]||NAV_ICO.link}<span class="lbl">${esc(menuName(k))}</span></button>`).join('')}</div></section>`;}).join('');
   sideDraw();
 }
@@ -1187,7 +1188,7 @@ function periodSelects(kind,cur,id){
 // 연도를 바꾸면 그 연도에서 오늘 이전의 가장 최근 기간(내용 있는 것) → 없으면 그 연도의 마지막 기간 → 그것도 없으면 이번 기간
 function latestIn(kind,y){const K=PKIND[kind],T=K.start(todayStr()),l=periodsOf(kind,y);return l.filter(v=>v<=T).pop()||l.pop()||T;}
 // 내보내기 메뉴: 화면마다 같은 모양, 헤더 도구 줄 맨 오른쪽. items=[[id,label,title]] 없으면 메뉴도 숨김
-const exportMenu=items=>items.length?`<details class="menu"><summary class="btn">내보내기 ▾</summary><div class="menuList">${items.map(([id,l,t])=>`<button class="btn" type="button" id="${id}"${t?` title="${t}"`:''}>${l}</button>`).join('')}</div></details>`:'';
+const exportMenu=items=>items.length?`<details class="menu"><summary class="btn">내보내기 <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="menuList">${items.map(([id,l,t])=>`<button class="btn" type="button" id="${id}"${t?` title="${t}"`:''}>${l}</button>`).join('')}</div></details>`:'';
 function periodRange(){
   if(state.period==='all')return null;
   const t=todayStr();
@@ -1380,7 +1381,7 @@ function renderPostNew(){
   box.hidden=!canWrite||!storeReady||!projects.length;
   if(box.hidden||box.contains(document.activeElement))return; // 입력 중엔 다시 그리지 않음
   const people=[...new Set([...members.map(m=>m.name),...tasks.map(x=>x.requester)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
-  keepVals(box,`<form class="postNew${pnOpen?' open':''}" id="pnForm" novalidate><h3><button type="button" class="pnToggle" id="pnToggle" aria-expanded="${pnOpen}" aria-controls="pnRowBox">프로젝트 등록하기<span class="chevron" aria-hidden="true">${pnOpen?'▲':'▼'}</span></button></h3><div class="pnRow" id="pnRowBox">
+  keepVals(box,`<form class="postNew${pnOpen?' open':''}" id="pnForm" novalidate><h3><button type="button" class="pnToggle" id="pnToggle" aria-expanded="${pnOpen}" aria-controls="pnRowBox">프로젝트 등록하기<span class="chevron" aria-hidden="true">${pnOpen?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'}</span></button></h3><div class="pnRow" id="pnRowBox">
     <label class="pnF"><span>프로젝트</span><select class="sel" id="pnProj">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'?state.project:projects[0].id)}</select></label>
     <label class="pnF pnT"><span>제목</span><input class="sel" id="pnTitle" placeholder="업무 제목을 입력해 주세요" maxlength="200"></label>
     <label class="pnF"><span>파트</span><select class="sel" id="pnPart">${optH(PARTS.map(p=>[p.k,p.label]),state.part!=='all'?state.part:PARTS[0].k)}</select></label>
@@ -1391,7 +1392,7 @@ function renderPostNew(){
     <button class="btn primary" type="submit" id="pnSave">등록하기</button></div>
     <datalist id="pnPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist><span class="err" id="pnErr"></span></form>`);
 }
-$('#postNew').addEventListener('click',e=>{if(!e.target.closest('#pnToggle')||!matchMedia('(max-width:600px)').matches)return;pnOpen=!pnOpen;const f=$('#pnForm');f.classList.toggle('open',pnOpen);e.target.closest('#pnToggle').setAttribute('aria-expanded',String(pnOpen));f.querySelector('.chevron').textContent=pnOpen?'▲':'▼';if(pnOpen)$('#pnTitle').focus();});
+$('#postNew').addEventListener('click',e=>{if(!e.target.closest('#pnToggle')||!matchMedia('(max-width:600px)').matches)return;pnOpen=!pnOpen;const f=$('#pnForm');f.classList.toggle('open',pnOpen);e.target.closest('#pnToggle').setAttribute('aria-expanded',String(pnOpen));f.querySelector('.chevron').innerHTML=pnOpen?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';if(pnOpen)$('#pnTitle').focus();});
 $('#postNew').addEventListener('submit',async e=>{
   e.preventDefault();if(!canWrite)return;
   const v=id=>$('#'+id).value.trim(), m=memOf($('#pnAs').value), now=new Date().toISOString();
@@ -1430,7 +1431,7 @@ function renderList(){
   const fold=new Set(state.yfold||[]), years=new Map();
   for(const p of posts){const y=(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
   $('#main').innerHTML=`<div class="postView">${[...years].map(([y,ps])=>{const c=fold.has(y);return `<section class="yGroup">
-    <button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${c?'▼':'▲'}</span></button>
+    <button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${c?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</span></button>
     ${c?'':`<ul class="postList">${ps.map(postRow).join('')}</ul>`}</section>`;}).join('')}<p class="legend">${posts.length}건 · 행을 누르면 게시물(댓글·업무 요청)을 열어요</p></div>`;
 }
 
@@ -1479,7 +1480,7 @@ function renderPost(p){
     </div>
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="tfLive">실시간 연결됨</span>${p.updatedAt?`<span class="legend">마지막 수정: ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}<span class="spacer"></span>
-      <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'▼':'▲'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
+      <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
       ${fold?'':ro?`<div class="tfNote tfNoteRo">${esc(p.note||'')||'<span class="legend">내용이 없어요.</span>'}</div>`:`<textarea class="tfNote" data-tf="note" aria-label="내용" placeholder="요청 배경, 변경 이력, 이슈">${esc(p.note||'')}</textarea>`}
       <span class="err" id="tErr"></span></section>
     <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span>${canWrite&&np?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(np.label)}(으)로 넘기기</button>`:''}</div>
@@ -1863,7 +1864,7 @@ function openProject(p){
       <div class="f"><label for="pName">프로젝트명 <b>*</b></label><input id="pName" value="${esc(p?.name||'')}" maxlength="40" placeholder="프로젝트명"></div>
       <div class="f"><label for="pClient">고객사 · 기간</label><input id="pClient" value="${esc(p?.client||'')}" maxlength="60" placeholder="고객사 · 기간"></div>
       <div class="f"><label>색</label><div class="swatches">${PCOLORS.slice(0,4).map(c=>`<button type="button" class="swatch" style="background:${c}" data-c="${c}" aria-label="색상" aria-pressed="${color0===c}"></button>`).join('')}</div></div>
-      ${isNew?'':`<div class="f"><label>탭 순서</label><div style="display:flex;gap:6px"><button class="btn" type="button" id="pUp" ${idx<=0?'disabled':''}>◀ 앞으로</button><button class="btn" type="button" id="pDown" ${idx>=projects.length-1?'disabled':''}>뒤로 ▶</button></div></div>`}
+      ${isNew?'':`<div class="f"><label>탭 순서</label><div style="display:flex;gap:6px"><button class="btn" type="button" id="pUp" ${idx<=0?'disabled':''}><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg> 앞으로</button><button class="btn" type="button" id="pDown" ${idx>=projects.length-1?'disabled':''}>뒤로 <svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div></div>`}
       <div id="pConfirm"></div>
     </div>
     <footer>${isNew?'<span></span>':'<button class="btn danger" type="button" id="pDel">삭제</button>'}<span class="err" id="pErr"></span><div class="r"><button class="btn" type="button" id="pCancel">취소</button><button class="btn primary" type="submit">저장</button></div></footer>
@@ -1984,7 +1985,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   }
   lvDayItems=byDay;
   return `<div class="panel">
-        <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달">◀</button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달">▶</button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
+        <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
           ${withFilters?`<span class="calFilters">${[['event','일정'],['leave','연차'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
         <div class="cal">${['월','화','수','목','금','토','일'].map((d,i)=>`<div class="dow ${i>4?'we':''}">${d}</div>`).join('')}${cells}</div>
     </div>`;
@@ -3737,7 +3738,7 @@ function renderReport(){
   const secs=cats.map(c=>{const fold=rstate.fold.has(c.id),s=c.sec;
     return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${c.color?`<span class="rdot" style="background:${esc(c.color)}"></span>`:''}${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>
-        <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'▼':'▲'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
+        <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
       <div class="rsecBody">
         <div class="rcounts">${R_KINDS.map(([k,l])=>`<label>${l}<input type="number" min="0" class="rcnt" data-k="${k}" data-note="cnt" value="${+c.counts[k]||0}" ${ro?'disabled':''}></label>`).join('')}${!ro&&c.project?'<button class="btn ghost sm" type="button" data-refill>자동 계산으로 다시 채우기</button>':''}${!c.inCount?'<span class="legend">운영 건수 미포함</span>':''}</div>
         ${ro?'':'<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>'}
@@ -3961,7 +3962,7 @@ function renderHours(){
     const detail=open?`<tr class="hdet"><td colspan="9">${p.items.length?`<ul class="hitems">${p.items.sort((x,y)=>({done:0,doing:1,leave:2}[x.kind]-{done:0,doing:1,leave:2}[y.kind])).map(it=>it.kind==='leave'
       ?`<li><span class="pill lt-o">휴가</span>${esc(leaveLabel(it.leave))} · ${it.ds.map(md).join(', ')}<span class="num hh">${hrs(it.h)}h</span></li>`
       :`<li><span class="pill ${it.kind==='done'?'s-done':'s-doing'}">${it.kind==='done'?'완료 '+md(it.t.doneDate):statusOf(it.t.status).label}</span>${hrState.project==='all'&&projOf(it.t.projectId)?`<span class="legend">${esc(projOf(it.t.projectId).name)} · </span>`:''}<span class="legend">${esc(partOf(it.t.part).label)}</span> <button type="button" class="hlink" data-task="${esc(it.t.id)}">${esc(it.t.title)}</button><span class="num hh">${hrs(it.h)}h${it.est?' <span class="legend">(예상)</span>':it.logged?' <span class="legend">(기록)</span>':''}</span></li>`).join('')}</ul>`:'<p class="legend" style="margin:0">이 기간에 집계된 업무나 휴가가 없습니다.</p>'}</td></tr>`:'';
-    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'▾':'▸'}</span><b>${who(p.name,'',24)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
+    return `<tr class="hrow ${open?'on':''}" data-person="${esc(p.name)}" tabindex="0"><td class="nowrap"><span class="caret">${open?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>'}</span><b>${who(p.name,'',24)}</b>${hrState.project==='all'&&p.projects.length?`<div class="legend" style="padding-left:14px">${esc(p.projects.join(' · '))}</div>`:''}</td>
       <td class="r num"><b class="${over?'late':''}">${hrs(p.total)}h</b></td><td class="r num">${hrs(p.avail)}h</td><td class="r num ${over?'late':''}">${r}%</td>
       <td><div class="hbar" title="가용 ${hrs(p.avail)}h 대비 ${r}%"><i class="d" style="width:${p.doneH/max*100}%"></i><i class="g" style="width:${p.doingH/max*100}%"></i><span class="cap" style="left:${Math.min(100,p.avail/max*100)}%"></span></div></td>
       <td class="r num">${p.doneN}건 · ${hrs(p.doneH)}h${p.noAct?`<span class="legend" title="실제 소요가 비어 예상 소요로 계산"> *${p.noAct}</span>`:''}</td>

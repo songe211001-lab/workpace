@@ -1047,6 +1047,8 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .miList{display:flex;flex-direction:column;gap:4px;max-height:50vh;overflow:auto}
 .miItem{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;cursor:pointer}
 .miItem>span:first-of-type{flex:1 1 200px}
+.soonTag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:700}
+.cardSt{display:flex;justify-content:flex-end}.cardSt .stSel{height:24px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1103,6 +1105,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
   <div class="ltBar">
     <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
+    <select class="sel" id="lSort" aria-label="목록 정렬"><option value="req">요청일 최신순</option><option value="due">마감 임박순</option></select>
     <div class="seg" id="viewSeg">
       <button type="button" data-view="list">목록</button>
       <button type="button" data-view="board">보드</button>
@@ -1463,7 +1466,7 @@ try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mod
 {const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
-function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold}));}catch(e){}}
+function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1698,6 +1701,7 @@ function renderFilters(){
   $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
   if(document.activeElement!==$('#fSearch'))$('#fSearch').value=state.q;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
+  $('#lSort').value=state.lsort==='due'?'due':'req';$('#lSort').hidden=state.view==='board';
 }
 
 function renderBoard(list){
@@ -1710,8 +1714,9 @@ function renderBoard(list){
         <div class="t">${t.jiraKey?`<span class="jira">${esc(t.jiraKey)}</span>`:''}${rmsBadge(t)}${esc(t.title)}</div>
         <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${who(t.assignee,t.assigneeId,16)}</span>
         <span class="num ${late?'late':''}">${t.dueDate?fmtDate(t.dueDate)+' '+(t.status==='done'?'':dday(t.dueDate)):''}</span></div>
+        ${canWrite?`<div class="cardSt">${stSel(t)}</div>`:''}
       </div>`;}).join('')}
-    </div>`;}).join('')}</div><p class="legend">카드를 다른 열로 끌어 놓으면 진행 현황이 바뀝니다</p>`;
+    </div>`;}).join('')}</div>${canWrite?'<p class="legend">카드를 다른 열로 끌어 놓거나, 카드의 상태를 골라 진행 현황을 바꿔요</p>':''}`;
 }
 
 
@@ -1762,6 +1767,7 @@ $('#postNew').addEventListener('submit',async e=>{
   const data={projectId:v('pnProj'),part:v('pnPart'),title:v('pnTitle'),assignee:m?m.name:'',assigneeId:m?m.id:'',parentId:'',requester:v('pnReq'),
     jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:2,requestDate:v('pnReqD'),dueDate:v('pnDue'),doneDate:'',estHours:'',actHours:'',link:'',note:'',updatedAt:now,createdAt:now};
   if(!data.title){$('#pnErr').textContent='제목을 입력해 주세요.';$('#pnTitle').focus();return;}
+  if(data.dueDate&&data.requestDate&&data.dueDate<data.requestDate){$('#pnErr').textContent='마감일이 요청일보다 빨라요. 날짜를 확인해 주세요.';$('#pnDue').focus();return;}
   $('#pnSave').disabled=true;
   try{const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);
     ['pnTitle','pnReq','pnDue','pnAs'].forEach(id=>$('#'+id).value='');$('#pnReqD').value=todayStr();$('#pnErr').textContent='';toast('등록했습니다');}
@@ -1774,8 +1780,15 @@ function postList(){
   const r=periodRange(), byRoot=new Map();
   for(const t of tasks){if(state.project!=='all'&&t.projectId!==state.project)continue;if(r&&!inPeriod(t,r))continue;if(!passF(t))continue;const p=rootOf(t);byRoot.set(p.id,p);}
   const key=p=>(p.requestDate||(p.createdAt||'').slice(0,10))+'|'+(p.createdAt||'');
-  return [...byRoot.values()].sort((a,b)=>key(b).localeCompare(key(a)));
+  const L=[...byRoot.values()].sort((a,b)=>key(b).localeCompare(key(a)));
+  if(state.lsort!=='due')return L;
+  // 마감 임박순: 남은 마감(요청이 있으면 끝나지 않은 요청 중 가장 이른 마감)이 이른 순, 마감 없음·끝난 건은 뒤로
+  const dk=p=>postDue(p,kidsOf(p))||'9999';
+  return L.sort((a,b)=>dk(a).localeCompare(dk(b)));
 }
+// 아직 안 끝난 마감일(요청이 있으면 열린 요청 중 가장 이른 것). 완료·보류는 ''
+const postDue=(p,k)=>(k.length?k:[p]).filter(x=>x.status!=='done'&&x.status!=='hold'&&x.dueDate).map(x=>x.dueDate).sort()[0]||'';
+const soonTag=d=>{if(!d||d<todayStr())return '';const n=Math.round((new Date(d+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/864e5);return n<=3?`<b class="soonTag" title="마감이 ${n?n+'일':'오늘'} 남았어요">${dday(d)}</b>`:'';};
 const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
 // 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
 const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
@@ -1784,7 +1797,7 @@ function postRow(p){
   const late=k.length?k.some(isLate):isLate(p),own=!k.length&&canWrite;
   return `<li class="postRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <span class="prMain">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span></span>
-    <span class="pMeta num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:''}</span>
+    <span class="pMeta num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</span>
     <span class="pMeta prWho">${k.length?`(요청 ${k.length}건${doing?` · 진행 ${doing}`:''}) `:''}${esc(partOf(p.part).label)} · ${who(p.assignee,p.assigneeId,22,'담당 미지정')}${p.requester?` · 요청 ${esc(p.requester)}`:''}</span>
     ${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</li>`;
 }
@@ -1792,7 +1805,7 @@ function renderList(){
   const posts=postList();
   if(!posts.length){$('#main').innerHTML=`<div class="empty"><h2>조건에 맞는 업무가 없습니다</h2><p>${state.period!=='all'?`${esc(periodLabel(periodRange()))}에 해당하는 업무가 없습니다. 기간을 바꿔 보세요.`:'필터를 바꾸거나 검색어를 지워 보세요.'}</p></div>`;return;}
   const fold=new Set(state.yfold||[]), years=new Map();
-  for(const p of posts){const y=(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
+  for(const p of posts){const y=state.lsort==='due'?'마감 임박순':(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
   $('#main').innerHTML=`<div class="postView">${[...years].map(([y,ps])=>{const c=fold.has(y);return `<section class="yGroup">
     <button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${c?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</span></button>
     ${c?'':`<ul class="postList">${ps.map(postRow).join('')}</ul>`}</section>`;}).join('')}<p class="legend">${posts.length}건 · 행을 누르면 게시물(댓글·업무 요청)을 열어요</p></div>`;
@@ -1874,6 +1887,8 @@ async function tfSave(p,f,raw){
   else if(f==='jiraKey')patch.jiraKey=raw.trim().toUpperCase();
   else if(f==='note')patch.note=raw.replace(/\s+$/,'');
   else patch[f]=raw.trim();
+  if(f==='requestDate'||f==='dueDate'){const r=f==='requestDate'?patch[f]:p.requestDate,d=f==='dueDate'?patch[f]:p.dueDate;
+    if(r&&d&&d<r){toast('마감일이 요청일보다 빨라요. 날짜를 확인해 주세요.');render();return;}}
   if(f==='status'&&raw==='done'&&!p.doneDate)patch.doneDate=todayStr();
   if(Object.keys(patch).every(x=>sameVal(p[x],patch[x])))return;
   Object.assign(patch,{updatedAt:new Date().toISOString(),updatedByName:myMember()?.name||''});
@@ -1899,6 +1914,7 @@ async function sendPost(p,btn){
   if(!isReq&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
   btn.disabled=true;
   try{
+    if(isReq&&$('#cpDue').value&&$('#cpDue').value<todayStr()){$('#cpErr').textContent='마감일이 오늘보다 빨라요. 날짜를 확인해 주세요.';btn.disabled=false;return;}
     if(isReq){const m=memOf($('#cpAs').value), now=new Date().toISOString();
       const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),assignee:m?m.name:'',assigneeId:m?m.id:'',parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',
         jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,updatedAt:now,createdAt:now};
@@ -1940,6 +1956,7 @@ $('#ptabs').addEventListener('click',e=>{const ed=e.target.closest('[data-pedit]
 $('#fStatus').addEventListener('change',e=>{state.status=e.target.value;persistUI();render();});
 $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMember()){e.target.value=state.assignee;openWhoAmI();return;}state.assignee=e.target.value;persistUI();render();});
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
+$('#lSort').addEventListener('change',e=>{state.lsort=e.target.value;persistUI();render();});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
 $('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;const cm=customOf(b.dataset.mode);if(cm?.newTab&&safeUrl(cm.url)){window.open(safeUrl(cm.url),'_blank','noopener');return;}if(state.mode==='report')flushNotes();state.mode=b.dataset.mode;persistUI();render();});
 $('#btnNotify').addEventListener('click',openNotify);
@@ -1964,7 +1981,8 @@ $('#main').addEventListener('click',async e=>{
     if(bid==='tNext'){const np=nextPart(p.part),pt=partOf(p.part);
       openTask(null,{projectId:p.projectId,part:np.k,title:p.title,jiraKey:p.jiraKey||'',rmsNo:p.rmsNo||'',rmsUrl:p.rmsUrl||'',link:p.link||'',requester:p.assignee||p.requester||'',priority:p.priority??2,parentId:rootOf(p).id,prevId:p.id,note:`이전 단계: ${pt.label} · ${p.title}`});return;}
     if(bid==='tfDel'){const back=p.parentId&&tasks.some(x=>x.id===p.parentId)?p.parentId:null;
-      evConfirm(`'${p.title||'업무'}'을(를) 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('tasks','task',`업무 · ${p.title||'(제목 없음)'}`,[wbDocOf('tasks',p)]);logChange('task','delete',p.id,p.title,null,null,'휴지통으로 옮김');openPost(back);toast('휴지통으로 옮겼어요');});return;}
+      const K=back?[]:kidsOf(p),ids=new Set([p.id,...K.map(x=>x.id)]),W=wlogs.filter(w=>ids.has(w.taskId));
+      evConfirm(`'${p.title||'업무'}'을(를) 삭제할까요?${K.length?`\n붙어 있는 업무 요청 ${K.length}건도 같이 삭제돼요.`:''}\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('tasks','task',`업무 · ${p.title||'(제목 없음)'}${K.length?` (요청 ${K.length}건)`:''}`,[wbDocOf('tasks',p),...K.map(x=>wbDocOf('tasks',x)),...W.map(w=>wbDocOf('worklogs',w))]);logChange('task','delete',p.id,p.title,null,null,'휴지통으로 옮김');openPost(back);toast('휴지통으로 옮겼어요');});return;}
     if(bid==='wlAddBtn'){tfAddWl(p);return;}
     const wd=e.target.closest('.wlDel');
     if(wd){if(!wd.dataset.sure){wd.dataset.sure='1';wd.textContent='정말 삭제';return;}
@@ -2230,6 +2248,7 @@ function openTask(t,prefill){
       updatedAt:new Date().toISOString(),createdAt:t.createdAt||new Date().toISOString()
     };
     if(!data.title){$('#tErr').textContent='요청내용을 입력해 주세요.';$('#tTitle').focus();return;}
+    if(data.dueDate&&data.requestDate&&data.dueDate<data.requestDate){$('#tErr').textContent='완료 일정이 요청일자보다 빨라요. 날짜를 확인해 주세요.';$('#tDue').focus();return;}
     if(data.status!=='done'&&data.doneDate&&!t.doneDate)data.doneDate=data.doneDate; // 사용자가 직접 입력한 값 유지
     // 수정은 내가 바꾼 칸만 update로 저장해서, 같은 업무를 다른 사람이 동시에 고쳐도 서로 다른 칸은 둘 다 남게 함.
     // 같은 칸을 다른 사람이 먼저 바꿨으면 한 번 경고하고, 다시 누르면 내 값으로 저장
@@ -3082,7 +3101,7 @@ let evPurged=false;
 let wbTrash=[],wbPurged=false;
 const WB_TRASH_TYPE={manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
 const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
-const wbLocal=c=>({tasks,projects,assignments:assigns,comments,manuals,manual_versions:manualVers,manual_runs:manualRuns})[c]||[];
+const wbLocal=c=>({tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns})[c]||[];
 // 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
 async function wbDrop(area,type,label,docs,extra={}){
   await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});

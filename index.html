@@ -4163,10 +4163,37 @@ function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `
 const V3_HEAD={done:/^(■\s*반영\s*)(\d+)(\s*건)/,doing:/^(■\s*진행\s*)(\d+)(\s*건)/,recv:/^(■\s*접수[^\d]*?)(\d+)(\s*건)/};
 function v3HeadCounts(lines){const o={};lines.forEach(l=>{for(const k in V3_HEAD){const m=String(l.t||'').match(V3_HEAD[k]);if(m&&!(k in o))o[k]=+m[2];}});return o;}
 const v3SetHeads=(lines,counts)=>lines.map(l=>{for(const k in V3_HEAD)if(V3_HEAD[k].test(l.t||''))return {...l,t:l.t.replace(V3_HEAD[k],(_,a,n,b)=>a+(+counts[k]||0)+b)};return l;});
+// 저장된 본문에 새로 생긴 업무를 끼워 넣음(이번 주부터, 확정 전). 업무마다 'id:구분'을 sec.auto에 적어 두어
+// 사용자가 지운 줄은 다시 넣지 않음. 다른 구분에 자동으로 넣었던 줄(글자 그대로)은 옮겨 감. 소제목 숫자도 함께 ±1
+const v3Line={done:t=>`${t.title}(${md(t.doneDate)})`,doing:t=>`${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`,recv:t=>`${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`};
+function v3Merge(c,sec,thu){
+  const a=v3Auto(c,thu),seen=new Set(sec.auto||[]);let L=sec.lines.map(l=>({...l})),changed=false;
+  const head=k=>L.findIndex(l=>V3_HEAD[k].test(l.t||'')),isHead=l=>/^■/.test(l.t||'')||/^-{5,}/.test(l.t||'');
+  const bump=(k,n)=>{const i=head(k);if(i>=0)L[i]={...L[i],t:L[i].t.replace(V3_HEAD[k],(_,x,m,y)=>x+Math.max(0,+m+n)+y)};};
+  const block=k=>{const i=head(k);if(i<0)return null;let j=i+1;while(j<L.length&&!isHead(L[j]))j++;return [i,j];};
+  for(const k of ['done','doing','recv'])for(const t of a.lists[k]){
+    const key=t.id+':'+k;if(seen.has(key)||!t.title)continue;const b=block(k);if(!b)continue;
+    seen.add(key);changed=true;
+    if(L.slice(b[0]+1,b[1]).some(l=>(l.t||'').includes(t.title)))continue; // 이미 적혀 있음
+    // 다른 구분에 자동으로 넣은 그대로 남아 있으면 빼 옴
+    for(const k2 of ['done','doing','recv']){if(k2===k)continue;const b2=block(k2);if(!b2)continue;const pl=`[${partOf(t.part).label}] `;
+      const at=L.findIndex((l,x)=>x>b2[0]&&x<b2[1]&&l.t===pl+v3Line[k2](t));if(at>=0){L.splice(at,1);bump(k2,-1);}}
+    const nb=block(k);let at=nb[1];while(at>nb[0]+1&&!String(L[at-1].t||'').trim())at--;
+    L.splice(at,0,{t:`[${partOf(t.part).label}] `+v3Line[k](t),hl:false});bump(k,1);
+  }
+  return {lines:L,auto:[...seen],changed};
+}
+const v3Merging=new Set();
 function v3Data(){
   const thu=rstate.week3,doc=v3Doc();
   const cats=[...projects.map(p=>({id:p.id,name:p.name,color:p.color,inCount:true,project:true})),...v3Custom(doc).map(c=>({...c,project:false}))];
-  return {thu,doc,cats:cats.map(c=>{const sec=doc?.sections?.[c.id]||{};
+  const live=thu>=thursdayOf(todayStr())&&!doc?.confirmed;
+  return {thu,doc,cats:cats.map(c=>{let sec=doc?.sections?.[c.id]||{};
+    if(live&&c.project&&Array.isArray(sec.lines)){const m=v3Merge(c,sec,thu);
+      if(m.changed){sec={...sec,lines:m.lines,auto:m.auto};
+        // 그 구역을 고치는 중이 아니면 저장(작성자 표시는 그대로)
+        const ed=document.activeElement?.closest?.('#reportArea [data-cid]');
+        if(canWrite&&!v3Merging.has(c.id)&&ed?.dataset.cid!==c.id&&!v3Timer[c.id]){v3Merging.add(c.id);v3SaveDoc({sections:{[c.id]:{lines:m.lines,auto:m.auto}}}).catch(()=>{}).finally(()=>v3Merging.delete(c.id));}}}
     const base=sec.countsEdited&&sec.counts?sec.counts:v3Auto(c,thu).counts;
     return Array.isArray(sec.lines)?{...c,sec,counts:{...base,...v3HeadCounts(sec.lines)},lines:sec.lines}:{...c,sec,counts:base,lines:v3Draft(c,thu)};})};
 }

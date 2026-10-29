@@ -2480,14 +2480,17 @@ let evtMonths=[], evtRowsAll=[];
 const EV_STATUS=['완료','진행','대기','연장','비노출'];
 const EV_SEL={workType:['HTML','단순 업로드'],category:['알닷','파트너사','기타파일']};
 const EV_DONE=new Set(['완료','연장','비노출']);
-const EV_FIELDS=['status','name','workType','category','dueDate','reflectStatus','source','reviewUrl','urlType','opUrl','note'];
-const EV_LABEL={status:'작업상태',name:'이벤트명',workType:'작업유형',category:'구분',dueDate:'시작일',reflectStatus:'종료일',source:'소스수급',reviewUrl:'검수용URL',urlType:'URL유형',opUrl:'운영URL',note:'주요특이사항'};
-const EV_COLS=[['status','상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']];
+const EV_FIELDS=['status','name','workType','category','dueDate','reflectStatus','source','reviewUrl','urlType','opUrl','note','devId'];
+const EV_LABEL={status:'작업상태',name:'이벤트명',workType:'작업유형',category:'구분',dueDate:'시작일',reflectStatus:'종료일',source:'소스수급',reviewUrl:'검수용URL',urlType:'URL유형',opUrl:'운영URL',note:'주요특이사항',devId:'확인용ID'};
+const EV_COLS=[['status','상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID'],['devId','확인용ID']];
 const EV_REQ=['name','dueDate','reflectStatus','eid'];
 const EV_LINKS={'친구추천':'https://www.uplusmvno.com/benefit/recommendation','롯데카드':'https://www.uplusmvno.com/benefit/affiliate-card','삼성카드':'https://www.uplusmvno.com/benefit/affiliate-card?mvnopPpCprtCardId=CC0000000029'};
 // 이벤트ID → 운영 페이지 주소(원본 eventIdToUrl과 같은 규칙)
 function evIdUrl(id){const v=String(id||'').trim();if(EV_LINKS[v])return EV_LINKS[v];const c=v.match(/^CC(\d{1,10})$/i);if(c)return `https://www.uplusmvno.com/benefit/affiliate-card?mvnopPpCprtCardId=CC${c[1].padStart(10,'0')}`;
   return /^\d{1,10}$/.test(v)?`https://www.uplusmvno.com/benefit/event/detail?mvnopEvetId=EV${v.padStart(10,'0')}`:'';}
+// 확인용ID(DEV) → DEV 상세 주소. 숫자만 넣으면 EV + 10자리로 맞춤
+const evDevId=v=>{v=String(v||'').trim();const q=v.match(/mvnopEvetId=([A-Za-z0-9]+)/);if(q)v=q[1];return /^\d{1,10}$/.test(v)?'EV'+v.padStart(10,'0'):/^EV\d+$/i.test(v)?v.toUpperCase():v;};
+const evDevUrl=v=>{const id=evDevId(v);return /^EV\d+$/.test(id)?`https://dev.uplusmvno.com/benefit/event/detail?mvnopEvetId=${id}`:'';};
 const evIsoToDot=s=>s?s.replaceAll('-','.'):'';
 function evDotToIso(s){const m=String(s||'').trim().match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/);return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:'';}
 const evNextKey=k=>{const [y,m]=k.split('-').map(Number);return m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;};
@@ -2520,6 +2523,8 @@ function evCell(r,k){
   if(k==='dueDate'||k==='reflectStatus')return `<td><input type="date" class="evf${miss}" data-f="${k}" value="${evDotToIso(r[k])}" aria-label="${EV_LABEL[k]}" ${ro}></td>`;
   if(k==='eid'){const url=evIdUrl(r.eid),dup=evDupOwners(r,r.eid);
     return `<td><div class="evId"><input class="evf${miss}${dup.length?' evDup':''}" data-f="eid" value="${esc(r.eid||'')}" list="evLinkOpts" placeholder="ID…" aria-label="이벤트ID" ${dup.length?`title="${esc('같은 ID가 있어요: '+dup.join(', '))}"`:''} ${ro}><button type="button" class="btn ghost sm evLink" ${url?'':'disabled'} title="운영 페이지로 이동" aria-label="운영 페이지로 이동">↗</button></div></td>`;}
+  if(k==='devId'){const url=evDevUrl(r.devId);
+    return `<td><div class="evId"><input class="evf" data-f="devId" value="${esc(r.devId||'')}" placeholder="EV… 또는 URL" aria-label="확인용ID" ${ro}><button type="button" class="btn ghost sm evDevLink" ${url?'':'disabled'} title="DEV 확인 페이지로 이동" aria-label="DEV 확인 페이지로 이동">↗</button></div></td>`;}
   const ph={name:'이벤트명을 입력해 주세요',urlType:'신규'}[k];
   return `<td><input class="evf${miss}${k==='name'&&!r.name?' evMiss':''}" data-f="${esc(k)}" value="${esc(r[k]||'')}" ${ph?`placeholder="${ph}"`:''} aria-label="${esc(EV_LABEL[k]||k)}" ${ro}></td>`;
 }
@@ -2607,7 +2612,7 @@ async function evPaste(e){
   const lines=text.replace(/\r/g,'').split('\n');if(lines[lines.length-1]==='')lines.pop();
   const skipped=[];let n=0;
   for(let i=0;i<lines.length;i++){
-    const vals={};lines[i].split('\t').forEach((v,j)=>{const k=keys[c0+j];if(!k)return;v=v.trim();if(k==='dueDate'||k==='reflectStatus')v=evIsoToDot(evDotToIso(v))||v;vals[k]=v;});
+    const vals={};lines[i].split('\t').forEach((v,j)=>{const k=keys[c0+j];if(!k)return;v=v.trim();if(k==='dueDate'||k==='reflectStatus')v=evIsoToDot(evDotToIso(v))||v;if(k==='devId')v=evDevId(v);vals[k]=v;});
     let r=rows[start+i];
     if(r&&vals.eid!=null&&evDupOwners(r,vals.eid).length){skipped.push(`${start+i+1}행 '${vals.eid}'`);delete vals.eid;}
     if(r){const before={...r};Object.assign(r,vals);await db.collection('evt_rows').doc(r.id).update({...vals,updatedAt:new Date().toISOString()});n++;}
@@ -2626,6 +2631,7 @@ onArea('#eventOpsArea','change',async e=>{
   if(!el.classList.contains('evf')||!canWrite)return;
   const r=evRowById(el.closest('tr').dataset.uid);if(!r)return;const f=el.dataset.f;let v=el.value;
   if(f==='dueDate'||f==='reflectStatus')v=evIsoToDot(v);
+  if(f==='devId'){v=evDevId(v);el.value=v;}
   if(f==='eid'){const d=evDupOwners(r,v);if(d.length){toast(`이미 사용 중인 ID예요: ${d.join(', ')}`);el.value=r.eid||'';return;}}
   try{await evSaveField(r,f,v);}catch(err){handleWriteError(err);}
   if(el.tagName==='SELECT')el.blur();
@@ -2640,6 +2646,7 @@ onArea('#eventOpsArea','click',async e=>{
   if(id==='evImport'){$('#evFile').click();return;}
   if(id==='evJson'||id==='evXlsx'||id==='evSum'){evExport(id);return;}
   const fl=e.target.closest('[data-evf]');if(fl){est.filter=fl.dataset.evf;est.sel.clear();render();return;}
+  const dl=e.target.closest('.evDevLink');if(dl){const u=evDevUrl(evRowById(dl.closest('tr').dataset.uid)?.devId);if(u)window.open(u,'_blank','noopener');return;}
   const lk=e.target.closest('.evLink');if(lk){const u=evIdUrl(evRowById(lk.closest('tr').dataset.uid)?.eid);if(u)window.open(u,'_blank','noopener');return;}
   if(!canWrite)return;
   try{

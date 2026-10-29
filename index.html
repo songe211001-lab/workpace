@@ -4001,11 +4001,13 @@ function queueNoteSave(){
 function flushNotes(){if(noteTimer){clearTimeout(noteTimer);noteTimer=null;noteBusy=noteBusy.then(saveChangedNotes).catch(()=>{});}}
 
 /* ---------- 주간 보고(팀 양식): 목~수 한 주, 카테고리(프로젝트)별 운영 건수와 본문 ---------- */
-// 주는 목요일 시작·수요일 끝. n주는 끝나는 수요일이 그 달 몇째 주(월요일 시작, 1일이 든 주 = 1주)인지로 셈 — 팀 양식 표기(10/15~10/21 = 10월 4주)와 같게
+// 주는 목요일 시작·수요일 끝. n주는 끝나는 수요일이 그 달 달력(일요일 시작, 1일이 든 줄 = 1주)의 몇째 줄인지로 셈
+// — 팀 양식 표기(10/15~10/21 = 10월 4주, 10/29~11/4 = 11월 1주)와 같게
 const thursdayOf=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()-((d.getDay()+3)%7));return ymd(d);};
+const sundayOf=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()-d.getDay());return ymd(d);};
 rstate.week3=thursdayOf(todayStr());
-function rWeekLabel(thu){const wed=addDays(thu,6),firstMon=mondayOf(wed.slice(0,8)+'01');
-  return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(mondayOf(wed)+'T00:00:00')-new Date(firstMon+'T00:00:00'))/(7*864e5))+1}주`;}
+function rWeekLabel(thu){const wed=addDays(thu,6),firstSun=sundayOf(wed.slice(0,8)+'01');
+  return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(sundayOf(wed)+'T00:00:00')-new Date(firstSun+'T00:00:00'))/(7*864e5))+1}주`;}
 const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
 const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['sum','주간보고'],['detail','주간보고(상세)']].map(([v,l])=>`<button type="button" class="vtab" role="tab" data-goto="report" data-rview="${v}" aria-selected="${cur===v}">${l}</button>`).join('')}</div></div>`;
 const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];

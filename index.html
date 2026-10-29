@@ -1007,7 +1007,10 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .listTitle{margin:6px 0 0;font-size:16px;font-weight:800;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .ltBar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
 .ltBar .searchBox{margin:0;width:280px;max-width:100%}
-.ltBar .ptabs{flex:0 1 auto;flex-wrap:wrap;overflow:visible;gap:6px}
+.ltBar .ptabs{flex:0 1 auto;flex-wrap:wrap;overflow:visible;gap:4px}
+/* 프로젝트 탭 간격: 관리 버튼(⋯)이 자리를 차지하지 않게 탭 오른쪽 위에 겹쳐 띄운다 */
+.ltBar .ptabW{position:relative}
+.ltBar .ptabMore{position:absolute;top:-7px;right:-5px;width:18px;height:18px;line-height:16px;padding:0;font-size:11px;background:var(--surface);border:1px solid var(--line);border-radius:50%;z-index:1}
 .ltBar .ptab{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:13px;background:var(--surface);color:var(--ink-soft)}
 .ltBar .ptab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .ltBar .ptab[aria-selected="true"] .c{color:inherit;background:rgba(255,255,255,.25)}
@@ -1079,7 +1082,6 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
     <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label>
     <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
-    <div class="chips" id="partChips"></div>
     <div class="seg" id="viewSeg">
       <button type="button" data-view="list">목록</button>
       <button type="button" data-view="board">보드</button>
@@ -1667,8 +1669,7 @@ function renderTabs(){
 }
 
 function renderFilters(){
-  if(state.part!=='all'&&!PARTS.some(p=>p.k===state.part))state.part='all';
-  $('#partChips').innerHTML=[{k:'all',label:'전체 파트'},...PARTS].map(p=>`<button class="chip" type="button" data-part="${p.k}" aria-pressed="${state.part===p.k}">${p.c?`<span class="sw" style="background:${p.c}"></span>`:''}${p.label}</button>`).join('');
+  state.part='all'; // 직무(파트) 구분 탭은 없앴다. 예전에 골라 둔 파트로 목록이 걸러진 채 남지 않게 항상 전체
   $('#fStatus').innerHTML=[['all','전체 현황'],['open','미완료 전체'],...STATUSES.map(s=>[s.k,s.label])].map(([k,l])=>`<option value="${k}" ${state.status===k?'selected':''}>${l}</option>`).join('');
   const names=[...new Set(scoped().map(t=>t.assignee).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const me=myMember();if(state.assignee==='me'&&storeReady&&!me)state.assignee='all';
@@ -1915,7 +1916,6 @@ async function setReqStatus(id,st){
 
 /* ---------- events ---------- */
 $('#ptabs').addEventListener('click',e=>{const ed=e.target.closest('[data-pedit]');if(ed){openProject(projOf(ed.dataset.pedit));return;}if(e.target.closest('#pAddTab')){openProject(null);return;}const b=e.target.closest('[data-p]');if(!b)return;state.project=b.dataset.p;persistUI();render();});
-$('#partChips').addEventListener('click',e=>{const b=e.target.closest('[data-part]');if(!b)return;state.part=b.dataset.part;persistUI();render();});
 $('#fStatus').addEventListener('change',e=>{state.status=e.target.value;persistUI();render();});
 $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMember()){e.target.value=state.assignee;openWhoAmI();return;}state.assignee=e.target.value;persistUI();render();});
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});

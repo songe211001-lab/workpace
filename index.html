@@ -1051,6 +1051,28 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .miItem>span:first-of-type{flex:1 1 200px}
 .soonTag{display:inline-block;margin-left:6px;padding:0 6px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-size:11px;font-weight:700}
 .cardSt{display:flex;justify-content:flex-end}.cardSt .stSel{height:24px}
+/* ---------- 회귀 검증 ---------- */
+.cvHead{display:flex;flex-direction:column;gap:10px;padding:14px 16px;margin-bottom:12px}
+.cvHeadT{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.cvHeadT h3{margin:0;font-size:16px}
+.cvStats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cvStat{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+.cvStat[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}.cvStat:focus-visible{outline:2px solid var(--accent)}
+.cvProg{display:inline-flex;align-items:baseline;gap:6px;margin-left:auto}.cvProg b{font-size:18px}
+.cvPill{display:inline-block;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:700;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.cv-PASS{background:var(--ok-soft);color:var(--ok)}.cv-MINOR{background:var(--warn-soft);color:var(--warn)}.cv-MAJOR{background:var(--bad-soft);color:var(--bad)}.cv-NA{background:var(--sunk);color:var(--ink-soft)}
+.cvFilt{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:0 0 10px}.cvFilt .searchBox{margin:0}
+.cvTable td{vertical-align:middle}.cvTable .cvGrp{white-space:nowrap;color:var(--ink-soft);font-size:12.5px}
+.cvSvc{font-size:11px;font-weight:700;color:var(--muted)}
+.cvItem{all:unset;cursor:pointer;font-weight:600}.cvItem:hover,.cvItem:focus-visible{text-decoration:underline;outline:none}
+.cvCore{margin-left:6px;font-size:10.5px;font-weight:800;color:var(--accent-dark);background:var(--accent-soft);border-radius:4px;padding:1px 5px}
+.cvSel{height:28px;width:auto;border-radius:999px;font-weight:700;font-size:12px;border-color:transparent}
+.cvSel.cv-NT{background:var(--sunk);color:var(--muted)}
+.cvMemo{height:28px;min-width:160px;width:100%}
+.cvRow.is-major td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+.cvDet td{background:var(--bg)}.cvDetGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.cvDetGrid p{margin:4px 0 0;white-space:pre-wrap;font-size:12.5px;line-height:1.6;color:var(--ink-soft)}
+.cvDetAct{display:flex;gap:6px;margin-top:8px}
+@media (max-width:600px){.cvDetGrid{grid-template-columns:1fr}.cvProg{margin-left:0}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1126,6 +1148,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
   <div class="area" id="linkArea" hidden></div>
   <div class="area" id="eventOpsArea" hidden></div>
   <div class="area" id="manualsArea" hidden></div>
+  <div class="area" id="regressArea" hidden></div>
   <div class="area" id="annualArea" hidden></div>
   <div class="area" id="menusArea" hidden></div>
 </div>
@@ -1465,7 +1488,7 @@ const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',
 let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 화면(settings/menus.home)을 쓰지 않음
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
+{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
@@ -1476,7 +1499,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const BASE_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
 let MENU_GRPS=BASE_GRPS;
-const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['leave','people','일정 관리'],['annual','people','연차 관리'],
+const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['leave','people','일정 관리'],['annual','people','연차 관리'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
@@ -1485,6 +1508,7 @@ function syncItems(list=menuCfg.custom,grps=menuCfg.groups,cgs=menuCfg.customGro
 const customOf=k=>CUSTOM.find(c=>c.id===k);
 const safeUrl=u=>/^https?:\/\/[^\s]+$/i.test(String(u||'').trim())?String(u).trim():'';
 const NAV_ICO={"manuals":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z\"/><path d=\"M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5\"/><path d=\"M8 7h8M8 11h6\"/></svg>","eventops":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M4 10v4a1 1 0 0 0 1 1h2l5 4V5L7 9H5a1 1 0 0 0-1 1z\"/><path d=\"M16 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11\"/></svg>","link":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1\"/><path d=\"M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1\"/></svg>","accounts":"<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"10\" cy=\"8\" r=\"3.5\"/><path d=\"M3.5 20c0-3.3 2.9-6 6.5-6 1.3 0 2.5.3 3.5.9\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/><path d=\"M17.5 13.5v1.5M17.5 20v1.5M21.5 17.5H20M15 17.5h-1.5\"/></svg>","tasks": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9 4V3h6v1M9 11h6M9 15h4\"/></svg>", "report": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h6\"/></svg>", "history": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 12a9 9 0 1 0 3-6.7L3 8\"/><path d=\"M3 3v5h5M12 7v5l3 2\"/></svg>", "staff": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "leave": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "grp:work": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"7\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 13h18\"/></svg>", "grp:people": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 4.5a3.5 3.5 0 0 1 0 7M18 14c2 .6 3 2.8 3 6\"/></svg>", "annual": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4\"/></svg>", "menus": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01\"/></svg>", "perms": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"5\" y=\"11\" width=\"14\" height=\"10\" rx=\"2\"/><path d=\"M8 11V7a4 4 0 0 1 8 0v4M12 15v2\"/></svg>", "grp:admin": "<svg class=\"ico\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z\"/><path d=\"M9 12l2 2 4-4\"/></svg>"};
+NAV_ICO.regress='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>';
 let menuCfg={}, navKey='', sideDraw=()=>{};
 // 관리자: 서버는 wb_admins(adminUI), 아티팩트는 편집 권한(canWrite)
 const isAdminUser=()=>canWrite&&(typeof adminUI!=='function'||adminUI());
@@ -1623,7 +1647,7 @@ function applyMode(){
   if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
   if(storeReady&&!pickShown&&!pickDone())setTimeout(openMenuPick,0); // 새로 들어올 때 메뉴 선택 화면
-  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea'};
+  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='tasks';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
@@ -1658,6 +1682,7 @@ function renderBody(){
   if(customOf(state.mode)){renderLink(customOf(state.mode));return;}
   if(state.mode!=='eventops')$('#mnPanel')?.remove();
   if(state.mode==='manuals'){renderManuals();return;}
+  if(state.mode==='regress'){if(!document.activeElement?.matches?.('#cvQ,#regressArea .cvMemo'))renderRegress();return;}
   if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
@@ -1932,6 +1957,142 @@ async function setReqStatus(id,st){
   const patch={status:st,doneDate:st==='done'?(t.doneDate||todayStr()):'',updatedAt:new Date().toISOString()};
   try{await db.collection('tasks').doc(id).update(patch);logChange('task','update',id,t.title,t,{...t,...patch});toast(`'${statusOf(st).label}'(으)로 바꿨어요`);}
   catch(err){handleWriteError(err);render();}
+}
+
+/* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
+let cvtCases=[],cvtRuns=[];
+const CV_RES=[['PASS','PASS'],['MINOR','MINOR'],['MAJOR','MAJOR'],['N/A','N/A']]; // 비어 있으면 미점검(NOT TESTED)
+const cvst={run:null,svc:'all',res:'all',core:false,q:'',open:new Set()};
+const cvCases=()=>cvtCases.slice().sort((a,b)=>(a.order??0)-(b.order??0));
+const cvRuns=()=>cvtRuns.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''));
+const cvR=(run,c)=>run?.['r_'+c.id]||'';
+const cvKey=s=>String(s??'').replace(/\s+/g,' ').trim();
+const cvRunName=r=>`${(r.date||'').replace(/-/g,'.')}${r.label?' '+r.label:''}`;
+const cvCls=v=>'cv-'+(v?v.replace('/',''):'NT');
+const cvPill=v=>`<span class="cvPill ${cvCls(v)}">${v||'미점검'}</span>`;
+function renderRegress(){
+  const area=$('#regressArea');
+  if(!storeReady){area.innerHTML='<div class="empty"><h2>불러오는 중입니다</h2></div>';return;}
+  const runs=cvRuns();if(!runs.some(r=>r.id===cvst.run))cvst.run=runs[0]?.id||null;
+  const run=runs.find(r=>r.id===cvst.run),prev=run&&runs[runs.indexOf(run)+1],C=cvCases(),w=canWrite;
+  const tools=`<div class="rtool">${runs.length?`<select class="sel" id="cvRun" aria-label="회차">${runs.map(r=>`<option value="${esc(r.id)}" ${r.id===cvst.run?'selected':''}>${esc(cvRunName(r))}${r.testers?` · ${esc(r.testers)}`:''}</option>`).join('')}</select>`:''}<span class="spacer"></span>${trashBtn('cvTrashBtn',TRASH_SRC.regress.list().length)}${w?`<button class="btn" type="button" id="cvImport">엑셀 가져오기</button><input type="file" id="cvFile" accept=".xlsx" hidden>${C.length?'<button class="btn" type="button" id="cvAddCase">+ 케이스</button><button class="btn primary" type="button" id="cvNewRun">+ 새 회차</button>':''}`:''}</div>`;
+  if(!C.length){area.innerHTML=`${tools}<div class="empty"><h2>아직 회귀 검증 케이스가 없어요</h2><p>CVT 구글 시트를 <b>파일 → 다운로드 → Microsoft Excel(.xlsx)</b>로 받은 뒤 '엑셀 가져오기'로 올리면, '전수 테스트' 탭의 케이스와 회차별 결과를 가져와요.</p>${w?'<button class="btn primary" type="button" id="cvAddCase">+ 케이스 직접 추가</button>':''}</div>`;return;}
+  const cnt={};C.forEach(c=>{const v=cvR(run,c);cnt[v]=(cnt[v]||0)+1;});
+  const tot=C.length,doneN=tot-(cnt['']||0),core=C.filter(c=>c.core),coreLeft=core.filter(c=>!cvR(run,c)).length;
+  const head=run?`<div class="panel cvHead"><div class="cvHeadT"><h3>${esc(cvRunName(run))}</h3><span class="legend">${run.testers?`담당 ${esc(run.testers)}`:'담당 미입력'}</span><span class="spacer"></span>${w?'<button class="btn ghost sm" type="button" id="cvRunEdit">회차 정보</button><button class="btn ghost sm" type="button" id="cvRunDel">회차 삭제</button>':''}</div>
+    <div class="cvStats">${[...CV_RES.map(x=>x[0]),''].map(k=>`<button type="button" class="cvStat" data-cvres="${k||'NT'}" aria-pressed="${cvst.res===(k||'NT')}" title="이 결과만 보기">${cvPill(k)}<b class="num">${cnt[k]||0}</b></button>`).join('')}
+      <span class="cvProg"><span class="legend">진행률</span><b class="num">${Math.round(doneN/tot*100)}%</b><span class="legend">${doneN}/${tot}${core.length?` · 핵심 미점검 ${coreLeft}건`:''}</span></span></div></div>`
+    :`<div class="empty"><h2>회차가 없어요</h2><p>'+ 새 회차'로 이번 검증을 시작하세요.</p></div>`;
+  const q=cvst.q.trim().toLowerCase();
+  const L=C.filter(c=>(cvst.svc==='all'||c.svc===cvst.svc)&&(!cvst.core||c.core)
+    &&(cvst.res==='all'||(cvst.res==='NT'?!cvR(run,c):cvst.res==='DIFF'?!!prev&&cvR(run,c)!==cvR(prev,c):cvR(run,c)===cvst.res))
+    &&(!q||[c.group,c.item,c.method,c.expect,run?.['m_'+c.id]].some(v=>String(v||'').toLowerCase().includes(q))));
+  const filt=`<div class="cvFilt"><div class="seg" role="group" aria-label="서비스">${[['all','전체'],['FO','FO'],['BO','BO']].map(([k,l])=>`<button type="button" data-cvsvc="${k}" aria-pressed="${cvst.svc===k}">${l}</button>`).join('')}</div>
+    <select class="sel" id="cvRes" aria-label="결과">${optH([['all','결과 전체'],['NT','미점검'],...CV_RES,['DIFF','이전 회차와 다름']],cvst.res)}</select>
+    <label class="cfItem"><input type="checkbox" id="cvCore" ${cvst.core?'checked':''}>핵심만</label>
+    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="cvQ" type="search" placeholder="케이스 · 점검 항목 · 메모 검색" value="${esc(cvst.q)}" aria-label="검색"></label><span class="legend">${L.length}건</span></div>`;
+  const rows=L.map(c=>{const v=cvR(run,c),op=cvst.open.has(c.id),memo=run?.['m_'+c.id]||'';
+    return `<tr class="cvRow${v==='MAJOR'?' is-major':''}" data-cv="${esc(c.id)}"><td><span class="cvSvc">${esc(c.svc||'')}</span></td><td class="cvGrp">${esc(c.group||'')}</td>
+      <td><button type="button" class="cvItem" data-cvopen aria-expanded="${op}" title="점검 방법 · 예상 결과 보기">${esc(c.item||'(점검 항목 없음)')}</button>${c.core?'<span class="cvCore">핵심</span>':''}</td>
+      <td>${run&&w?`<select class="sel cvSel ${cvCls(v)}" data-cvr aria-label="결과">${optH([['','미점검'],...CV_RES],v)}</select>`:cvPill(v)}</td>
+      <td>${run&&w?`<input class="sel cvMemo" data-cvm value="${esc(memo)}" placeholder="메모" aria-label="메모">`:esc(memo)}</td>
+      <td>${prev?cvPill(cvR(prev,c)):'<span class="legend">—</span>'}</td></tr>
+      ${op?`<tr class="cvDet" data-cv="${esc(c.id)}"><td></td><td colspan="5"><div class="cvDetGrid"><div><b>점검 방법</b><p>${esc(c.method||'—')}</p></div><div><b>예상 결과</b><p>${esc(c.expect||'—')}</p></div></div>${w?'<div class="cvDetAct"><button type="button" class="btn ghost sm" data-cvedit>케이스 수정</button><button type="button" class="btn ghost sm" data-cvdel>케이스 삭제</button></div>':''}</td></tr>`:''}`;}).join('');
+  area.innerHTML=`${tools}${head}${filt}<div class="statWrap"><table class="stable cvTable"><thead><tr><th>서비스</th><th>케이스</th><th>점검 항목</th><th>결과</th><th>메모</th><th>이전 회차${prev?`<br><span class="legend">${esc(cvRunName(prev))}</span>`:''}</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="legend">조건에 맞는 케이스가 없어요.</td></tr>'}</tbody></table></div>`;
+}
+onArea('#regressArea','change',async e=>{const el=e.target;
+  if(el.id==='cvRun'){cvst.run=el.value;render();return;}
+  if(el.id==='cvRes'){cvst.res=el.value;render();return;}
+  if(el.id==='cvCore'){cvst.core=el.checked;render();return;}
+  if(el.id==='cvFile'){const f=el.files[0];el.value='';if(f)cvImport(f);return;}
+  const tr=el.closest('[data-cv]'),run=cvtRuns.find(r=>r.id===cvst.run),isR=el.dataset.cvr!=null;if(!tr||!run||!canWrite||(!isR&&el.dataset.cvm==null))return;
+  const k=(isR?'r_':'m_')+tr.dataset.cv,v=isR?el.value:el.value.trim();if((run[k]||'')===v)return;run[k]=v;
+  try{await db.collection('cvt_runs').doc(run.id).update({[k]:v,updatedAt:new Date().toISOString()});}catch(err){handleWriteError(err);}
+  if(isR){el.blur();render();}
+});
+let cvqT;onArea('#regressArea','input',e=>{if(e.target.id!=='cvQ')return;clearTimeout(cvqT);cvqT=setTimeout(()=>{cvst.q=e.target.value;renderRegress();liftTools();const i=$('#cvQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},200);});
+onArea('#regressArea','click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.cvsvc){cvst.svc=b.dataset.cvsvc;render();return;}
+  if(b.dataset.cvres){cvst.res=cvst.res===b.dataset.cvres?'all':b.dataset.cvres;render();return;}
+  const id=b.closest('[data-cv]')?.dataset.cv,c=id&&cvtCases.find(x=>x.id===id);
+  if(b.dataset.cvopen!=null&&c){cvst.open.has(id)?cvst.open.delete(id):cvst.open.add(id);render();return;}
+  if(b.dataset.cvedit!=null&&c){cvCaseModal(c);return;}
+  if(b.dataset.cvdel!=null&&c){evConfirm(`'${c.item}' 케이스를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvcase',`케이스 · ${c.item||''}`,[wbDocOf('cvt_cases',c)]);cvtCases=cvtCases.filter(x=>x.id!==id);logChange('regress','delete',id,c.item,null,null,'휴지통으로 옮김');render();});return;}
+  if(b.id==='cvImport'){$('#cvFile').click();return;}
+  if(b.id==='cvAddCase'){cvCaseModal(null);return;}
+  if(b.id==='cvNewRun'){cvRunModal(null);return;}
+  const run=cvtRuns.find(r=>r.id===cvst.run);
+  if(b.id==='cvRunEdit'&&run){cvRunModal(run);return;}
+  if(b.id==='cvRunDel'&&run)evConfirm(`'${cvRunName(run)}' 회차를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvrun',`회차 · ${cvRunName(run)}`,[wbDocOf('cvt_runs',run)]);cvtRuns=cvtRuns.filter(x=>x.id!==run.id);logChange('regress','delete',run.id,cvRunName(run),null,null,'휴지통으로 옮김');render();});
+});
+document.addEventListener('click',e=>{if(e.target.closest?.('#cvTrashBtn'))openTrash('regress');});
+function cvRunModal(run){const isNew=!run,last=cvRuns().find(r=>Object.keys(r).some(k=>k.startsWith('r_')&&r[k]==='N/A')); // N/A가 있는 가장 최근 회차
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="cvRunForm" novalidate style="max-width:480px"><header><h2>${isNew?'새 회차':'회차 정보'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body"><div class="f"><label for="cvRDate">점검일 <b>*</b></label><input type="date" id="cvRDate" value="${esc(run?.date||todayStr())}"></div>
+      <div class="f"><label for="cvRLabel">구분</label><input id="cvRLabel" value="${esc(run?.label||'')}" placeholder="예: STG, 2차" maxlength="40"></div>
+      <div class="f full"><label for="cvRTesters">담당자</label><input id="cvRTesters" value="${esc(run?run.testers||'':myMember()?.name||'')}" placeholder="여러 명은 쉼표로" maxlength="80"></div>
+      ${isNew&&last?`<label class="cfItem full"><input type="checkbox" id="cvRCarry" checked>최근 회차(${esc(cvRunName(last))})의 N/A 결과와 메모 이어받기</label>`:''}</div>
+    <footer><span class="err" id="cvRErr"></span><div class="r"><button class="btn" type="button" id="cvRCancel">취소</button><button class="btn primary" type="submit" id="cvRSave">${isNew?'만들기':'저장'}</button></div></footer></form></div>`;
+  $('#xClose').onclick=$('#cvRCancel').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#cvRunForm').addEventListener('submit',async e=>{e.preventDefault();const date=$('#cvRDate').value;if(!date){$('#cvRErr').textContent='점검일을 골라 주세요.';return;}
+    const data={date,label:$('#cvRLabel').value.trim(),testers:$('#cvRTesters').value.trim(),updatedAt:new Date().toISOString()};$('#cvRSave').disabled=true;
+    try{if(isNew){const id=evUid();Object.assign(data,{createdAt:data.updatedAt,by:myMember()?.name||''});
+        // 미사용 기능처럼 매번 N/A인 케이스는 이어받음
+        if($('#cvRCarry')?.checked)cvtCases.forEach(c=>{if(cvR(last,c)==='N/A'){data['r_'+c.id]='N/A';if(last['m_'+c.id])data['m_'+c.id]=last['m_'+c.id];}});
+        await db.collection('cvt_runs').doc(id).set(data);evKeep(cvtRuns,{id,...data});cvst.run=id;cvst.res='all';logChange('regress','create',id,cvRunName(data));}
+      else{await db.collection('cvt_runs').doc(run.id).update(data);Object.assign(run,data);}
+      closeModal();render();}catch(err){$('#cvRSave').disabled=false;handleWriteError(err,'#cvRErr');}});
+  setTimeout(()=>$('#cvRDate').focus(),0);
+}
+function cvCaseModal(c){const isNew=!c,groups=[...new Set(cvtCases.map(x=>x.group).filter(Boolean))];
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="cvCForm" novalidate style="max-width:620px"><header><h2>${isNew?'케이스 추가':'케이스 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body"><div class="f"><label for="cvCSvc">서비스</label><select id="cvCSvc">${optH([['FO','FO'],['BO','BO']],c?.svc||'FO')}</select></div>
+      <div class="f"><label for="cvCGroup">회귀테스트 케이스 <b>*</b></label><input id="cvCGroup" list="cvGroups" value="${esc(c?.group||'')}" maxlength="60"><datalist id="cvGroups">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist></div>
+      <div class="f full"><label for="cvCItem">점검 항목 <b>*</b></label><input id="cvCItem" value="${esc(c?.item||'')}" maxlength="200"></div>
+      <div class="f full"><label for="cvCMethod">점검 방법</label><textarea id="cvCMethod" rows="5">${esc(c?.method||'')}</textarea></div>
+      <div class="f full"><label for="cvCExpect">예상 결과</label><textarea id="cvCExpect" rows="3">${esc(c?.expect||'')}</textarea></div>
+      <label class="cfItem full"><input type="checkbox" id="cvCCore" ${c?.core?'checked':''}>핵심 케이스</label></div>
+    <footer><span class="err" id="cvCErr"></span><div class="r"><button class="btn" type="button" id="cvCCancel">취소</button><button class="btn primary" type="submit" id="cvCSave">${isNew?'추가':'저장'}</button></div></footer></form></div>`;
+  $('#xClose').onclick=$('#cvCCancel').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#cvCForm').addEventListener('submit',async e=>{e.preventDefault();
+    const data={svc:$('#cvCSvc').value,group:$('#cvCGroup').value.trim(),item:$('#cvCItem').value.trim(),method:$('#cvCMethod').value.trim(),expect:$('#cvCExpect').value.trim(),core:$('#cvCCore').checked,updatedAt:new Date().toISOString()};
+    if(!data.group||!data.item){$('#cvCErr').textContent='케이스와 점검 항목을 입력해 주세요.';return;}
+    $('#cvCSave').disabled=true;
+    try{if(isNew){const id=evUid();Object.assign(data,{order:Math.max(0,...cvtCases.map(x=>x.order||0))+1,createdAt:data.updatedAt});await db.collection('cvt_cases').doc(id).set(data);evKeep(cvtCases,{id,...data});logChange('regress','create',id,data.item);}
+      else{await db.collection('cvt_cases').doc(c.id).update(data);Object.assign(c,data);logChange('regress','update',c.id,data.item,null,null,'케이스 수정');}
+      closeModal();render();}catch(err){$('#cvCSave').disabled=false;handleWriteError(err,'#cvCErr');}});
+  setTimeout(()=>$(isNew?'#cvCGroup':'#cvCItem').focus(),0);
+}
+// 엑셀 가져오기: '전수 테스트' 탭. 머리글 줄(서비스 | 회귀테스트 케이스 | 점검 항목 | 점검 방법 | 예상결과 | 핵심여부) 오른쪽으로 회차가 2칸씩(메모 | 점검결과)
+// 이미 있는 케이스(서비스·케이스·점검 항목·예상결과가 같음)와 회차(점검일·구분·담당자가 같음)는 건너뜀
+async function cvImport(file){
+  try{const X=await loadExcel(),wb=new X.Workbook();await wb.xlsx.load(await file.arrayBuffer());
+    const ws=wb.worksheets.find(x=>x.name.includes('전수'))||wb.worksheets.find(x=>x.name.includes('회귀'));if(!ws)throw {cv:"'전수 테스트' 탭을 찾지 못했어요."};
+    const g=bnGrid(ws),raw=(r,c)=>bnAt(g,r,c),at=(r,c)=>{const v=raw(r,c);return v instanceof Date?ymd(v):cvKey(v);};
+    const h=g.findIndex(row=>cvKey(row[0])==='서비스'&&/케이스/.test(cvKey(row[1])))+1;if(!h)throw {cv:"'서비스 · 회귀테스트 케이스' 머리글 줄을 찾지 못했어요."};
+    const rounds=[];
+    for(let c=7;c<=(g[h-1]||[]).length;c+=2){const t=at(h,c);if(!t||!/점검결과/.test(at(h+1,c+1)))continue;const m=t.match(/(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})/);if(!m)continue;
+      rounds.push({c,date:`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`,label:cvKey(t.replace(m[0],'').replace(/ver\.?/ig,'').replace(/[()]/g,' ')),testers:String(raw(h+1,c)??'').split(/\n+/).map(s=>s.trim()).filter(Boolean).join(', ')});}
+    const cases=[];
+    for(let r=h+2;r<=g.length;r++){const grp=at(r,2),item=at(r,3);if(!grp&&!item)continue;
+      cases.push({r,svc:/^BO/i.test(at(r,1))?'BO':'FO',group:grp,item,method:String(raw(r,4)??'').trim(),expect:String(raw(r,5)??'').trim(),core:/핵심/.test(at(r,6))});}
+    if(!cases.length)throw {cv:'가져올 케이스가 없어요.'};
+    const keyOf=(c,seen)=>{const k=[c.svc,c.group,c.item,c.expect].map(cvKey).join('|');seen[k]=(seen[k]||0)+1;return k+'#'+seen[k];};
+    const s1={},have=new Map(cvCases().map(c=>[keyOf(c,s1),c])),s2={},now=new Date().toISOString(),ids=[],newCases=[];let order=Math.max(0,...cvtCases.map(c=>c.order||0));
+    for(const c of cases){const ex=have.get(keyOf(c,s2));if(ex){ids.push(ex.id);continue;}const id=evUid();ids.push(id);newCases.push([id,{svc:c.svc,group:c.group,item:c.item,method:c.method,expect:c.expect,core:c.core,order:++order,createdAt:now,updatedAt:now}]);}
+    const runKey=r=>[r.date,cvKey(r.label),cvKey(r.testers)].join('|'),haveR=new Set(cvtRuns.map(runKey)),newRuns=[];
+    for(const R of rounds){if(haveR.has(runKey(R)))continue;haveR.add(runKey(R));const doc={date:R.date,label:R.label,testers:R.testers,createdAt:now,updatedAt:now,by:myMember()?.name||'',imported:true};
+      cases.forEach((c,i)=>{const v=at(c.r,R.c+1).toUpperCase(),rv=['PASS','MINOR','MAJOR'].includes(v)?v:/^N\/?A$/.test(v)?'N/A':'',m=String(raw(c.r,R.c)??'').trim();
+        if(rv)doc['r_'+ids[i]]=rv;if(m&&m!=='정상')doc['m_'+ids[i]]=m;});
+      newRuns.push([evUid(),doc]);}
+    if(!newCases.length&&!newRuns.length){toast('새로 가져올 케이스·회차가 없어요.');return;}
+    const skip=cases.length-newCases.length;
+    evConfirm(`'${ws.name}' 탭에서 케이스 ${newCases.length}건, 회차 ${newRuns.length}개를 가져올까요?${skip?`\n이미 있는 케이스 ${skip}건은 건너뛰어요.`:''}`,async()=>{
+      let n=0;const all=newCases.length+newRuns.length,step=()=>{if(++n%20===0)toast(`가져오는 중… ${n}/${all}`);};
+      for(const [id,d] of newCases){await db.collection('cvt_cases').doc(id).set(d);evKeep(cvtCases,{id,...d});step();}
+      for(const [id,d] of newRuns){await db.collection('cvt_runs').doc(id).set(d);evKeep(cvtRuns,{id,...d});step();}
+      logChange('regress','create','import',`엑셀 가져오기 · ${file.name}`,null,null,`케이스 ${newCases.length}건 · 회차 ${newRuns.length}개`);cvst.run=null;render();toast(`케이스 ${newCases.length}건, 회차 ${newRuns.length}개를 가져왔어요.`);},'가져오기');
+  }catch(err){if(err?.cv)toast(err.cv);else if(err?.code)handleWriteError(err);else toast('엑셀 파일을 읽지 못했어요. .xlsx로 받은 파일인지 확인해 주세요.');}
 }
 
 /* ---------- 왼쪽 메뉴: 전체 접기 · 좁은 화면 서랍 (접힘 상태는 이 브라우저에 기억) ---------- */
@@ -3120,9 +3281,9 @@ let evPurged=false;
 /* ----- 휴지통(업무 관리 · 주간 보고): trash 컬렉션 문서 하나 = 지운 묶음 하나 {at, area, type, label, payload, by}
    payload.docs = 지운 문서 그대로 [{coll, id, data}] → 복구하면 같은 id로 다시 씀. 보고서 카테고리는 payload {docId, cat, idx} ----- */
 let wbTrash=[],wbPurged=false;
-const WB_TRASH_TYPE={manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
+const WB_TRASH_TYPE={cvcase:'회귀 검증 케이스',cvrun:'회귀 검증 회차',manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
 const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
-const wbLocal=c=>({tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns})[c]||[];
+const wbLocal=c=>({tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns,cvt_cases:cvtCases,cvt_runs:cvtRuns})[c]||[];
 // 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
 async function wbDrop(area,type,label,docs,extra={}){
   await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});
@@ -3145,7 +3306,7 @@ async function wbRestore(t){
     if(!n){await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);return '이미 복구된 항목이라 휴지통에서만 지웠어요.';}
   }
   await db.collection('trash').doc(t.id).delete();wbTrash=wbTrash.filter(x=>x.id!==t.id);
-  logChange(t.area==='report'?'report':t.area==='manual'?'manual':'task','create',t.id,t.label,null,null,'휴지통에서 복구');
+  logChange(t.area==='report'?'report':t.area==='manual'?'manual':t.area==='regress'?'regress':'task','create',t.id,t.label,null,null,'휴지통에서 복구');
   return `'${t.label}'을(를) 복구했어요.`;
 }
 async function wbDropComment(id){const c=comments.find(x=>x.id===id);if(!c){await db.collection('comments').doc(id).delete();return;}
@@ -3161,6 +3322,7 @@ const TRASH_SRC={
   evt:{list:()=>evtTrash,restore:t=>evRestore(t),coll:'evt_trash',types:EV_TRASH_TYPE,count:t=>evTrashCount(t),note:'지운 달·블록·행',ent:'evt',drop:id=>{evtTrash=evtTrash.filter(x=>x.id!==id);}},
   tasks:{list:()=>wbTrash.filter(t=>t.area==='tasks'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:t=>(t.payload?.docs||[]).filter(d=>d.coll==='tasks').length,note:'지운 업무·프로젝트·댓글',ent:'task',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
   manual:{list:()=>wbTrash.filter(t=>t.area==='manual'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 매뉴얼·진행 건',ent:'manual',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
+  regress:{list:()=>wbTrash.filter(t=>t.area==='regress'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 회귀 검증 케이스·회차',ent:'regress',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}},
   report:{list:()=>wbTrash.filter(t=>t.area==='report'),restore:t=>wbRestore(t),coll:'trash',types:WB_TRASH_TYPE,count:()=>0,note:'지운 보고서 카테고리',ent:'report',drop:id=>{wbTrash=wbTrash.filter(x=>x.id!==id);}}};
 let trashOpen=null;
 function trashDraw(){
@@ -4532,7 +4694,7 @@ const HFIELDS={manual:[['title','제목'],['category','분류'],['version','버�
   site:[['title','제목'],['subtitle','설명'],['rmsTemplate','RMS 주소 규칙']],
   report:[]
 };
-const HENT={manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
+const HENT={regress:'회귀 검증',manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
 const HACT={create:['등록','s-done'],update:['수정','s-doing'],delete:['삭제','h-del'],confirm:['확정','s-review'],unconfirm:['확정 해제','s-wait'],restore:['복원','s-review']};
 function hval(f,v){
   if(v===''||v==null)return '';
@@ -4637,10 +4799,12 @@ render();
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
   db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
-  db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals')render();},onErr);
+  db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');trashPurge('regress');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals'||state.mode==='regress')render();},onErr);
   db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_versions').onSnapshot(s=>{manualVers=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();},onErr);
+  db.collection('cvt_cases').onSnapshot(s=>{cvtCases=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='regress')render();},onErr);
+  db.collection('cvt_runs').onSnapshot(s=>{cvtRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='regress')render();},onErr);
   db.collection('evt_trash').onSnapshot(s=>{evtTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!evPurged){evPurged=true;trashPurge('evt');}trashDraw();if(state.mode==='eventops')render();},onErr);
   db.collection('parts').onSnapshot(s=>{
     if(s.docs.length){PARTS=s.docs.map(x=>{const d=x.data();return {k:x.id,label:d.name||'이름 없음',c:d.color||PART_COLORS[4],order:d.order??0};}).sort((a,b)=>a.order-b.order);partsStored=true;}

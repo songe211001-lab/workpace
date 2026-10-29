@@ -837,7 +837,7 @@ a.rms:hover{text-decoration:underline}
 .evTable .evf:hover:not(:disabled){border-color:var(--line)}
 .evTable .evf:focus{outline:none;border-color:var(--accent);background:var(--surface)}
 .evTable input[data-f="name"]{min-width:180px}
-.evTable input[type=date].evf{min-width:128px}
+.evTable .evf.evDate{min-width:96px}
 .evTable .evMiss{background:var(--accent-soft)}
 .evTable .evDup{border-color:var(--bad);color:var(--bad)}
 .evSt{font-weight:700}
@@ -848,6 +848,7 @@ a.rms:hover{text-decoration:underline}
 .evArr .btn:hover:not(:disabled){color:var(--accent-dark);background:var(--accent-soft)}
 .btn .arw{width:15px;height:15px;flex:none}
 .arw{width:15px;height:15px;flex:none;vertical-align:middle;pointer-events:none} /* 아이콘을 눌러도 버튼이 눌린 것으로(id로 고르는 처리 유지) */.chev .arw,.caret .arw,.chevron .arw{width:14px;height:14px}.yHead .arw{width:14px;height:14px}
+.evTable .evf.evDate{min-width:96px;font-variant-numeric:tabular-nums}
 .evId{display:flex;align-items:center;gap:2px}.evId .evf{min-width:90px}
 .evTable tr[draggable="true"]{cursor:grab}
 .evMissBtn{all:unset;cursor:pointer;font:inherit}
@@ -2491,6 +2492,15 @@ function evIdUrl(id){const v=String(id||'').trim();if(EV_LINKS[v])return EV_LINK
 // 확인용ID(DEV) → DEV 상세 주소. 숫자만 넣으면 EV + 10자리로 맞춤
 const evDevId=v=>{v=String(v||'').trim();const q=v.match(/mvnopEvetId=([A-Za-z0-9]+)/);if(q)v=q[1];return /^\d{1,10}$/.test(v)?'EV'+v.padStart(10,'0'):/^EV\d+$/i.test(v)?v.toUpperCase():v;};
 const evDevUrl=v=>{const id=evDevId(v);return /^EV\d+$/.test(id)?`https://dev.uplusmvno.com/benefit/event/detail?mvnopEvetId=${id}`:'';};
+// 시작일·종료일 글자 입력: 2026.10.29 · 26.10.29 · 10.29 · 10/29 · 1029 · 20261029 · 10월 29일 → 2026.10.29
+// 연도를 빼면 그 시트의 연도. 못 읽으면 null
+function evParseDate(v,mkey){v=String(v||'').trim();if(!v)return '';const Y=+(mkey||todayStr()).slice(0,4);let y,m,d,n;
+  const dg=v.replace(/\D/g,''),parts=v.split(/[^\d]+/).filter(Boolean);
+  if(parts.length===1){if(dg.length===8)[y,m,d]=[dg.slice(0,4),dg.slice(4,6),dg.slice(6)];else if(dg.length===6)[y,m,d]=['20'+dg.slice(0,2),dg.slice(2,4),dg.slice(4)];else if(dg.length===4||dg.length===3)[y,m,d]=[Y,dg.slice(0,-2),dg.slice(-2)];else return null;}
+  else if(parts.length===3){[y,m,d]=parts;if(String(y).length===2)y='20'+y;}
+  else if(parts.length===2){[m,d]=parts;y=Y;}else return null;
+  [y,m,d]=[+y,+m,+d];n=new Date(y,m-1,d);if(!y||n.getFullYear()!==y||n.getMonth()!==m-1||n.getDate()!==d)return null;
+  return `${y}.${String(m).padStart(2,'0')}.${String(d).padStart(2,'0')}`;}
 const evIsoToDot=s=>s?s.replaceAll('-','.'):'';
 function evDotToIso(s){const m=String(s||'').trim().match(/^(\d{4})[.\-\/](\d{1,2})[.\-\/](\d{1,2})\.?$/);return m?`${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`:'';}
 const evNextKey=k=>{const [y,m]=k.split('-').map(Number);return m===12?`${y+1}-01`:`${y}-${String(m+1).padStart(2,'0')}`;};
@@ -2520,7 +2530,7 @@ function evCell(r,k){
   if(EV_SEL[k]){const cur=String(r[k]??''),o=['',...EV_SEL[k]];if(cur&&!o.includes(cur))o.push(cur);
     return `<td><select class="evf" data-f="${k}" aria-label="${EV_LABEL[k]}" ${ro}>${o.map(v=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${v?esc(v):'선택'}</option>`).join('')}</select></td>`;}
   const miss=est.missing&&evMissing(r,k)?' evMiss':'';
-  if(k==='dueDate'||k==='reflectStatus')return `<td><input type="date" class="evf${miss}" data-f="${k}" value="${evDotToIso(r[k])}" aria-label="${EV_LABEL[k]}" ${ro}></td>`;
+  if(k==='dueDate'||k==='reflectStatus')return `<td><input class="evf evDate${miss}" data-f="${k}" value="${esc(evParseDate(r[k],evtMonths.find(m=>m.id===r.monthId)?.key)||r[k]||'')}" placeholder="10.29" autocomplete="off" spellcheck="false" aria-label="${EV_LABEL[k]} (예: 10.29, 2026.10.29)" title="10.29 · 1029 · 2026.10.29처럼 입력" ${ro}></td>`;
   if(k==='eid'){const url=evIdUrl(r.eid),dup=evDupOwners(r,r.eid);
     return `<td><div class="evId"><input class="evf${miss}${dup.length?' evDup':''}" data-f="eid" value="${esc(r.eid||'')}" list="evLinkOpts" placeholder="ID…" aria-label="이벤트ID" ${dup.length?`title="${esc('같은 ID가 있어요: '+dup.join(', '))}"`:''} ${ro}><button type="button" class="btn ghost sm evLink" ${url?'':'disabled'} title="운영 페이지로 이동" aria-label="운영 페이지로 이동">↗</button></div></td>`;}
   if(k==='devId'){const url=evDevUrl(r.devId);
@@ -2612,7 +2622,7 @@ async function evPaste(e){
   const lines=text.replace(/\r/g,'').split('\n');if(lines[lines.length-1]==='')lines.pop();
   const skipped=[];let n=0;
   for(let i=0;i<lines.length;i++){
-    const vals={};lines[i].split('\t').forEach((v,j)=>{const k=keys[c0+j];if(!k)return;v=v.trim();if(k==='dueDate'||k==='reflectStatus')v=evIsoToDot(evDotToIso(v))||v;if(k==='devId')v=evDevId(v);vals[k]=v;});
+    const vals={};lines[i].split('\t').forEach((v,j)=>{const k=keys[c0+j];if(!k)return;v=v.trim();if(k==='dueDate'||k==='reflectStatus')v=evParseDate(v,evtMonths.find(m=>m.id===mid)?.key)||v;if(k==='devId')v=evDevId(v);vals[k]=v;});
     let r=rows[start+i];
     if(r&&vals.eid!=null&&evDupOwners(r,vals.eid).length){skipped.push(`${start+i+1}행 '${vals.eid}'`);delete vals.eid;}
     if(r){const before={...r};Object.assign(r,vals);await db.collection('evt_rows').doc(r.id).update({...vals,updatedAt:new Date().toISOString()});n++;}
@@ -2630,7 +2640,8 @@ onArea('#eventOpsArea','change',async e=>{
   if(el.classList.contains('evSel')){const u=el.closest('tr').dataset.uid;el.checked?est.sel.add(u):est.sel.delete(u);render();return;}
   if(!el.classList.contains('evf')||!canWrite)return;
   const r=evRowById(el.closest('tr').dataset.uid);if(!r)return;const f=el.dataset.f;let v=el.value;
-  if(f==='dueDate'||f==='reflectStatus')v=evIsoToDot(v);
+  if(f==='dueDate'||f==='reflectStatus'){const x=evParseDate(v,evtMonths.find(m=>m.id===r.monthId)?.key);
+    if(x===null){toast('날짜를 읽지 못했어요. 10.29 또는 2026.10.29처럼 입력해 주세요.');el.value=r[f]||'';return;}v=x;el.value=x;}
   if(f==='devId'){v=evDevId(v);el.value=v;}
   if(f==='eid'){const d=evDupOwners(r,v);if(d.length){toast(`이미 사용 중인 ID예요: ${d.join(', ')}`);el.value=r.eid||'';return;}}
   try{await evSaveField(r,f,v);}catch(err){handleWriteError(err);}

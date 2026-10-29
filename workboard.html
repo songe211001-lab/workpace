@@ -982,6 +982,15 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .prWho{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
 @media (max-width:900px){.postRow{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"main main" "date st" "who who"}.prMain{grid-area:main}.prDate{grid-area:date}.prWho{grid-area:who}.postRow>.stSel,.postRow>.pill{grid-area:st;justify-self:end}}
 @media (max-width:600px){.ltBar .searchBox{width:100%}}
+/* ---------- 매뉴얼 고정 · 최근 · 내 진행 중 ---------- */
+.mnCardW{position:relative;display:flex;min-width:0}.mnCardW .mnCard{flex:1;padding-right:40px}
+.mnPin{all:unset;cursor:pointer;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;font-size:17px;color:var(--muted);flex:none}
+.mnCardW .mnPin{position:absolute;top:8px;right:8px}
+.mnPin[aria-pressed="true"]{color:#e0a100}.mnPin:hover,.mnPin:focus-visible{background:var(--accent-soft);outline:none}
+.mnSecT{margin:4px 0 0;font-size:13px;font-weight:800;color:var(--ink-soft)}
+.mnRecent{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.mnRecent .chip{cursor:pointer}
+.mnHead h2{display:flex;align-items:center;gap:6px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -2858,6 +2867,19 @@ const mnText=s=>String(s||'').split('\n').map(l=>{const h=esc(l).replace(/https?
 const mnLinks=L=>(L||[]).filter(x=>safeUrl(x.url)).map(x=>`<a class="chip mnLink" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.label)} ↗</a>`).join('');
 const mnFig=u=>safeUrl(u)?`<a class="btn ghost sm" href="${esc(safeUrl(u))}" target="_blank" rel="noopener">피그마에서 보기 ↗</a>`:'';
 
+// 자주 보는 매뉴얼(고정): 내 구성원 문서 manualPins(사람마다 따로, 기기 상관없이). 구성원 연결이 없으면 이 브라우저에만
+// 최근 본 매뉴얼 5개: 이 브라우저에만
+const mnLS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k)||'[]');localStorage.setItem(k,JSON.stringify(v));}catch(e){return [];}};
+const mnPins=()=>(myMember()?.manualPins||mnLS('wb-mnpins')).filter(id=>manuals.some(m=>m.id===id));
+async function mnTogglePin(id){const me=myMember(),cur=me?.manualPins||mnLS('wb-mnpins'),next=cur.includes(id)?cur.filter(x=>x!==id):[...cur,id];
+  if(me){me.manualPins=next;render();try{await db.collection('members').doc(me.id).update({manualPins:next});}catch(err){handleWriteError(err);}}else{mnLS('wb-mnpins',next);render();}
+  toast(cur.includes(id)?'고정을 풀었어요.':'자주 보는 매뉴얼로 고정했어요.');}
+const mnRecent=()=>mnLS('wb-mnrecent').filter(id=>manuals.some(m=>m.id===id));
+const mnSeen=id=>mnLS('wb-mnrecent',[id,...mnLS('wb-mnrecent').filter(x=>x!==id)].slice(0,5));
+// 내가 진행 중: 내가 시작했거나, 내 업무에 연결된 진행 건
+const mnMyRuns=()=>{const me=myMember();if(!me)return [];return manualRuns.filter(r=>!r.closedAt&&manuals.some(m=>m.id===r.manualId)&&(r.by===me.name||(r.taskId&&isMine(tasks.find(t=>t.id===r.taskId)||{})))).sort((a,b)=>(b.startedAt||'').localeCompare(a.startedAt||''));};
+const mnPinBtn=(id,on)=>`<button type="button" class="mnPin" data-mpin="${esc(id)}" aria-pressed="${on}" aria-label="${on?'고정 풀기':'자주 보는 매뉴얼로 고정'}" title="${on?'고정 풀기':'고정'}">${on?'★':'☆'}</button>`;
+const mnCardHtml=(m,pins)=>`<div class="mnCardW"><button type="button" class="mnCard" data-mopen="${esc(m.id)}"><span class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}</span></span><b>${esc(m.title||'(제목 없음)')}</b>${m.summary?`<span class="legend mnSum">${esc(m.summary)}</span>`:''}<span class="legend">단계 ${(m.steps||[]).length}개 · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}${mnRunsOf(m.id).length?` · <span class="mnCardRun">진행 중 ${mnRunsOf(m.id).length}건</span>`:''}</span></button>${mnPinBtn(m.id,pins.includes(m.id))}</div>`;
 function renderManuals(){
   const area=$('#manualsArea');
   if(area.contains(document.activeElement)&&document.activeElement.matches('input,textarea'))return; // 입력 중엔 다시 그리지 않음
@@ -2875,8 +2897,13 @@ function renderManuals(){
       (m.steps||[]).forEach((s,i)=>{const f=[s.title,s.body,...(s.table||[]).flatMap(r=>[r.label,r.rule]),...(s.checks||[])].find(has);if(f!=null)H.push({m,s,i,t:snip(f)});});});
     body=`<div class="panel mnHits"><h3>검색 결과 <span class="legend">${H.length}건</span></h3>${H.length?H.map(h=>`<button type="button" class="mnHit" data-mopen="${esc(h.m.id)}"${h.s?` data-mstep="${esc(h.s.id)}"`:''}><b>${esc(h.m.title)}${h.s?` · ${h.i+1}. ${esc(h.s.title)}`:''}</b><span class="legend">${esc(h.t)}</span></button>`).join(''):'<p class="legend" style="margin:0">찾는 내용이 없어요.</p>'}</div>`;}
   else{const L=manuals.filter(m=>mnst.cat==='전체'||m.category===mnst.cat).sort((a,b)=>(b.updatedAt||'').localeCompare(a.updatedAt||''));
-    body=`<div class="chips evChips">${['전체',...cats].map(c=>`<button type="button" class="chip" data-mcat="${esc(c)}" aria-pressed="${mnst.cat===c}">${esc(c)} <span class="num">${c==='전체'?manuals.length:manuals.filter(m=>m.category===c).length}</span></button>`).join('')}</div>
-      ${L.length?`<div class="mnCards">${L.map(m=>`<button type="button" class="mnCard" data-mopen="${esc(m.id)}"><span class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}</span></span><b>${esc(m.title||'(제목 없음)')}</b>${m.summary?`<span class="legend mnSum">${esc(m.summary)}</span>`:''}<span class="legend">단계 ${(m.steps||[]).length}개 · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}${mnRunsOf(m.id).length?` · <span class="mnCardRun">진행 중 ${mnRunsOf(m.id).length}건</span>`:''}</span></button>`).join('')}</div>`
+    const pins=mnPins(),rec=mnRecent(),my=mnMyRuns(),byId=id=>manuals.find(m=>m.id===id);
+    body=`${pins.length?`<h4 class="mnSecT">★ 고정</h4><div class="mnCards">${pins.map(id=>mnCardHtml(byId(id),pins)).join('')}</div>`:''}
+      ${rec.length?`<div class="mnRecent"><span class="mnSecT">최근 본</span>${rec.map(id=>`<button type="button" class="chip" data-mopen="${esc(id)}">${esc(byId(id).title||'(제목 없음)')}</button>`).join('')}</div>`:''}
+      ${my.length?`<h4 class="mnSecT">내가 진행 중 <span class="legend">${my.length}건</span></h4><div class="mnRuns">${my.map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)} <span class="legend">${esc(byId(r.manualId).title)}</span></b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
+      ${pins.length||rec.length||my.length?'<h4 class="mnSecT">전체 매뉴얼</h4>':''}
+      <div class="chips evChips">${['전체',...cats].map(c=>`<button type="button" class="chip" data-mcat="${esc(c)}" aria-pressed="${mnst.cat===c}">${esc(c)} <span class="num">${c==='전체'?manuals.length:manuals.filter(m=>m.category===c).length}</span></button>`).join('')}</div>
+      ${L.length?`<div class="mnCards">${L.map(m=>mnCardHtml(m,pins)).join('')}</div>`
         :`<div class="empty"><h2>${manuals.length?'이 분류에 매뉴얼이 없어요':'아직 등록된 매뉴얼이 없어요'}</h2><p>${canWrite?"'+ 매뉴얼 등록'에서 템플릿(운영 업무 프로세스 · 이벤트 등록)으로 시작해 보세요.":'등록된 매뉴얼이 생기면 여기에 보여요.'}</p></div>`}`;}
   area.innerHTML=`<div class="rtool">${tools}</div>${body}`;
 }
@@ -2886,7 +2913,7 @@ const mnStepView=(s,i)=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data
       ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
       ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
 function mnDetail(area){
-  const m=mnCur(),ed=mnst.edit&&canWrite,vers=manualVers.filter(v=>v.manualId===m.id),steps=m.steps||[];
+  mnSeen(mnst.id);const m=mnCur(),ed=mnst.edit&&canWrite,vers=manualVers.filter(v=>v.manualId===m.id),steps=m.steps||[];
   const tools=`<button class="btn ghost" type="button" id="mnBack">← 목록</button><span class="spacer"></span><span class="legend" id="mnSaveSt" aria-live="polite"></span>
     ${canWrite?(ed?'<button class="btn primary" type="button" id="mnEditEnd">편집 끝내기</button>':'<button class="btn primary" type="button" id="mnRunStart">진행 시작</button><button class="btn" type="button" id="mnEdit">편집</button><button class="btn" type="button" id="mnVerUp">버전 올리기</button>'):''}
     <button class="btn" type="button" id="mnVers">이전 버전${vers.length?` <span class="num">${vers.length}</span>`:''}</button>${canWrite&&!ed?'<button class="btn ghost" type="button" id="mnDel">삭제</button>':''}`;
@@ -2898,7 +2925,7 @@ function mnDetail(area){
       <div class="mnFld">연결할 화면 <span class="legend">고른 화면의 '매뉴얼' 버튼에서 이 매뉴얼이 열려요</span><div class="mnLinkTo">${MN_LINKS().map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-mlink="${k}" ${(m.linkTo||[]).includes(k)?'checked':''}>${esc(l)}</label>`).join('')}</div></div>
       <datalist id="mnCatList">${mnCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></section>`
     :`<section class="panel mnHead"><div class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')} · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${mnFig(m.figmaUrl)}</div>
-      <h2>${esc(m.title||'(제목 없음)')}</h2>${m.summary?`<p class="legend" style="margin:0">${esc(m.summary)}</p>`:''}${(m.links||[]).length?`<div class="mnLinks">${mnLinks(m.links)}</div>`:''}
+      <h2>${esc(m.title||'(제목 없음)')}${mnPinBtn(m.id,mnPins().includes(m.id))}</h2>${m.summary?`<p class="legend" style="margin:0">${esc(m.summary)}</p>`:''}${(m.links||[]).length?`<div class="mnLinks">${mnLinks(m.links)}</div>`:''}
       ${(m.linkTo||[]).length?`<span class="legend">연결된 화면: ${esc(MN_LINKS().filter(([k])=>m.linkTo.includes(k)).map(([,l])=>l).join(', '))}</span>`:''}
       ${mnRunsOf(m.id).length?`<div class="mnRuns"><span class="mnLab">진행 중 ${mnRunsOf(m.id).length}건</span>${mnRunsOf(m.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}</section>`;
   const card=(s,i)=>ed?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
@@ -2991,6 +3018,7 @@ onArea('#manualsArea','input',e=>{const el=e.target;
 onArea('#manualsArea','focusout',e=>{if(e.target.matches?.('input,textarea')&&e.target.id!=='mnQ')setTimeout(()=>{if(!$('#manualsArea').contains(document.activeElement)||!document.activeElement.matches('input,textarea'))render();},0);});
 onArea('#manualsArea','click',async e=>{
   const b=e.target.closest('button,[data-mopen]');if(!b)return;const id=b.id;
+  if(b.dataset.mpin){mnTogglePin(b.dataset.mpin);return;}
   if(b.dataset.mopen){mnOpen(b.dataset.mopen,b.dataset.mstep);return;}
   if(b.dataset.mcat!=null){mnst.cat=b.dataset.mcat;render();return;}
   if(b.dataset.mgo){mnFlash(b.dataset.mgo);return;}

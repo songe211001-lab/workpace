@@ -2532,8 +2532,8 @@ async function evSaveField(r,f,v){
   await db.collection('evt_rows').doc(r.id).update({[f]:v,updatedAt:new Date().toISOString()});
   logChange('evt','update',r.id,r.name||'(이벤트명 없음)',before,{...r});
 }
-async function evAddRows(mid,list){ // list: [{...fields}] → 맨 뒤에 추가
-  let so=Math.max(-1,...evRowsOf(mid).map(r=>+r.sortOrder||0));
+async function evAddRows(mid,list,top){ // list: [{...fields}] → 맨 뒤에 추가(top이면 맨 위에)
+  const os=evRowsOf(mid).map(r=>+r.sortOrder||0);let so=top?Math.min(1,...os)-list.length-1:Math.max(-1,...os);
   for(const d of list){const id=evUid(),doc={monthId:mid,kind:'event',sortOrder:++so,status:'대기',name:'',workType:'',category:'',dueDate:'',reflectStatus:'',source:'',reviewUrl:'',urlType:'',opUrl:'',note:'',eid:'',...d,updatedAt:new Date().toISOString()};
     await db.collection('evt_rows').doc(id).set(doc);evKeep(evtRowsAll,{id,...doc});}
 }
@@ -2599,7 +2599,7 @@ onArea('#eventOpsArea','click',async e=>{
   try{
     if(id==='evFirst'||id==='evAddMonth'){await evNewMonth();return;}
     const mo=evMonthList().find(m=>m.key===est.month);
-    if(id==='evAddRow'){await evAddRows(mo.id,[{}]);logChange('evt','create',mo.id,`${mo.label} 이벤트 행`,null,null,'행 추가');render();return;}
+    if(id==='evAddRow'){await evAddRows(mo.id,[{}],true);logChange('evt','create',mo.id,`${mo.label} 이벤트 행`,null,null,'행 추가');render();return;}
     const bk=e.target.closest('[data-bulk]');
     if(bk){const s=bk.dataset.bulk,ids=[...est.sel];for(const u of ids){const r=evRowById(u);if(r&&r.status!==s){r.status=s;await db.collection('evt_rows').doc(u).update({status:s});}}
       logChange('evt','update',mo.id,`${mo.label} 이벤트`,null,null,`${ids.length}건 상태를 '${s}'로 일괄 변경`);est.sel.clear();render();toast(`${ids.length}건을 '${s}' 상태로 바꿨어요.`);return;}

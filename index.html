@@ -1034,6 +1034,15 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .mnRecent{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .mnRecent .chip{cursor:pointer}
 .mnHead h2{display:flex;align-items:center;gap:6px}
+/* ---------- 매뉴얼 단계만 편집 · 끌기 ---------- */
+.mnGrip{cursor:grab;color:var(--muted);padding:0 4px;font-size:14px;letter-spacing:-2px;user-select:none}
+.mnGrip:active{cursor:grabbing}
+.mnStep.mnDrop,.mnTocBtn.mnDrop{outline:2px dashed var(--accent);outline-offset:2px}
+.mnHeadTools{display:flex;gap:6px;align-items:center}
+.mnAddRow{display:flex;gap:8px;flex-wrap:wrap}
+.miList{display:flex;flex-direction:column;gap:4px;max-height:50vh;overflow:auto}
+.miItem{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 8px;border:1px solid var(--line);border-radius:var(--r);font-size:13px;cursor:pointer}
+.miItem>span:first-of-type{flex:1 1 200px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -3196,7 +3205,7 @@ const bfToState=()=>bfMonthList().map(b=>({_uid:b.id.slice(8),label:b.label,item
    manual_versions 문서 {manualId, version, note, at, by, snapshot} — '버전 올리기' 때 올리기 전 내용을 그대로 보관
    편집 중에는 사본(mnDraft)을 고치고 1초 뒤 통째로 저장(같은 매뉴얼을 두 사람이 동시에 고치면 나중 저장이 남음) */
 let manuals=[],manualVers=[];
-const mnst={id:null,run:null,edit:false,cat:'전체',q:''};
+const mnst={id:null,run:null,edit:false,step:null,cat:'전체',q:''};
 let mnDraft=null,mnTimer=null,mnForce=false;
 const mnUid=()=>'s'+Math.random().toString(36).slice(2,9);
 const MN_BOARD='https://www.figma.com/board/ZU6nQA9PHPC35cAeAmK08t/?node-id=',MN_DECK='https://www.figma.com/deck/OPll03c39SAoDJx3wPgaPe';
@@ -3262,7 +3271,7 @@ Object.assign(MN_TPL,{
   image:{title:'이미지 경로 생성 매뉴얼',category:'이벤트 운영',summary:'',figmaUrl:MN_BOARD+'2086-2530',links:[],steps:[
     {title:'(BO) 이미지 경로 생성',body:'이미지 관리 목록에서 등록하고, 상세의 이미지 경로를 복사해 써요. (혜택 상세 HTML 등)',figmaUrl:MN_BOARD+'2094-722',table:mnRows([['구분','PC / MO'],['이미지','이미지 등록 (이미지 파일 첨부)'],['이미지 대체 텍스트','이벤트 명 혹은 대표 타이틀 입력'],['이미지경로','선택 시, 복사 가능']])}]}});
 const mnStepOf=s=>({id:mnUid(),title:s.title||'',body:s.body||'',table:(s.table||[]).map(r=>({...r})),checks:[...(s.checks||[])],links:(s.links||[]).map(l=>({...l})),figmaUrl:s.figmaUrl||''});
-const mnCur=()=>mnst.edit&&mnDraft&&mnDraft.id===mnst.id?mnDraft:manuals.find(m=>m.id===mnst.id);
+const mnCur=()=>(mnst.edit||mnst.step)&&mnDraft&&mnDraft.id===mnst.id?mnDraft:manuals.find(m=>m.id===mnst.id);
 const mnCats=()=>[...new Set(manuals.map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 const mnNextVer=v=>{const [a,b]=String(v||'1.0').split('.').map(Number);return `${a||1}.${(b||0)+1}`;};
 const mnFmt=s=>s?fmtDT(s):'';
@@ -3314,30 +3323,30 @@ function renderManuals(){
         :`<div class="empty"><h2>${manuals.length?'이 분류에 매뉴얼이 없어요':'아직 등록된 매뉴얼이 없어요'}</h2><p>${canWrite?"'+ 매뉴얼 등록'에서 템플릿(운영 업무 프로세스 · 이벤트 등록)으로 시작해 보세요.":'등록된 매뉴얼이 생기면 여기에 보여요.'}</p></div>`}`;}
   area.innerHTML=`<div class="rtool">${tools}</div>${body}`;
 }
-const mnStepView=(s,i)=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}"><div class="mnStepHead"><span class="mnNo">${i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}</div>
+const mnStepView=(s,i,tl='')=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}"><div class="mnStepHead"><span class="mnNo">${i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}${tl}</div>
       ${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}
       ${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><thead><tr><th>항목</th><th>입력 기준</th></tr></thead><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label||'')}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}
       ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
       ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
 function mnDetail(area){
-  mnSeen(mnst.id);const m=mnCur(),ed=mnst.edit&&canWrite,vers=manualVers.filter(v=>v.manualId===m.id),steps=m.steps||[];
+  mnSeen(mnst.id);const m=mnCur(),ed=mnst.edit&&canWrite,hed=ed||(mnst.step==='__head'&&canWrite),vers=manualVers.filter(v=>v.manualId===m.id),steps=m.steps||[];
   const tools=`<button class="btn ghost" type="button" id="mnBack">← 목록</button><span class="spacer"></span><span class="legend" id="mnSaveSt" aria-live="polite"></span>
     ${canWrite?(ed?'<button class="btn primary" type="button" id="mnEditEnd">편집 끝내기</button>':'<button class="btn primary" type="button" id="mnRunStart">진행 시작</button><button class="btn" type="button" id="mnEdit">편집</button><button class="btn" type="button" id="mnVerUp">버전 올리기</button>'):''}
     <button class="btn" type="button" id="mnVers">이전 버전${vers.length?` <span class="num">${vers.length}</span>`:''}</button>${canWrite&&!ed?'<button class="btn ghost" type="button" id="mnDel">삭제</button>':''}`;
-  const toc=`<nav class="mnToc panel" aria-label="단계 목차"><b>${esc(m.title||'(제목 없음)')}</b><ol>${steps.map((s,i)=>`<li><button type="button" class="mnTocBtn" data-mgo="${esc(s.id)}">${i+1}. ${esc(s.title||'(제목 없음)')}</button></li>`).join('')}</ol></nav>`;
-  const head=ed?`<section class="panel mnHead mnEd"><label>제목<input class="sel" data-mf="title" value="${esc(m.title||'')}" maxlength="80"></label>
+  const toc=`<nav class="mnToc panel" aria-label="단계 목차"><b>${esc(m.title||'(제목 없음)')}</b><ol>${steps.map((s,i)=>`<li><button type="button" class="mnTocBtn" data-mgo="${esc(s.id)}" ${canWrite?'draggable="true"':''}>${i+1}. ${esc(s.title||'(제목 없음)')}</button></li>`).join('')}</ol></nav>`;
+  const head=hed?`<section class="panel mnHead mnEd">${ed?'':'<div class="mnHeadTools"><span class="mnLab">매뉴얼 정보 편집</span><span class="spacer"></span><button type="button" class="btn primary sm" data-sdone>완료</button></div>'}<label>제목<input class="sel" data-mf="title" value="${esc(m.title||'')}" maxlength="80"></label>
       <div class="mnTwo"><label>분류<input class="sel" data-mf="category" value="${esc(m.category||'')}" list="mnCatList" maxlength="30"></label><label>피그마 주소<input class="sel" data-mf="figmaUrl" value="${esc(m.figmaUrl||'')}" placeholder="https://www.figma.com/…" spellcheck="false"></label></div>
       <label>요약<input class="sel" data-mf="summary" value="${esc(m.summary||'')}" maxlength="200"></label>
       <label>관련 링크 <span class="legend">한 줄에 하나 · 이름 | 주소</span><textarea class="sel" data-mf="links" rows="2" spellcheck="false">${esc(mnLinksText(m.links))}</textarea></label>
       <div class="mnFld">연결할 화면 <span class="legend">고른 화면의 '매뉴얼' 버튼에서 이 매뉴얼이 열려요</span><div class="mnLinkTo">${MN_LINKS().map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-mlink="${k}" ${(m.linkTo||[]).includes(k)?'checked':''}>${esc(l)}</label>`).join('')}</div></div>
       <datalist id="mnCatList">${mnCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></section>`
-    :`<section class="panel mnHead"><div class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')} · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${mnFig(m.figmaUrl)}</div>
+    :`<section class="panel mnHead"><div class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')} · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${mnFig(m.figmaUrl)}${canWrite?'<button type="button" class="btn ghost sm" data-hedit aria-label="매뉴얼 정보 편집">✎ 편집</button>':''}</div>
       <h2>${esc(m.title||'(제목 없음)')}${mnPinBtn(m.id,mnPins().includes(m.id))}</h2>${m.summary?`<p class="legend" style="margin:0">${esc(m.summary)}</p>`:''}${(m.links||[]).length?`<div class="mnLinks">${mnLinks(m.links)}</div>`:''}
       ${(m.linkTo||[]).length?`<span class="legend">연결된 화면: ${esc(MN_LINKS().filter(([k])=>m.linkTo.includes(k)).map(([,l])=>l).join(', '))}</span>`:''}
       ${mnRunsOf(m.id).length?`<div class="mnRuns"><span class="mnLab">진행 중 ${mnRunsOf(m.id).length}건</span>${mnRunsOf(m.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}</section>`;
-  const card=(s,i)=>ed?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
+  const card=(s,i)=>(ed||(canWrite&&mnst.step===s.id))?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
       <div class="mnStepHead"><span class="mnNo">${i+1}</span><input class="sel" data-sf="title" value="${esc(s.title||'')}" placeholder="단계 제목" aria-label="단계 제목" maxlength="80">
-        <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-sdel>삭제</button></div>
+        <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-sdel>삭제</button>${mnStepTools(s,i,true)}</div>
       <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span><textarea class="sel" data-sf="body" rows="${Math.min(14,Math.max(3,String(s.body||'').split('\n').length+1))}">${esc(s.body||'')}</textarea></label>
       <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표를 복사해 칸에 붙여넣으면 행이 생겨요</span></span>
         ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></div>`).join('')}
@@ -3345,8 +3354,8 @@ function mnDetail(area){
       <div class="mnTwo"><label>체크 항목 <span class="legend">한 줄에 하나</span><textarea class="sel" data-sf="checks" rows="3">${esc((s.checks||[]).join('\n'))}</textarea></label>
         <label>링크 <span class="legend">한 줄에 하나 · 이름 | 주소</span><textarea class="sel" data-sf="links" rows="3" spellcheck="false">${esc(mnLinksText(s.links))}</textarea></label></div>
       <label>피그마 프레임 주소<input class="sel" data-sf="figmaUrl" value="${esc(s.figmaUrl||'')}" placeholder="https://www.figma.com/…?node-id=…" spellcheck="false"></label></section>`
-    :mnStepView(s,i);
-  area.innerHTML=`<div class="rtool">${tools}</div><div class="mnGrid">${toc}<div class="mnMain">${head}${steps.map(card).join('')||'<div class="empty"><h2>단계가 없어요</h2></div>'}${ed?'<button class="btn" type="button" id="mnStepAdd">+ 단계 추가</button>':''}</div></div>`;
+    :mnStepView(s,i,mnStepTools(s,i,false));
+  area.innerHTML=`<div class="rtool">${tools}</div><div class="mnGrid">${toc}<div class="mnMain">${head}${steps.map(card).join('')||'<div class="empty"><h2>단계가 없어요</h2></div>'}${canWrite?'<div class="mnAddRow"><button class="btn" type="button" id="mnStepAdd">+ 단계 추가</button><button class="btn ghost" type="button" id="mnImport">다른 매뉴얼에서 가져오기</button></div>':''}</div></div>`;
   if(mnTimer)$('#mnSaveSt').textContent='저장 중…';
 }
 // 저장: 편집 사본을 통째로(1초 뒤). 단계 추가·삭제·순서는 바로
@@ -3354,7 +3363,7 @@ function mnQueue(now){clearTimeout(mnTimer);const st=$('#mnSaveSt');if(st)st.tex
 async function mnSave(){clearTimeout(mnTimer);mnTimer=null;const d=mnDraft;if(!d)return;
   const {id,...data}=d;try{await db.collection('manuals').doc(id).update({...data,updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''});const st=$('#mnSaveSt');if(st)st.textContent=`저장됨 ${new Date().toTimeString().slice(0,5)}`;}
   catch(err){handleWriteError(err);}}
-function mnOpen(id,step){mnst.id=id;mnst.edit=false;mnDraft=null;document.activeElement?.blur();mnForce=true;render();window.scrollTo(0,0);if(step)mnFlash(step);}
+function mnOpen(id,step){if(mnDraft&&(mnst.step||mnst.edit))mnSave();mnst.id=id;mnst.edit=false;mnst.step=null;mnDraft=null;document.activeElement?.blur();mnForce=true;render();window.scrollTo(0,0);if(step)mnFlash(step);}
 function mnFlash(sid){const el=document.getElementById('mn-'+sid);if(!el)return;el.scrollIntoView({block:'start'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
 function mnNewModal(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>매뉴얼 등록</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
@@ -3430,23 +3439,68 @@ onArea('#manualsArea','click',async e=>{
   if(b.dataset.mcat!=null){mnst.cat=b.dataset.mcat;render();return;}
   if(b.dataset.mgo){mnFlash(b.dataset.mgo);return;}
   if(id==='mnTrashBtn'){openTrash('manual');return;}
-  if(id==='mnBack'){if(mnDraft)await mnSave();mnst.id=null;mnst.run=null;mnst.edit=false;mnDraft=null;render();return;}
+  if(id==='mnBack'){if(mnDraft)await mnSave();mnst.step=null;mnst.id=null;mnst.run=null;mnst.edit=false;mnDraft=null;render();return;}
   if(id==='mnVers'){mnVersModal();return;}
   if(!canWrite)return;
   if(id==='mnNew'){mnNewModal();return;}
   const m=mnCur();if(!m)return;
-  if(id==='mnEdit'){mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(m));render();return;}
+  if(id==='mnEdit'){if(mnst.step&&mnDraft)await mnSave();mnst.step=null;mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(manuals.find(x=>x.id===mnst.id)));render();return;}
   if(id==='mnEditEnd'){await mnSave();logChange('manual','update',m.id,m.title,null,null,'내용 수정');mnst.edit=false;mnDraft=null;render();toast('저장했어요.');return;}
   if(id==='mnVerUp'){mnVerUpModal();return;}
   if(id==='mnDel'){const V=manualVers.filter(v=>v.manualId===m.id);evConfirm(`'${m.title}' 매뉴얼을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('manual','manual',`매뉴얼 · ${m.title}`,[wbDocOf('manuals',m),...V.map(v=>wbDocOf('manual_versions',v)),...manualRuns.filter(r=>r.manualId===m.id).map(r=>wbDocOf('manual_runs',r))]);manuals=manuals.filter(x=>x.id!==m.id);logChange('manual','delete',m.id,m.title,null,null,'휴지통으로 옮김');mnst.id=null;render();});return;}
+  if(b.dataset.hedit!=null){mnStepOpen('__head');return;}
+  if(b.dataset.sdone!=null){mnStepClose();return;}
+  if(id==='mnImport'){mnImportModal();return;}
+  if(b.dataset.sedit!=null||b.dataset.sdup!=null){const sid=b.closest('[data-sid]')?.dataset.sid;if(!sid)return;
+    if(b.dataset.sedit!=null){mnStepOpen(sid);return;}
+    await mnApply(d=>{const i=d.steps.findIndex(x=>x.id===sid);if(i<0)return;const c=mnStepOf({...d.steps[i],title:(d.steps[i].title||'')+' (복사)'});d.steps.splice(i+1,0,c);});toast('단계를 복제했어요.');return;}
+  if(id==='mnStepAdd'){if(mnst.step&&mnDraft)await mnSave();if(!mnDraft)mnDraft=JSON.parse(JSON.stringify(manuals.find(x=>x.id===mnst.id)));const s=mnStepOf({title:''});mnDraft.steps.push(s);if(!mnst.edit)mnst.step=s.id;mnQueue(true);render();document.querySelector(`#mn-${s.id} [data-sf=title]`)?.focus();return;}
   if(!mnDraft)return;
-  if(id==='mnStepAdd'){const s=mnStepOf({title:''});mnDraft.steps.push(s);mnQueue(true);render();document.querySelector(`#mn-${s.id} [data-sf=title]`)?.focus();return;}
   const sec=b.closest('[data-sid]'),s=sec&&mnDraft.steps.find(x=>x.id===sec.dataset.sid);if(!s)return;const i=mnDraft.steps.indexOf(s);
   if(b.dataset.smv){const j=i+ +b.dataset.smv;if(j<0||j>=mnDraft.steps.length)return;[mnDraft.steps[i],mnDraft.steps[j]]=[mnDraft.steps[j],mnDraft.steps[i]];mnQueue(true);render();mnFlash(s.id);return;}
-  if(b.dataset.sdel!=null){if(!b.dataset.ok){b.dataset.ok='1';b.textContent='한 번 더 누르면 삭제';return;}mnDraft.steps.splice(i,1);mnQueue(true);render();toast('단계를 지웠어요.');return;}
+  if(b.dataset.sdel!=null){if(!b.dataset.ok){b.dataset.ok='1';b.textContent='한 번 더 누르면 삭제';return;}mnDraft.steps.splice(i,1);if(mnst.step===s.id){await mnSave();mnst.step=null;if(!mnst.edit)mnDraft=null;}else mnQueue(true);render();toast('단계를 지웠어요.');return;}
   if(b.dataset.radd!=null){s.table.push({label:'',rule:''});mnQueue(true);render();const rows=document.querySelectorAll(`#mn-${s.id} [data-row]`);rows[rows.length-1]?.querySelector('input')?.focus();return;}
   if(b.dataset.rdel!=null){s.table.splice(+b.closest('[data-row]').dataset.row,1);mnQueue(true);render();return;}
 });
+
+/* ----- 매뉴얼 편집 편하게: 단계만 바로 편집(mnst.step) · 끌어서 순서 · 단계 복제 · 다른 매뉴얼에서 단계 가져오기 ----- */
+// 편집 사본이 있으면 거기에, 없으면 바로 저장(단계 순서·구성만 바뀜). 진행 중 체크는 단계 id 기준이라 그대로 남음
+async function mnApply(fn){const m=mnCur();if(!m)return;
+  if(mnDraft){fn(mnDraft);mnQueue(true);render();return;}
+  const d=JSON.parse(JSON.stringify(m));fn(d);m.steps=d.steps;render();
+  try{await db.collection('manuals').doc(m.id).update({steps:d.steps,updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''});logChange('manual','update',m.id,m.title,null,null,'단계 순서·구성 변경');}
+  catch(err){handleWriteError(err);}}
+async function mnStepOpen(sid){const m=mnCur();if(!m)return;
+  if(mnst.step&&mnDraft)await mnSave();
+  if(!mnDraft)mnDraft=JSON.parse(JSON.stringify(manuals.find(x=>x.id===mnst.id)));
+  mnst.step=sid;render();
+  const box=sid==='__head'?document.querySelector('#manualsArea .mnHead'):document.getElementById('mn-'+sid);box?.querySelector('input,textarea')?.focus();}
+async function mnStepClose(){if(!mnst.step)return;const m=mnCur();await mnSave();if(m)logChange('manual','update',m.id,m.title,null,null,'단계 수정');
+  const sid=mnst.step;mnst.step=null;if(!mnst.edit)mnDraft=null;document.activeElement?.blur();render();if(sid!=='__head')mnFlash(sid);}
+const mnStepTools=(s,i,editing)=>canWrite?`<span class="mnGrip" draggable="true" data-sgrip title="끌어서 순서 바꾸기" aria-hidden="true">⋮⋮</span><button type="button" class="btn ghost sm" data-sdup title="바로 아래에 복사본을 만들어요">복제</button>${editing?(mnst.edit?'':'<button type="button" class="btn primary sm" data-sdone>완료</button>'):'<button type="button" class="btn ghost sm" data-sedit aria-label="이 단계만 편집">✎ 편집</button>'}`:'';
+// 다른 매뉴얼에서 단계 가져오기(복사, 새 id)
+function mnImportModal(){const cur=mnCur(),L=manuals.filter(m=>m.id!==cur.id&&(m.steps||[]).length);
+  if(!L.length){toast('가져올 단계가 있는 다른 매뉴얼이 없어요.');return;}
+  const has=new Set((cur.steps||[]).map(s=>String(s.title||'').trim()));
+  const draw=mid=>{const m=L.find(x=>x.id===mid)||L[0];
+    $('#miList').innerHTML=(m.steps||[]).map((s,i)=>`<label class="miItem"><input type="checkbox" value="${esc(s.id)}"><span>${i+1}. ${esc(s.title||'(제목 없음)')}</span>${has.has(String(s.title||'').trim())?'<span class="lateTag mnChanged">이미 있음</span>':''}<span class="legend">${(s.table||[]).length?`표 ${s.table.length}행 `:''}${(s.checks||[]).length?`체크 ${s.checks.length}`:''}</span></label>`).join('');};
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:520px"><header><h2>다른 매뉴얼에서 단계 가져오기</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><label class="mnFld">매뉴얼<select class="sel" id="miMan">${L.map(m=>`<option value="${esc(m.id)}">${esc(m.title)}</option>`).join('')}</select></label>
+      <div class="miList" id="miList"></div><p class="legend" style="margin:0">고른 단계는 복사돼서 이 매뉴얼 맨 끝에 붙어요. 원래 매뉴얼은 그대로예요.</p></div>
+    <footer><span class="err" id="miErr"></span><div class="r"><button class="btn" type="button" id="miNo">취소</button><button class="btn primary" type="button" id="miYes">가져오기</button></div></footer></div></div>`;
+  $('#xClose').onclick=$('#miNo').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  draw(L[0].id);$('#miMan').onchange=e=>draw(e.target.value);
+  $('#miYes').onclick=async()=>{const m=L.find(x=>x.id===$('#miMan').value),ids=[...document.querySelectorAll('#miList input:checked')].map(x=>x.value);
+    if(!ids.length){$('#miErr').textContent='가져올 단계를 골라 주세요.';return;}
+    const picked=m.steps.filter(s=>ids.includes(s.id)).map(mnStepOf);closeModal();await mnApply(d=>{d.steps.push(...picked);});toast(`단계 ${picked.length}개를 가져왔어요.`);mnFlash(picked[0].id);};
+}
+let mnDragSid=null;
+onArea('#manualsArea','dragstart',e=>{const g=e.target.closest?.('[data-sgrip],.mnTocBtn[draggable="true"]');if(!g||!canWrite)return;mnDragSid=g.closest('[data-sid]')?.dataset.sid||g.dataset.mgo;e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',mnDragSid);});
+onArea('#manualsArea','dragover',e=>{if(!mnDragSid)return;const t=e.target.closest?.('.mnStep[data-sid],.mnTocBtn[data-mgo]');if(!t)return;e.preventDefault();document.querySelectorAll('.mnDrop').forEach(x=>x!==t&&x.classList.remove('mnDrop'));t.classList.add('mnDrop');});
+onArea('#manualsArea','drop',e=>{const t=e.target.closest?.('.mnStep[data-sid],.mnTocBtn[data-mgo]');if(!mnDragSid||!t)return;e.preventDefault();const from=mnDragSid,to=t.dataset.sid||t.dataset.mgo;mnDragSid=null;document.querySelectorAll('.mnDrop').forEach(x=>x.classList.remove('mnDrop'));if(from===to)return;
+  mnApply(d=>{const i=d.steps.findIndex(s=>s.id===from),j=d.steps.findIndex(s=>s.id===to);if(i<0||j<0)return;const [s]=d.steps.splice(i,1);d.steps.splice(j,0,s);}).then(()=>mnFlash(from));});
+onArea('#manualsArea','dragend',()=>{mnDragSid=null;document.querySelectorAll('.mnDrop').forEach(x=>x.classList.remove('mnDrop'));});
+onArea('#manualsArea','keydown',e=>{if(e.key==='Escape'&&mnst.step){e.preventDefault();mnStepClose();}});
 
 /* ---------- 매뉴얼 관리 2단계: 체크리스트로 진행 · 이벤트 운영 패널 · 업무 연결 ----------
    manual_runs 문서 {manualId, manualVersion, title, startedAt, by, done:{'<단계 id>:<체크 번호>' 또는 '<단계 id>:s': {at, by}}, taskId, closedAt}
@@ -3510,7 +3564,7 @@ function mnPanel(){
     <div class="mnPBody">${!sel?`<div class="empty"><h2>이 탭에 연결된 매뉴얼이 없어요</h2><p>매뉴얼 관리에서 매뉴얼을 편집할 때 '연결할 화면'에서 '${esc(tab)}'를 골라 주세요.</p></div>`
       :`${L.length>1?`<div class="chips">${L.map(m=>`<button type="button" class="chip" data-psel="${esc(m.id)}" aria-pressed="${m.id===sel.id}">${esc(m.title)}</button>`).join('')}</div>`:''}
       <h2 class="mnPTitle">${esc(sel.title)} <span class="legend">v${esc(sel.version||'1.0')}</span></h2>${mnRunsOf(sel.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}
-      ${(sel.steps||[]).map(mnStepView).join('')}`}</div>`;
+      ${(sel.steps||[]).map((s,i)=>mnStepView(s,i)).join('')}`}</div>`;
 }
 
 /* ---------- 메뉴 선택 화면: 새로 들어올 때마다(같은 탭 새로 고침은 제외) 볼 수 있는 메뉴를 고르고 들어감 ---------- */

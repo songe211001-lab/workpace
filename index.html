@@ -1975,7 +1975,7 @@ function renderRegress(){
   if(!storeReady){area.innerHTML='<div class="empty"><h2>불러오는 중입니다</h2></div>';return;}
   const runs=cvRuns();if(!runs.some(r=>r.id===cvst.run))cvst.run=runs[0]?.id||null;
   const run=runs.find(r=>r.id===cvst.run),prev=run&&runs[runs.indexOf(run)+1],C=cvCases(),w=canWrite;
-  const tools=`<div class="rtool">${runs.length?`<select class="sel" id="cvRun" aria-label="회차">${runs.map(r=>`<option value="${esc(r.id)}" ${r.id===cvst.run?'selected':''}>${esc(cvRunName(r))}${r.testers?` · ${esc(r.testers)}`:''}</option>`).join('')}</select>`:''}<span class="spacer"></span>${trashBtn('cvTrashBtn',TRASH_SRC.regress.list().length)}${w?`<button class="btn" type="button" id="cvImport">엑셀 가져오기</button><input type="file" id="cvFile" accept=".xlsx" hidden>${C.length?'<button class="btn" type="button" id="cvAddCase">+ 케이스</button><button class="btn primary" type="button" id="cvNewRun">+ 새 회차</button>':''}`:''}</div>`;
+  const tools=`<div class="rtool">${runs.length?`<select class="sel" id="cvRun" aria-label="회차">${runs.map(r=>`<option value="${esc(r.id)}" ${r.id===cvst.run?'selected':''}>${esc(cvRunName(r))}${r.testers?` · ${esc(r.testers)}`:''}</option>`).join('')}</select>`:''}<span class="spacer"></span>${trashBtn('cvTrashBtn',TRASH_SRC.regress.list().length)}${downloads&&C.length?exportMenu([['cvXAll','엑셀 저장 (전체 회차)'],...(runs.length?[['cvXRun','엑셀 저장 (이 회차만)']]:[])]):''}${w?`<button class="btn" type="button" id="cvImport">엑셀 가져오기</button><input type="file" id="cvFile" accept=".xlsx" hidden>${C.length?'<button class="btn" type="button" id="cvAddCase">+ 케이스</button><button class="btn primary" type="button" id="cvNewRun">+ 새 회차</button>':''}`:''}</div>`;
   if(!C.length){area.innerHTML=`${tools}<div class="empty"><h2>아직 회귀 검증 케이스가 없어요</h2><p>CVT 구글 시트를 <b>파일 → 다운로드 → Microsoft Excel(.xlsx)</b>로 받은 뒤 '엑셀 가져오기'로 올리면, '전수 테스트' 탭의 케이스와 회차별 결과를 가져와요.</p>${w?'<button class="btn primary" type="button" id="cvAddCase">+ 케이스 직접 추가</button>':''}</div>`;return;}
   const cnt={};C.forEach(c=>{const v=cvR(run,c);cnt[v]=(cnt[v]||0)+1;});
   const tot=C.length,doneN=tot-(cnt['']||0),core=C.filter(c=>c.core),coreLeft=core.filter(c=>!cvR(run,c)).length;
@@ -2018,6 +2018,10 @@ onArea('#regressArea','click',e=>{const b=e.target.closest('button');if(!b)retur
   if(b.dataset.cvopen!=null&&c){cvst.open.has(id)?cvst.open.delete(id):cvst.open.add(id);render();return;}
   if(b.dataset.cvedit!=null&&c){cvCaseModal(c);return;}
   if(b.dataset.cvdel!=null&&c){evConfirm(`'${c.item}' 케이스를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvcase',`케이스 · ${c.item||''}`,[wbDocOf('cvt_cases',c)]);cvtCases=cvtCases.filter(x=>x.id!==id);logChange('regress','delete',id,c.item,null,null,'휴지통으로 옮김');render();});return;}
+  if(b.id==='cvXAll'||b.id==='cvXRun'){const R=cvRuns(),one=b.id==='cvXRun'&&R.find(r=>r.id===cvst.run),label=b.textContent;b.disabled=true;b.textContent='만드는 중…';
+    (async()=>{try{const X=await loadExcel(),buf=await cvXlsx(X,one?[one]:R);await downloads.save({filename:`회귀검증_${one?(one.date||'').replace(/-/g,'')+(one.label?'_'+one.label.replace(/[\\/:*?"<>|\s]+/g,''):''):todayStr().replace(/-/g,'')+'_전체'}.xlsx`,data:new Blob([buf])});}
+      catch(err){if(err?.code!=='declined')toast(err?.message==='load'?'엑셀 변환 도구를 불러오지 못했어요. 잠시 후 다시 눌러 주세요':'엑셀 파일을 만들지 못했어요');}
+      finally{b.disabled=false;b.textContent=label;}})();return;}
   if(b.id==='cvImport'){$('#cvFile').click();return;}
   if(b.id==='cvAddCase'){cvCaseModal(null);return;}
   if(b.id==='cvNewRun'){cvRunModal(null);return;}
@@ -2063,6 +2067,19 @@ function cvCaseModal(c){const isNew=!c,groups=[...new Set(cvtCases.map(x=>x.grou
       closeModal();render();}catch(err){$('#cvCSave').disabled=false;handleWriteError(err,'#cvCErr');}});
   setTimeout(()=>$(isNew?'#cvCGroup':'#cvCItem').focus(),0);
 }
+// 엑셀 내보내기: 시트 '전수 테스트'와 같은 모양(케이스 6칸 + 회차마다 메모·점검결과 2칸, 최신 회차가 왼쪽). 그대로 다시 가져올 수 있음
+async function cvXlsx(X,runs){const wb=new X.Workbook(),ws=wb.addWorksheet('전수 테스트'),C=cvCases(),n=6+runs.length*2;
+  const FILL={PASS:'FFDAFAE3',MINOR:'FFFFE8D1',MAJOR:'FFFFDCDC','N/A':'FFEEEEEE','NOT TESTED':'FFF5F5F5'};
+  ws.addRow(['서비스','회귀테스트 케이스','점검 항목','점검 방법','예상결과','핵심여부',...runs.flatMap(r=>[cvRunName(r),''])]);
+  ws.addRow(['','','','','','',...runs.flatMap(r=>[r.testers||'','점검결과'])]);
+  for(let c=1;c<=6;c++)ws.mergeCells(1,c,2,c);runs.forEach((r,i)=>ws.mergeCells(1,7+i*2,1,8+i*2));
+  C.forEach(c=>{const row=ws.addRow([c.svc,c.group,c.item,c.method,c.expect,c.core?'핵심':'',...runs.flatMap(r=>{const v=cvR(r,c);return [r['m_'+c.id]||(v==='PASS'?'정상':''),v||'NOT TESTED'];})]);
+    runs.forEach((r,i)=>{row.getCell(8+i*2).fill={type:'pattern',pattern:'solid',fgColor:{argb:FILL[cvR(r,c)||'NOT TESTED']}};});});
+  [8,18,28,48,32,8,...runs.flatMap(()=>[22,12])].forEach((w,i)=>ws.getColumn(i+1).width=w);
+  ws.eachRow((row,rn)=>row.eachCell({includeEmpty:true},cell=>{cell.alignment={vertical:'top',wrapText:true};cell.border={top:{style:'thin',color:{argb:'FFDDDDDD'}},bottom:{style:'thin',color:{argb:'FFDDDDDD'}},left:{style:'thin',color:{argb:'FFDDDDDD'}},right:{style:'thin',color:{argb:'FFDDDDDD'}}};
+    if(rn<=2){cell.font={bold:true};cell.alignment={vertical:'middle',horizontal:'center',wrapText:true};cell.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFF0F2F5'}};}}));
+  ws.views=[{state:'frozen',xSplit:3,ySplit:2}];
+  return wb.xlsx.writeBuffer();}
 // 엑셀 가져오기: '전수 테스트' 탭. 머리글 줄(서비스 | 회귀테스트 케이스 | 점검 항목 | 점검 방법 | 예상결과 | 핵심여부) 오른쪽으로 회차가 2칸씩(메모 | 점검결과)
 // 이미 있는 케이스(서비스·케이스·점검 항목·예상결과가 같음)와 회차(점검일·구분·담당자가 같음)는 건너뜀
 async function cvImport(file){

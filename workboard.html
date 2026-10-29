@@ -2125,9 +2125,11 @@ async function evSaveField(r,f,v){
   await db.collection('evt_rows').doc(r.id).update({[f]:v,updatedAt:new Date().toISOString()});
   logChange('evt','update',r.id,r.name||'(이벤트명 없음)',before,{...r});
 }
-async function evAddRows(mid,list,top){ // list: [{...fields}] → 맨 뒤에 추가(top이면 맨 위에)
-  const os=evRowsOf(mid).map(r=>+r.sortOrder||0);let so=top?Math.min(1,...os)-list.length-1:Math.max(-1,...os);
-  for(const d of list){const id=evUid(),doc={monthId:mid,kind:'event',sortOrder:++so,status:'대기',name:'',workType:'',category:'',dueDate:'',reflectStatus:'',source:'',reviewUrl:'',urlType:'',opUrl:'',note:'',eid:'',...d,updatedAt:new Date().toISOString()};
+async function evAddRows(mid,list,beforeExt){ // list: [{...fields}] → 맨 뒤에 추가(beforeExt면 첫 '연장' 행 바로 위에, 연장이 없으면 맨 뒤)
+  const rs=evRowsOf(mid),xi=beforeExt?rs.findIndex(r=>r.status==='연장'):-1;
+  let so=Math.max(-1,...rs.map(r=>+r.sortOrder||0)),step=1;
+  if(xi>=0){const hi=+rs[xi].sortOrder||0,lo=xi?+rs[xi-1].sortOrder||0:hi-list.length-1;step=(hi-lo)/(list.length+1);so=lo;}
+  for(const d of list){const id=evUid(),doc={monthId:mid,kind:'event',sortOrder:so+=step,status:'대기',name:'',workType:'',category:'',dueDate:'',reflectStatus:'',source:'',reviewUrl:'',urlType:'',opUrl:'',note:'',eid:'',...d,updatedAt:new Date().toISOString()};
     await db.collection('evt_rows').doc(id).set(doc);evKeep(evtRowsAll,{id,...doc});}
 }
 async function evMove(mid,uid,toIdx){ // 행 하나를 toIdx 자리로(옮긴 행의 순서값만 이웃 사이 값으로 바꿈)

@@ -716,7 +716,7 @@ a.rms:hover{text-decoration:underline}
 .roleBadge.adm{background:var(--accent-soft);color:var(--accent-dark)}
 /* ---------- 업무 관리 헤더 필터 ---------- */
 #taskActions{flex-wrap:wrap}
-#taskActions .searchBox{margin:0;width:240px}
+#taskActions .searchBox{margin:0;width:280px}
 @media (max-width:900px){#taskActions .searchBox{flex:1 1 180px;width:auto}}
 /* ---------- 주간보고 탭: 제목 → 탭 → 운영 건수 표 → 카테고리별 본문 ---------- */
 .rbar{margin-bottom:0}
@@ -998,7 +998,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
     <button class="btn ghost sideOpen" type="button" id="sideOpen" aria-label="메뉴 열기" aria-controls="side" aria-expanded="false">☰</button>
     <h2 class="pageTitle" id="pageTitle">업무 관리</h2>
     <div class="pageTools" id="pageTools"></div>
-    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
+    <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
     </div>
@@ -1013,7 +1013,6 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
   <!-- 업무 목록: 검색 · 프로젝트 칩 · 파트 칩 · 목록/보드 한 줄 -->
   <h3 class="listTitle">업무 목록</h3>
   <div class="ltBar">
-    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label>
     <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
     <div class="seg" id="viewSeg">

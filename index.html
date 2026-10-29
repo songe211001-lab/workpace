@@ -842,7 +842,10 @@ a.rms:hover{text-decoration:underline}
 .evSt{font-weight:700}
 .evSt.st-완료{color:var(--ok-strong,#2f8a5b)}.evSt.st-진행{color:var(--accent-dark)}.evSt.st-연장{color:#b57a12}.evSt.st-비노출{color:var(--muted)}
 .evOrd{white-space:nowrap}.evOrd .num{display:inline-block;min-width:20px;text-align:right;margin-right:4px;color:var(--ink-soft)}
-.evArr .btn{padding:0 4px;height:22px;font-size:10px}
+.evArr{display:inline-flex;gap:1px;vertical-align:middle}
+.evArr .btn{padding:0;width:22px;height:22px;color:var(--muted);border-color:transparent}
+.evArr .btn:hover:not(:disabled){color:var(--accent-dark);background:var(--accent-soft)}
+.btn .arw{width:15px;height:15px;flex:none}
 .evId{display:flex;align-items:center;gap:2px}.evId .evf{min-width:90px}
 .evTable tr[draggable="true"]{cursor:grab}
 .evMissBtn{all:unset;cursor:pointer;font:inherit}
@@ -2499,7 +2502,7 @@ function evCell(r,k){
 }
 function evRowHtml(r,i,cur){
   return `<tr data-uid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}>${cur?`<td class="selCell"><input type="checkbox" class="evSel" ${est.sel.has(r.id)?'checked':''} aria-label="선택" ${canWrite?'':'disabled'}></td>`:''}
-    <td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-mv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-mv="1" aria-label="아래로">▼</button></span>`:''}</td>
+    <td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-mv="-1" aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-mv="1" aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>`:''}</td>
     ${evCols().map(([k])=>evCell(r,k)).join('')}
     <td>${canWrite?'<button type="button" class="btn ghost sm evDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
 }
@@ -2731,7 +2734,7 @@ function bnDefaultMonth(){const L=bnMonthList();if(!L.length)return null;const d
 
 function bnRankRow(mo,r,i,cur){
   const cols=bnVisCols(mo),ro=canWrite?'':'disabled';
-  return `<tr data-buid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-bmv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-bmv="1" aria-label="아래로">▼</button></span>`:''}</td>
+  return `<tr data-buid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-bmv="-1" aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-bmv="1" aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>`:''}</td>
     ${cols.map(c=>`<td><input class="bnf" data-col="${esc(c.id)}" value="${esc(r['v_'+c.id]||'')}" aria-label="${esc(c.name)}" ${ro}></td>`).join('')}<td>${canWrite?'<button type="button" class="btn ghost sm bnDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
 }
 function bnRankTable(mo,cur){
@@ -2789,7 +2792,7 @@ async function bnNewMonth(silent){
 // 구좌 편집: 이름 변경·순서·숨김·추가·삭제(지운 칸의 값은 함께 지움)
 function bnOpenCols(mo){
   let rows=(mo.cols||[]).map(c=>({...c,hide:(mo.hidden||[]).includes(c.id)}));
-  const draw=()=>{$('#bcList').innerHTML=rows.length?rows.map((r,i)=>`<div class="bcRow"><input class="sel" data-i="${i}" value="${esc(r.name)}" aria-label="구좌 이름" maxlength="30"><label class="cfItem"><input type="checkbox" data-hide="${i}" ${r.hide?'checked':''}>숨김</label><button type="button" class="btn ghost sm" data-up="${i}" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-down="${i}" ${i<rows.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-del="${i}">삭제</button></div>`).join(''):'<p class="legend">구좌가 없어요. 아래에서 추가해 주세요.</p>';};
+  const draw=()=>{$('#bcList').innerHTML=rows.length?rows.map((r,i)=>`<div class="bcRow"><input class="sel" data-i="${i}" value="${esc(r.name)}" aria-label="구좌 이름" maxlength="30"><label class="cfItem"><input type="checkbox" data-hide="${i}" ${r.hide?'checked':''}>숨김</label><button type="button" class="btn ghost sm" data-up="${i}" ${i?'':'disabled'} aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-down="${i}" ${i<rows.length-1?'':'disabled'} aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button type="button" class="btn ghost sm" data-del="${i}">삭제</button></div>`).join(''):'<p class="legend">구좌가 없어요. 아래에서 추가해 주세요.</p>';};
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:560px"><header><h2>구좌 편집 · ${esc(mo.label)}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr"><p class="legend" style="margin:0">이름을 바꾸면 순위표 값은 그대로 따라가요. 지운 구좌의 값은 휴지통에 30일 동안 보관돼요. 숨긴 구좌는 표에서만 안 보여요.</p><div id="bcList" class="bcList"></div>
       <div class="bcRow"><input class="sel" id="bcNew" placeholder="새 구좌 이름…" maxlength="30" aria-label="새 구좌 이름"><button type="button" class="btn" id="bcAdd">+ 추가</button></div></div>
@@ -2972,7 +2975,7 @@ const bfDays=iso=>/^\d{4}-\d{2}-\d{2}$/.test(iso||'')?Math.round((new Date(iso+'
 function bfRow(it,i){
   const ro=canWrite?'':'disabled',d=bfDays(it.expiryDate),cls=d==null?'':d<0?' bfOver':d<=7?' bfSoon':'';
   const tt=d==null?'혜택 종료일 (선택)':d<0?`${-d}일 지난 혜택이에요. 종료 처리해 주세요.`:d<=7?`${d?`D-${d}`:'오늘 만료'} — 곧 종료돼요.`:'혜택 종료일';
-  return `<tr data-fuid="${esc(it.id)}"><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-fmv="-1" aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-fmv="1" aria-label="아래로">▼</button></span>`:''}</td>
+  return `<tr data-fuid="${esc(it.id)}"><td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-fmv="-1" aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-fmv="1" aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>`:''}</td>
     <td><input class="bff" data-f="name" value="${esc(it.name||'')}" placeholder="혜택명" aria-label="혜택명" ${ro}></td><td><input class="bff" data-f="copy" value="${esc(it.copy||'')}" placeholder="문구" aria-label="문구" ${ro}></td>
     <td><input class="bff" data-f="status" value="${esc(it.status||'')}" placeholder="작업현황" aria-label="작업현황" ${ro}></td><td><input type="date" class="bff${cls}" data-f="expiryDate" value="${esc(it.expiryDate||'')}" title="${esc(tt)}" aria-label="종료일" ${ro}></td>
     <td>${canWrite?'<button type="button" class="btn ghost sm bfDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
@@ -3346,7 +3349,7 @@ function mnDetail(area){
       ${mnRunsOf(m.id).length?`<div class="mnRuns"><span class="mnLab">진행 중 ${mnRunsOf(m.id).length}건</span>${mnRunsOf(m.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}</section>`;
   const card=(s,i)=>(ed||(canWrite&&mnst.step===s.id))?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
       <div class="mnStepHead"><span class="mnNo">${i+1}</span><input class="sel" data-sf="title" value="${esc(s.title||'')}" placeholder="단계 제목" aria-label="단계 제목" maxlength="80">
-        <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로">▲</button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로">▼</button><button type="button" class="btn ghost sm" data-sdel>삭제</button>${mnStepTools(s,i,true)}</div>
+        <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button type="button" class="btn ghost sm" data-sdel>삭제</button>${mnStepTools(s,i,true)}</div>
       <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span><textarea class="sel" data-sf="body" rows="${Math.min(14,Math.max(3,String(s.body||'').split('\n').length+1))}">${esc(s.body||'')}</textarea></label>
       <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표를 복사해 칸에 붙여넣으면 행이 생겨요</span></span>
         ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></div>`).join('')}

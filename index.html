@@ -3226,6 +3226,30 @@ const MN_TPL={
     {title:'운영기 검수',body:'URL 접근 확인',figmaUrl:MN_BOARD+'2077-453',links:[mnL('운영 FO','https://www.uplusmvno.com/')],
       checks:['등록 완료 : 노출 정보 상세 확인, URL 접근 확인','담당자 검수 : STG 사업 검수 후, 운영기 상세 검수는 업무 담당자가 진행','오픈 : 노출 일자 당겨서 세팅 후 수기로 노출 Y 전환, 이벤트 노출 확인','사업 검수 : 노출 Y, 이벤트 노출 확인 완료 시 사업 검수 요청','종료 : 반드시 사업 검수 완료 메일 확인 후 업무 종료']},
     {title:'업무 종료',body:'반드시 사업 검수 완료 메일 확인 후 업무 종료',checks:['사업 검수 완료 메일 확인']}]}};
+// 배너·혜택·이미지 경로 템플릿(피그마 '이벤트 운영 매뉴얼' 보드). 담당자 이름·BO 주소는 비워 두고 사이트에서 채움
+const mnQA=node=>[
+  {title:'DEV 검수',body:'URL 접근 확인',figmaUrl:MN_BOARD+node,links:[mnL('DEV FO','https://dev.uplusmvno.com/')],checks:['등록 완료 : 해당 영역 노출 확인, URL 접근 확인','사업 검수 : 반드시 DEV 사업 검수 후 운영기 오픈 세팅 시작']},
+  {title:'운영기 검수',body:'URL 접근 확인',figmaUrl:MN_BOARD+node,links:[mnL('운영 FO','https://www.uplusmvno.com/')],
+    checks:['등록 완료 : 노출 정보 상세 확인, URL 접근 확인','담당자 검수 : STG 사업 검수 후, 운영기 상세 검수는 업무 담당자가 진행','오픈 : 노출 일자 당겨서 세팅 후 수기로 노출 Y 전환, 이벤트 노출 확인','사업 검수 : 노출 Y, 이벤트 노출 확인 완료 시 사업 검수 요청','종료 : 반드시 사업 검수 완료 메일 확인 후 업무 종료']},
+  {title:'업무 종료',body:'반드시 사업 검수 완료 메일 확인 후 업무 종료',checks:['사업 검수 완료 메일 확인']}];
+const mnHead=[{title:'업무 요청 확인',body:''},{title:'디자인 소스 수급',body:''},{title:'BO 세팅',body:'셋팅 전 이미지 최적화 : https://squoosh.app/\n담당자:  | MVNO 영업팀'}];
+const MN_PERIOD=['시작일 : 시간은 항상 00:00:00 으로 셋팅\n종료일 : 시간은 항상 23:59:59 으로 셋팅'];
+const mnBannerRows=(img,period)=>mnRows([['노출 여부','Y/N'],['제목','이벤트 명 혹은 대표 타이틀 입력'],[period,MN_PERIOD[0]],[img,'이미지 등록'],['이미지 대체 텍스트','이벤트 명 혹은 대표 타이틀 입력'],['URL','선택 시 이동할 링크 입력'],['추천순서','노출 순서 입력']]);
+Object.assign(MN_TPL,{
+  banner:{title:'배너 등록 매뉴얼',category:'이벤트 운영',summary:'미디어로그 · 2026.04.23 -',figmaUrl:MN_BOARD+'2002-1385',links:[],steps:[...mnHead,
+    {title:'(BO) 메인 팝업 등록',body:'(FO) 메인 팝업에 노출돼요.',figmaUrl:MN_BOARD+'2084-1176',table:mnBannerRows('팝업 상세','공지기간 (예약기간)')},
+    {title:'(BO) 메인 상단 배너 등록',body:'(FO) 메인 상단 배너에 노출돼요.',figmaUrl:MN_BOARD+'2085-1736',table:mnBannerRows('배너 이미지','노출 기간 (예약기간)')},
+    {title:'(BO) 메인 하단 배너 등록',body:'(FO) 메인 하단 배너에 노출돼요.',figmaUrl:MN_BOARD+'2085-1915',table:mnBannerRows('배너 이미지','노출 기간 (예약기간)')},
+    {title:'(BO) 요금제 목록 배너 등록',body:'(FO) 상품 > 요금제 목록 배너에 노출돼요.',figmaUrl:MN_BOARD+'2085-2029',table:mnRows([['노출 여부','Y/N'],['제목','이벤트 명 혹은 대표 타이틀 입력'],['배너 이미지','이미지 등록'],['노출 기간 (예약기간)',MN_PERIOD[0]],['이미지 대체 텍스트','이벤트 명 혹은 대표 타이틀 입력'],['URL','선택 시 이동할 링크 입력'],['추천순서','노출 순서 입력']])},
+    ...mnQA('2084-1224')]},
+  benefit:{title:'혜택 등록 매뉴얼',category:'이벤트 운영',summary:'미디어로그 · 2026.04.23 -',figmaUrl:MN_BOARD+'2041-221',links:[],steps:[...mnHead,
+    {title:'(BO) 알닷 혜택 등록',body:'(FO) 상품 > 요금제 찾기 > 요금제 상세, 요금제 상세 > 혜택보기에 노출돼요.',figmaUrl:MN_BOARD+'2097-1113',table:mnRows([
+      ['구분','선택: 알닷 / 파트너사\n알닷 : 알닷 이벤트 등록할 경우\n파트너사 : 파트너사 이벤트 등록할 경우, 지정된 이벤트 일 경우에는 목록에서 해당 파트너사 입력'],['노출 여부','Y/N'],['➊ 혜택','FO 요금제 혜택 상단 타이틀'],['➋ 혜택 소개','FO 요금제 혜택 하단 타이틀'],
+      ['혜택 금액 입력 여부','Y/N (아직 FO에는 미반영 상태)'],['최대 혜택 금액','혜택 금액 입력 (숫자만 입력 가능)'],['➌ 대표이미지','FO  요금제 혜택 썸네일'],['이미지 대체 텍스트','이벤트 명으로 입력'],['추천순서','요금제 혜택 리스트 노출 순서 입력'],
+      ['➍ 요금제 혜택 관리 상세','FO 요금제 혜택 상세\n직접입력으로 등록 : HTML 내 이미지 변경 (이미지 경로 생성 후, 입력)'],['요금제 선택','사업이 요청한 혜택에 해당되는 요금제 필터에 맞춰 요금제 삽입'],['노출기간 (예약 기간)',MN_PERIOD[0]]])},
+    ...mnQA('2097-1166')]},
+  image:{title:'이미지 경로 생성 매뉴얼',category:'이벤트 운영',summary:'',figmaUrl:MN_BOARD+'2086-2530',links:[],steps:[
+    {title:'(BO) 이미지 경로 생성',body:'이미지 관리 목록에서 등록하고, 상세의 이미지 경로를 복사해 써요. (혜택 상세 HTML 등)',figmaUrl:MN_BOARD+'2094-722',table:mnRows([['구분','PC / MO'],['이미지','이미지 등록 (이미지 파일 첨부)'],['이미지 대체 텍스트','이벤트 명 혹은 대표 타이틀 입력'],['이미지경로','선택 시, 복사 가능']])}]}});
 const mnStepOf=s=>({id:mnUid(),title:s.title||'',body:s.body||'',table:(s.table||[]).map(r=>({...r})),checks:[...(s.checks||[])],links:(s.links||[]).map(l=>({...l})),figmaUrl:s.figmaUrl||''});
 const mnCur=()=>mnst.edit&&mnDraft&&mnDraft.id===mnst.id?mnDraft:manuals.find(m=>m.id===mnst.id);
 const mnCats=()=>[...new Set(manuals.map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
@@ -3305,7 +3329,7 @@ function mnOpen(id,step){mnst.id=id;mnst.edit=false;mnDraft=null;document.active
 function mnFlash(sid){const el=document.getElementById('mn-'+sid);if(!el)return;el.scrollIntoView({block:'start'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
 function mnNewModal(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>매뉴얼 등록</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><label class="mnFld">시작 방식${[['blank','빈 매뉴얼','단계 하나에서 시작'],['ops','운영 업무 프로세스','알닷 운영 메뉴얼(덱)의 담당자 R&R · 6단계 · 수시 업무 흐름'],['event','이벤트 등록','이벤트 등록 매뉴얼(보드)의 요청 확인 · BO 세팅 항목 표 · 검수 체크']].map(([v,l,d],i)=>`<label class="mnTpl"><input type="radio" name="mnTpl" value="${v}" ${i?'':'checked'}><span><b>${l}</b><span class="legend">${d}</span></span></label>`).join('')}</label>
+    <div class="body" style="grid-template-columns:1fr"><label class="mnFld">시작 방식${[['blank','빈 매뉴얼','단계 하나에서 시작'],['ops','운영 업무 프로세스','알닷 운영 메뉴얼(덱)의 담당자 R&R · 6단계 · 수시 업무 흐름'],['event','이벤트 등록','이벤트 등록 매뉴얼(보드)의 요청 확인 · BO 세팅 항목 표 · 검수 체크'],['banner','배너 등록','메인 팝업 · 메인 상단/하단 배너 · 요금제 목록 배너 항목 표 · 검수 체크'],['benefit','혜택 등록','알닷 혜택(요금제 혜택) 항목 표 · 검수 체크'],['image','이미지 경로 생성','이미지 등록 후 경로 복사']].map(([v,l,d],i)=>`<label class="mnTpl"><input type="radio" name="mnTpl" value="${v}" ${i?'':'checked'}><span><b>${l}</b><span class="legend">${d}</span></span></label>`).join('')}</label>
       <label class="mnFld">제목<input class="sel" id="mnNTitle" maxlength="80" placeholder="예: 이벤트 등록 매뉴얼"></label>
       <label class="mnFld">분류<input class="sel" id="mnNCat" maxlength="30" list="mnNCats" placeholder="예: 이벤트 운영"><datalist id="mnNCats">${mnCats().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></label></div>
     <footer><span class="err" id="mnNErr"></span><div class="r"><button class="btn" type="button" id="mnNNo">취소</button><button class="btn primary" type="button" id="mnNYes">만들고 편집</button></div></footer></div></div>`;

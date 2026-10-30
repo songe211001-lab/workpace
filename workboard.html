@@ -656,14 +656,8 @@ a.rms:hover{text-decoration:underline}
 .rsec{border-top:1px solid var(--line);padding-top:16px}
 .rsecHead{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
 .rsecHead h3{margin:0;font-size:16px;font-weight:800;display:flex;align-items:center;gap:6px}
-.rsecHead .rdot{width:8px;height:8px;border-radius:50%}
 .rlive{color:var(--ok)}
-.rsec.fold .rsecBody{display:none}
 .rsecBody{display:flex;flex-direction:column;gap:8px;margin-top:10px}
-.rcounts{display:flex;gap:8px 14px;align-items:center;flex-wrap:wrap}
-.rcounts label{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ink-soft)}
-.rcounts input{width:64px;height:32px;border:1px solid var(--line);border-radius:var(--r);padding:0 8px;font-size:14px;background:var(--surface)}
-.rtools{display:flex;gap:6px}
 .rEditor{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;min-height:160px;font-size:14px;line-height:1.75;outline:none;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--surface)}
 .rEditor:focus{border-color:var(--accent)}
 .rEditor[contenteditable="false"]{background:var(--bg)}
@@ -1061,7 +1055,7 @@ div.tfNote{height:auto;overflow:auto}
 .evBulk{margin:0 0 10px}
 .tkTable .tkRow{cursor:pointer}.tkTable .tkRow:hover td,.tkTable .tkRow:focus-visible td{background:var(--bg)}.tkTable .tkRow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .tkTable .tkRow.is-late td:first-child{box-shadow:inset 3px 0 0 var(--bad-strong)}
-.tkTable td{vertical-align:middle}.tkTable .tkTitle{min-width:220px}.tkTable .tkTitle .pTitle{display:block}.tkTable .prDate{white-space:nowrap}
+.tkTable td{vertical-align:middle}.tkTable .tkTitle{min-width:160px}.tkTable .tkTitle .pTitle{display:block}.tkTable .prDate{white-space:nowrap}
 .tkTable .tkYear td{background:var(--sunk);padding:6px 12px}
 .postOpen>#tkSum{display:none}
 /* 이벤트 관리 표의 상태 칸: 위 통계 칩(.cvPill)과 같은 알약 */
@@ -1069,7 +1063,7 @@ div.tfNote{height:auto;overflow:auto}
 .evTable .evf.evSt.evp-완료{background:var(--ok-soft);color:var(--ok)}.evTable .evf.evSt.evp-진행{background:#e3edff;color:#1c5fbf}.evTable .evf.evSt.evp-대기{background:var(--warn-soft);color:var(--warn)}.evTable .evf.evSt.evp-연장{background:#fff1d0;color:#9a6200}.evTable .evf.evSt.evp-비노출{background:var(--sunk);color:var(--ink-soft)}
 .evTable .evf.evPillSel{height:24px;width:auto;min-width:0;border:0;border-radius:999px;padding:0 4px 0 9px;font-size:11.5px;font-weight:700;background:var(--sunk);color:var(--ink-soft)} /* 작업유형·구분: 회색 알약 */
 .pjTag{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:6px;background:var(--sunk);color:var(--fg);font-size:12px;font-weight:700;white-space:nowrap}.pjTag .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
-.tkTable td:nth-child(5),.tkTable td:nth-child(6){white-space:nowrap}
+.tkTable td:nth-child(6),.tkTable td:nth-child(7){white-space:nowrap}
 .tkWho{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:150px}.tkWho .who{white-space:nowrap}
 .tkPart{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-soft);white-space:nowrap}.tkPart::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--c)}
 .tlTable{border-collapse:separate;border-spacing:0;width:100%}
@@ -1087,6 +1081,8 @@ div.tfNote{height:auto;overflow:auto}
 .avOpt{all:unset;box-sizing:border-box;cursor:pointer;width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}.avOpt img{width:100%;height:100%;border-radius:50%;display:block}
 .avOpt[aria-pressed="true"]{box-shadow:0 0 0 3px var(--accent)}.avOpt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .roleBadge.ext{background:var(--warn-soft);color:var(--warn)}
+.tkRms{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
+.rmsGo{min-width:28px;justify-content:center;text-decoration:none}.tkRms .rmsGo{min-width:0;height:24px;padding:0 6px}.rmsGo[aria-disabled]{opacity:.4;cursor:not-allowed}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1232,9 +1228,15 @@ function dday(d){if(!d)return'';const ms=new Date(d+'T00:00:00')-new Date(todayS
 /* RMS: 업무별 링크가 있으면 그 주소로, 없으면 공용 주소 규칙({no} 자리에 번호)으로 연결 */
 function rmsHref(t){
   let u=(t.rmsUrl||'').trim();
-  if(!u&&t.rmsNo&&site?.rmsTemplate)u=site.rmsTemplate.replace(/\{no\}/g,encodeURIComponent(String(t.rmsNo).trim()));
+  if(!u&&t.rmsNo&&site?.rmsTemplate)u=site.rmsTemplate.replace(/\{no\}/g,encodeURIComponent(String(t.rmsNo).replace(/[\s#]/g,'')));
   if(!u)return '';
   return /^https?:\/\//i.test(u)?u:'https://'+u;
+}
+// 목록 RMS 칸: 번호 + ↗(주소가 없으면 흐리게). 누르면 RMS만 열고 게시물은 열지 않음
+function rmsCell(t){
+  if(!t.rmsNo&&!t.rmsUrl)return '<span class="legend">—</span>';
+  const h=rmsHref(t);
+  return `<span class="tkRms"><span class="num">${esc(t.rmsNo||'링크')}</span>${h?`<a class="btn ghost sm rmsGo" href="${esc(h)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:'<span class="btn ghost sm rmsGo" aria-disabled="true" title="주소 규칙을 설정하면 바로가기가 생겨요">↗</span>'}</span>`;
 }
 function rmsBadge(t){
   if(!t.rmsNo&&!t.rmsUrl)return '';
@@ -1357,7 +1359,7 @@ function liftTools(){
 }
 // 헤더로 옮긴 도구 줄에서도 그 화면의 이벤트 처리가 그대로 동작하게
 // 헤더 도구 줄 안 화면 탭(보고서/업무 시간): 화면 모드만 바꿈
-document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;const v=b.dataset.rview;if(b.dataset.goto===state.mode&&(!v||v===rstate.view))return;if(v)rstate.view=v;if(state.mode==='report')v3Flush();state.mode=b.dataset.goto;persistUI();render();});
+document.querySelector('.wrap').addEventListener('click',e=>{const b=e.target.closest('[data-goto]');if(!b)return;if(b.dataset.goto===state.mode)return;if(state.mode==='report')v3Flush();state.mode=b.dataset.goto;persistUI();render();});
 function onArea(sel,type,fn){$(sel).addEventListener(type,fn);$('#pageTools').addEventListener(type,e=>{if(!$(sel).hidden)fn(e);});}
 function renderBody(){
   if(state.mode==='staff')state.mode='hours'; // 인력 관리 = 업무 시간 화면
@@ -1568,7 +1570,8 @@ function postRow(p){
   const late=postLate(p),own=!k.length&&canWrite;
   return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <td>${pj?`<span class="pjTag" style="--c:${esc(pj.color)}"><span class="dot" aria-hidden="true"></span>${esc(pj.name)}</span>`:''}</td>
-    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>${k.length?`<span class="legend">요청 ${k.length}건${doing?` · 진행 ${doing}`:''}</span>`:''}</td>
+    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${k.length?`<span class="legend">요청 ${k.length}건${doing?` · 진행 ${doing}`:''}</span>`:''}</td>
+    <td>${rmsCell(p)}</td>
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
     <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
     <td>${p.requester?esc(p.requester):'<span class="legend">—</span>'}</td>
@@ -1582,8 +1585,8 @@ function renderList(){
   let body='';
   if(state.lsort==='due')body=posts.map(postRow).join('');
   else{const years=new Map();for(const p of posts){const y=(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
-    for(const [y,ps] of years){const c=fold.has(y);body+=`<tr class="tkYear"><td colspan="6"><button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${arw(c)}</span></button></td></tr>${c?'':ps.map(postRow).join('')}`;}}
-  $('#main').innerHTML=`<div class="statWrap"><table class="stable tkTable"><thead><tr><th>프로젝트</th><th>제목</th><th>기간</th><th>파트 · 담당자</th><th>요청자</th><th>진행 현황</th></tr></thead><tbody>${body}</tbody></table></div>
+    for(const [y,ps] of years){const c=fold.has(y);body+=`<tr class="tkYear"><td colspan="7"><button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${arw(c)}</span></button></td></tr>${c?'':ps.map(postRow).join('')}`;}}
+  $('#main').innerHTML=`<div class="statWrap"><table class="stable tkTable"><thead><tr><th>프로젝트</th><th>제목</th><th>RMS</th><th>기간</th><th>파트 · 담당자</th><th>요청자</th><th>진행 현황</th></tr></thead><tbody>${body}</tbody></table></div>
     <p class="legend evLegend">${posts.length}건 · 행을 누르면 게시물(댓글·업무 요청)을 열어요</p>`;
 }
 // 목록 위 요약 카드: 상태별 건수(누르면 진행 현황 필터) + 지연(추가 필터). 건수 = 그 상태를 골랐을 때 목록에 보이는 게시물 수
@@ -1641,9 +1644,9 @@ function renderPost(p){
       ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
       ${row('우선순위',sel('priority',PRIS.map((l,i)=>[i,l]),p.priority??2,'우선순위'))}
       ${row('소요시간',`<span class="legend">예상</span>${num('estHours',p.estHours,'예상 소요시간')}<span class="legend">실제</span>${num('actHours',p.actHours,'실제 소요시간',wl.length>0)}<span class="hint">1MD = 8h</span>`)}
-      ${row('Jira · RMS',`${txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"')}${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false"')}${rh?`<a class="rms" href="${esc(rh)}" target="_blank" rel="noopener">RMS 바로가기 ↗</a>`:''}`)}
-      ${row('RMS 링크',`${txt('rmsUrl',p.rmsUrl,'RMS 바로가기 링크',`placeholder="${site?.rmsTemplate?'비워 두면 주소 규칙으로 자동 연결':'RMS 화면 주소 붙여넣기'}" spellcheck="false"`)}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn">주소 규칙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
-      ${row('관련 링크',`${txt('link',p.link,'관련 링크','placeholder="Figma, 설계서, Jira 등 URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
+      ${row('Jira',txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"'))}
+      ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn">주소 규칙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
+      ${row('피그마 링크',`${txt('link',p.link,'피그마 링크','placeholder="Figma URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
       ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
     </div>
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
@@ -1678,6 +1681,7 @@ async function tfSave(p,f,raw){
   else if(f==='priority')patch.priority=+raw;
   else if(f==='estHours'||f==='actHours')patch[f]=raw===''?'':Math.max(0,+raw);
   else if(f==='jiraKey')patch.jiraKey=raw.trim().toUpperCase();
+  else if(f==='rmsNo')patch.rmsNo=raw.replace(/[\s#]/g,'');
   else if(f==='note')patch.note=raw.replace(/\s+$/,'');
   else if(f==='noteRich'){patch.note=raw.text;patch.noteHtml=raw.html;}
   else patch[f]=raw.trim();
@@ -2022,6 +2026,7 @@ $('#main').addEventListener('click',async e=>{
     return;
   }
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
+  if(e.target.closest('.rmsGo'))return;
   const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(row.dataset.post?rootOf(t).id:t.id);
 });
 // 상세의 '내용'(서식 편집칸)은 칸에서 나갈 때 저장
@@ -2118,15 +2123,14 @@ function openTask(t,prefill){
       <div class="f"><label for="tAct">실제 소요시간 (h)</label><input type="number" id="tAct" min="0" step="0.5" inputmode="decimal" value="${esc(t.actHours??'')}"></div>
       ${isNew?'':'<div class="f full wlBox" id="wlBox"></div><div class="f full cmBox" id="cmBox"></div>'}
       <!-- 자주 안 쓰는 칸은 접어 둠. 값이 있으면 펼친 채로 열림 -->
-      <details class="f full moreF" ${t.jiraKey||t.rmsNo||t.rmsUrl||t.link||t.note?'open':''}><summary>상세 입력 <span class="hint">Jira · RMS · 관련 링크 · 메모</span></summary><div class="body sub">
+      <details class="f full moreF" ${t.jiraKey||t.rmsNo||t.rmsUrl||t.link||t.note?'open':''}><summary>상세 입력 <span class="hint">Jira · RMS · 피그마 링크 · 메모</span></summary><div class="body sub">
       <div class="f"><label for="tJira">Jira 키</label><input id="tJira" value="${esc(t.jiraKey||'')}" placeholder="예: PROJ-123" autocapitalize="characters" spellcheck="false"></div>
-      <div class="f"><label for="tRms">RMS 번호</label><input id="tRms" value="${esc(t.rmsNo||'')}" placeholder="예: 2026-00123" spellcheck="false"></div>
-      <div class="f full"><label for="tRmsUrl">RMS 바로가기 링크</label><input id="tRmsUrl" value="${esc(t.rmsUrl||'')}" placeholder="${site?.rmsTemplate?'비워 두면 주소 규칙으로 자동 연결':'RMS 화면 주소 붙여넣기'}" spellcheck="false"></div>
+      <div class="f"><label for="tRms">RMS 번호</label><input id="tRms" value="${esc(t.rmsNo||'')}" placeholder="번호만 입력" inputmode="numeric" spellcheck="false"></div>
       <div class="f full rmsRow"><span class="hint" id="rmsInfo"></span>${canWrite?'<button type="button" class="btn ghost" id="rmsRuleBtn">주소 규칙 설정</button>':''}<a class="rms" id="rmsGo" target="_blank" rel="noopener" hidden>RMS 바로가기 ↗</a>
         <div class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false"><button type="button" class="btn" id="rmsTplSave">저장</button><span class="hint">{no} 자리에 RMS 번호가 들어갑니다. 모든 업무에 공통 적용</span></div></div>
-      <div class="f full"><label for="tLink">관련 링크</label><input id="tLink" value="${esc(t.link||'')}" placeholder="Figma, 설계서, Jira 등 URL"></div>
+      <div class="f full"><label for="tLink">피그마 링크</label><input id="tLink" value="${esc(t.link||'')}" placeholder="Figma URL"></div>
       <div class="f full"><label for="tNote">메모</label><textarea id="tNote" placeholder="요청 배경, 변경 이력, 이슈">${esc(t.note||'')}</textarea></div>
-      ${t.link?`<div class="f full"><a href="${esc(/^https?:\/\//.test(t.link)?t.link:'https://'+t.link)}" target="_blank" rel="noopener" style="color:var(--accent-dark)">관련 링크 열기 ↗</a></div>`:''}
+      ${t.link?`<div class="f full"><a href="${esc(/^https?:\/\//.test(t.link)?t.link:'https://'+t.link)}" target="_blank" rel="noopener" style="color:var(--accent-dark)">피그마 링크 열기 ↗</a></div>`:''}
       </div></details>
     </div></fieldset>
     <datalist id="peopleList">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
@@ -2139,9 +2143,9 @@ function openTask(t,prefill){
   $('#xClose').onclick=$('#tCancel').onclick=askClose;
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#tStatus').addEventListener('change',e=>{if(e.target.value==='done'&&!$('#tDone').value)$('#tDone').value=todayStr();});
-  const rmsSync=()=>{const h=rmsHref({rmsNo:$('#tRms').value,rmsUrl:$('#tRmsUrl').value});$('#rmsGo').hidden=!h;if(h)$('#rmsGo').href=h;
-    $('#rmsInfo').textContent=site?.rmsTemplate?`주소 규칙: ${site.rmsTemplate}`:'RMS 주소 규칙이 없으면 링크를 직접 붙여넣어 주세요.';};
-  rmsSync();['tRms','tRmsUrl'].forEach(id=>$('#'+id).addEventListener('input',rmsSync));
+  const rmsSync=()=>{const h=rmsHref({rmsNo:$('#tRms').value,rmsUrl:t.rmsUrl});$('#rmsGo').hidden=!h;if(h)$('#rmsGo').href=h;
+    $('#rmsInfo').textContent=site?.rmsTemplate?`주소 규칙: ${site.rmsTemplate}`:'주소 규칙을 설정하면 RMS 번호로 바로가기가 생겨요.';};
+  rmsSync();$('#tRms').addEventListener('input',rmsSync);
   $('#rmsRuleBtn')?.addEventListener('click',()=>{$('#rmsRule').hidden=!$('#rmsRule').hidden;if(!$('#rmsRule').hidden)$('#rmsTpl').focus();});
   $('#rmsTplSave')?.addEventListener('click',async()=>{
     const tpl=$('#rmsTpl').value.trim();
@@ -2230,7 +2234,7 @@ function openTask(t,prefill){
     const data={
       projectId:$('#tProject').value,part:$('#tPart').value,title:$('#tTitle').value.trim(),
       ...asData(asVals('#tAs')),parentId:t.parentId||'',requester:$('#tRequester').value.trim(),
-      jiraKey:$('#tJira').value.trim().toUpperCase(),rmsNo:$('#tRms').value.trim(),rmsUrl:$('#tRmsUrl').value.trim(),
+      jiraKey:$('#tJira').value.trim().toUpperCase(),rmsNo:$('#tRms').value.replace(/[\s#]/g,''),rmsUrl:t.rmsUrl||'',
       status:$('#tStatus').value,priority:+$('#tPri').value,
       requestDate:$('#tReq').value,dueDate:$('#tDue').value,doneDate:$('#tDone').value,
       estHours:num($('#tEst').value),actHours:num($('#tAct').value),
@@ -4016,7 +4020,7 @@ function openAccount(m){
 let reports=[];
 const addDays=(s,n)=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()+n);return ymd(d);};
 const mondayOf=s=>{const d=new Date(s+'T00:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));return ymd(d);};
-const rstate={week:mondayOf(todayStr()),project:'all',week3:null,view:'sum',fold:new Set()};
+const rstate={week:mondayOf(todayStr()),project:'all',week3:null};
 const md=s=>s?`${+s.slice(5,7)}/${+s.slice(8,10)}`:'';
 const DOW=['일','월','화','수','목','금','토'];
 const reportId=(w,p)=>`${w}__${p}`;
@@ -4170,7 +4174,6 @@ rstate.week3=thursdayOf(todayStr());
 function rWeekLabel(thu){const wed=addDays(thu,6),firstSun=sundayOf(wed.slice(0,8)+'01');
   return `${wed.slice(2,4)}년 ${+wed.slice(5,7)}월 ${Math.round((new Date(sundayOf(wed)+'T00:00:00')-new Date(firstSun+'T00:00:00'))/(7*864e5))+1}주`;}
 const rRange=thu=>`${mdot(thu)} 목 ~ ${mdot(addDays(thu,6))} 수`;
-const rTabs=cur=>`<div class="vbar"><div class="vtabs" role="tablist">${[['sum','주간보고'],['detail','주간보고(상세)']].map(([v,l])=>`<button type="button" class="vtab" role="tab" data-goto="report" data-rview="${v}" aria-selected="${cur===v}">${l}</button>`).join('')}</div></div>`;
 const R_KINDS=[['done','반영'],['doing','진행'],['recv','접수']];
 const v3Id=thu=>`w_${thu}`;
 const v3Doc=()=>reports.find(r=>r.id===v3Id(rstate.week3));
@@ -4194,7 +4197,6 @@ function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `
 // 본문 소제목(■ 반영 N건 · ■ 진행 N건 · ■ 접수… N건)의 숫자 = 운영 건수. 한쪽을 고치면 다른 쪽도 같이 바뀜
 const V3_HEAD={done:/^(■\s*반영\s*)(\d+)(\s*건)/,doing:/^(■\s*진행\s*)(\d+)(\s*건)/,recv:/^(■\s*접수[^\d]*?)(\d+)(\s*건)/};
 function v3HeadCounts(lines){const o={};lines.forEach(l=>{for(const k in V3_HEAD){const m=String(l.t||'').match(V3_HEAD[k]);if(m&&!(k in o))o[k]=+m[2];}});return o;}
-const v3SetHeads=(lines,counts)=>lines.map(l=>{for(const k in V3_HEAD)if(V3_HEAD[k].test(l.t||''))return {...l,t:l.t.replace(V3_HEAD[k],(_,a,n,b)=>a+(+counts[k]||0)+b),h:undefined};return l;});
 // 저장된 본문에 새로 생긴 업무를 끼워 넣음(이번 주부터, 확정 전). 업무마다 'id:구분'을 sec.auto에 적어 두어
 // 사용자가 지운 줄은 다시 넣지 않음. 다른 구분에 자동으로 넣었던 줄(글자 그대로)은 옮겨 감. 소제목 숫자도 함께 ±1
 const v3Line={done:t=>`${t.title}(${md(t.doneDate)})`,doing:t=>`${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`,recv:t=>`${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`};
@@ -4233,14 +4235,6 @@ function v3Data(){
 const linesHtml=L=>L.map(l=>`<div${l.hl?' class="hl"':''}>${l.h?rtClean(l.h):l.t?esc(l.t):'<br>'}</div>`).join('');
 function readLines(ed){const out=[];ed.childNodes.forEach(n=>{if(n.nodeType===3){if(n.textContent.trim()||out.length)out.push({t:n.textContent,hl:false});return;}
   if(n.nodeType===1){const h=rtClean(n.innerHTML);out.push({t:n.textContent,hl:n.classList.contains('hl'),...(rtFmt(h)?{h}:{})});}});return out;}
-function edLinesInSel(ed){const sel=getSelection();if(!sel.rangeCount)return [];const r=sel.getRangeAt(0);
-  const kids=[...ed.children].filter(c=>r.intersectsNode(c));if(kids.length)return kids;
-  let n=r.startContainer;while(n&&n.parentNode!==ed)n=n.parentNode;return n&&n.nodeType===1?[n]:[];}
-function toggleHl(ed){const ls=edLinesInSel(ed);if(!ls.length)return;const on=!ls.every(l=>l.classList.contains('hl'));
-  // ✔ 표시만 앞에 붙이고 빼서, 줄 안의 글자 서식은 그대로 둠
-  ls.forEach(l=>{l.classList.toggle('hl',on);const t=l.textContent;if(on&&!t.startsWith('✔'))l.prepend('✔ ');
-    if(!on&&t.startsWith('✔')){const w=document.createTreeWalker(l,NodeFilter.SHOW_TEXT);while(w.nextNode()){const x=w.currentNode;if(x.data.trim()){x.data=x.data.replace(/^\s*✔\s?/,'');break;}}}if(!l.textContent)l.innerHTML='<br>';});}
-function insertHr(ed){const ls=edLinesInSel(ed),d=document.createElement('div');d.textContent='----------';(ls.length?ls[ls.length-1]:ed.lastChild)?.after?.(d)||ed.append(d);}
 // 저장: 구역 단위 부분 저장(다른 사람이 다른 구역을 고쳐도 덮어쓰지 않음)
 async function v3SaveDoc(patch){const id=v3Id(rstate.week3),doc=v3Doc(),at=new Date().toISOString();
   if(doc)return db.collection('reports').doc(id).update({...patch,updatedAt:at});
@@ -4259,15 +4253,6 @@ function renderReport(){
   const old=reports.filter(r=>r.kind!=='v3'&&r.week&&r.week>=mondayOf(thu)&&r.week<=mondayOf(addDays(thu,6)));
   const sum=`<h3 class="rsubt">${rWeekLabel(thu).slice(4)} 운영 건수</h3><div class="statWrap rsum-wrap"><table class="statTable rsum"><thead><tr><th>구분</th>${inc.map(c=>`<th title="${esc(c.name)}">${esc(c.name)}</th>`).join('')}<th>합계</th></tr></thead><tbody>
     ${R_KINDS.map(([k,l])=>`<tr><th scope="row">${l}</th>${inc.map(c=>`<td class="num" data-rc="${esc(c.id)}|${k}">${+c.counts[k]||0}</td>`).join('')}<td class="num"><b data-rt="${k}">${tot(k)}</b></td></tr>`).join('')}</tbody></table></div>`;
-  const secs=cats.map(c=>{const fold=rstate.fold.has(c.id),s=c.sec;
-    return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
-      <header class="rsecHead"><h3>${c.color?`<span class="rdot" style="background:${esc(c.color)}"></span>`:''}${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>
-        <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
-      <div class="rsecBody rtWrap">
-        <div class="rcounts">${R_KINDS.map(([k,l])=>`<label>${l}<input type="number" min="0" class="rcnt" data-k="${k}" data-note="cnt" value="${+c.counts[k]||0}" ${ro?'disabled':''}></label>`).join('')}${!ro&&c.project?'<button class="btn ghost sm" type="button" data-refill>자동 계산으로 다시 채우기</button>':''}${!c.inCount?'<span class="legend">운영 건수 미포함</span>':''}</div>
-        ${ro?'':`<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>`}
-        <div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
-      </div></section>`;}).join('');
   const simple=cats.map(c=>{const s=c.sec;
     return `<section class="rsec rsimple" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>${!c.project&&!ro?'<button class="btn sm" type="button" data-cdel>삭제</button>':''}</header>
@@ -4280,22 +4265,17 @@ function renderReport(){
       ${trashBtn('rpTrashBtn',TRASH_SRC.report.list().length)}${exportMenu([['rCopy','텍스트 복사'],...(downloads?[['rXlsx','엑셀 저장'],['rCsv','CSV','운영 건수 표만'],['rMd','Markdown']]:[])])}
     </div>
     <div class="rbar"><h2 class="rtitle">${rWeekLabel(thu).slice(4)}<small>${thu.replace(/-/g,'/')}(목)~${addDays(thu,6).slice(5).replace('-','/')}(수)</small></h2><span class="spacer"></span><span class="pill ${locked?'s-done':'s-wait'}">${locked?'확정됨':'작성 중'}</span>${canWrite?(locked?'<button class="btn primary" type="button" id="rUnconfirm">확정 해제</button>':'<button class="btn primary" type="button" id="rConfirm">이 주 보고서 확정</button>'):''}</div>
-    ${rTabs(rstate.view)}
-    ${rstate.view==='detail'?secs:sum+simple}${addCat}
+    ${sum+simple}${addCat}
     ${!doc&&old.length?`<div class="rold"><span class="legend">이전 형식 보고서 보기:</span>${old.map(r=>`<button class="btn ghost sm" type="button" data-oldrep="${esc(r.id)}">${esc(projOf(r.projectId)?.name||'전체 프로젝트')} · ${esc(md(r.week))} 주</button>`).join('')}</div>`:''}`;
 }
 // 본문을 고치는 중: 소제목 숫자를 운영 건수 표·건수 칸에 바로 반영(저장은 1초 뒤)
 function v3Live(sec){const hc=v3HeadCounts(readLines(sec.querySelector('.rEditor'))),cid=sec.dataset.cid;
-  for(const k in hc){const td=document.querySelector(`#reportArea [data-rc="${CSS.escape(cid)}|${k}"]`);if(td)td.textContent=hc[k];const inp=sec.querySelector(`.rcnt[data-k="${k}"]`);if(inp)inp.value=hc[k];}
+  for(const k in hc){const td=document.querySelector(`#reportArea [data-rc="${CSS.escape(cid)}|${k}"]`);if(td)td.textContent=hc[k];}
   R_KINDS.forEach(([k])=>{const t=document.querySelector(`#reportArea [data-rt="${k}"]`);if(t)t.textContent=[...document.querySelectorAll(`#reportArea [data-rc$="|${k}"]`)].reduce((n,x)=>n+(+x.textContent||0),0);});}
 onArea('#reportArea','input',e=>{const ed=e.target.closest?.('.rEditor');if(ed&&canWrite){const sec=ed.closest('[data-cid]');v3Live(sec);v3Queue(sec.dataset.cid);}});
 onArea('#reportArea','paste',e=>{if(!e.target.closest?.('.rEditor'))return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));});
-onArea('#reportArea','mousedown',e=>{if(e.target.closest('[data-hl],[data-hr]'))e.preventDefault();});
 onArea('#reportArea','change',e=>{const t=e.target;
   if(t.id==='rWeek3'||t.id==='rWeek3Y'){v3Flush();rstate.week3=t.id==='rWeek3'?t.value:latestIn('rweek',+t.value);render();return;}
-  if(t.classList.contains('rcnt')){const sec=t.closest('[data-cid]'),cid=sec.dataset.cid,counts={};sec.querySelectorAll('.rcnt').forEach(x=>counts[x.dataset.k]=Math.max(0,Math.round(+x.value||0)));
-    const ed=sec.querySelector('.rEditor'),lines=v3SetHeads(readLines(ed),counts);ed.innerHTML=linesHtml(lines);clearTimeout(v3Timer[cid]);delete v3Timer[cid];
-    v3Save(cid,{counts,countsEdited:true,lines}).catch(err=>handleWriteError(err));}
 });
 // 보고서 내보내기용 텍스트 줄(강조 줄은 ✔ 유지)
 function v3Text(d){const L=[`■ ${rWeekLabel(d.thu)} 주간 업무 보고 (${rRange(d.thu)})`,'','[운영 건수]'],inc=d.cats.filter(c=>c.inCount);
@@ -4318,10 +4298,6 @@ async function v3Xlsx(X,d){const wb=new X.Workbook(),ws=wb.addWorksheet('주간�
   return wb.xlsx.writeBuffer();}
 onArea('#reportArea','click',async e=>{
   const sec=e.target.closest('[data-cid]'),cid=sec?.dataset.cid;
-  if(e.target.closest('[data-fold]')){rstate.fold.has(cid)?rstate.fold.delete(cid):rstate.fold.add(cid);render();return;}
-  if(e.target.closest('[data-hl]')){toggleHl(sec.querySelector('.rEditor'));v3Queue(cid);return;}
-  if(e.target.closest('[data-hr]')){insertHr(sec.querySelector('.rEditor'));v3Queue(cid);return;}
-  if(e.target.closest('[data-refill]')){const c=v3Data().cats.find(x=>x.id===cid),counts=v3Auto(c,rstate.week3).counts;try{await v3Save(cid,{counts,countsEdited:false,...(Array.isArray(c.sec.lines)?{lines:v3SetHeads(c.sec.lines,counts)}:{})});}catch(err){handleWriteError(err);}return;}
   if(e.target.closest('[data-cdel]')){const c=v3Data().cats.find(x=>x.id===cid);if(!confirm(`'${c?.name}' 카테고리를 이 주 보고서에서 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`))return;
     try{const all=v3Custom(v3Doc()),idx=all.findIndex(x=>x.id===cid),cat=all[idx];await v3SaveDoc({cats:all.filter(x=>x.id!==cid)});
       if(cat)await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area:'report',type:'report_cat',label:`${rWeekLabel(rstate.week3)} · ${cat.name}`,payload:{docId:v3Id(rstate.week3),cat,idx},by:myMember()?.name||''});
@@ -4539,7 +4515,7 @@ let actorId=null, userCap=null, historyItems=[], historyReady=false, historySub=
 const nameCache={}, nameAsked=new Set();
 const hstate={entity:'all',action:'all',actor:'all',range:'30',q:''};
 const HFIELDS={manual:[['title','제목'],['category','분류'],['version','버전']],evt:[['status','작업상태'],['name','이벤트명'],['workType','작업유형'],['category','구분'],['dueDate','시작일'],['reflectStatus','종료일'],['eid','이벤트ID']],
-  task:[['projectId','프로젝트'],['part','파트'],['title','요청내용'],['jiraKey','Jira 키'],['rmsNo','RMS 번호'],['rmsUrl','RMS 링크'],['assignee','담당자'],['requester','요청자'],['status','진행 현황'],['priority','우선순위'],['requestDate','요청일자'],['dueDate','완료 일정'],['doneDate','실제 완료일'],['estHours','예상 소요(h)'],['actHours','실제 소요(h)'],['link','관련 링크'],['note','메모']],
+  task:[['projectId','프로젝트'],['part','파트'],['title','요청내용'],['jiraKey','Jira 키'],['rmsNo','RMS 번호'],['rmsUrl','RMS 링크'],['assignee','담당자'],['requester','요청자'],['status','진행 현황'],['priority','우선순위'],['requestDate','요청일자'],['dueDate','완료 일정'],['doneDate','실제 완료일'],['estHours','예상 소요(h)'],['actHours','실제 소요(h)'],['link','피그마 링크'],['note','메모']],
   project:[['name','이름'],['client','고객사·기간'],['color','색상']],
   part:[['name','이름'],['color','색상'],['order','순서']],
   member:[['name','이름'],['projectId','프로젝트'],['part','파트'],['quota','연차(일)']],

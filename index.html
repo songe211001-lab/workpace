@@ -1006,16 +1006,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .pnRow .pnF .sel{flex:none}.pnRow .pnF select.sel{width:auto}
 .ltBar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
 .ltBar .searchBox{margin:0;width:280px;max-width:100%}
-.ltBar .ptabs{flex:0 1 auto;flex-wrap:wrap;overflow:visible;gap:4px}
-/* 프로젝트 탭 간격: 관리 버튼(⋯)이 자리를 차지하지 않게 탭 오른쪽 위에 겹쳐 띄운다 */
-.ltBar .ptabW{position:relative}
-.ltBar .ptabMore{position:absolute;top:-7px;right:-5px;width:18px;height:18px;line-height:16px;padding:0;font-size:11px;background:var(--surface);border:1px solid var(--line);border-radius:50%;z-index:1}
-.ltBar .ptab{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:14px;background:var(--surface);color:var(--ink-soft)}
-.ltBar .ptab[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
-.ltBar .ptab[aria-selected="true"] .c{color:inherit;background:rgba(255,255,255,.25)}
-.ltBar .ptab[aria-selected="true"] .dot{box-shadow:0 0 0 1.5px #fff}
-.ltBar .ptabAdd{border-style:dashed}
-.postOpen>.ltBar{display:none}
+.postOpen>.ltBar,.postOpen>.ptBar{display:none}
 .postList{background:transparent;border:0;border-radius:0;border-top:1px solid var(--line)}
 .postRow{display:grid;grid-template-columns:minmax(0,2fr) 220px minmax(0,1.6fr) auto;align-items:center;gap:6px 16px;padding:14px 12px;border-top:0;border-bottom:1px solid var(--line)}
 .prMain{display:flex;align-items:center;gap:8px;min-width:0}.prMain .pTitle{flex:1 1 auto}
@@ -1119,6 +1110,7 @@ div.tfNote{height:auto;overflow:auto}
 .tkRms{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
 .rmsGo{min-width:28px;justify-content:center;text-decoration:none}.tkRms .rmsGo{min-width:0;height:24px;padding:0 6px}.rmsGo[aria-disabled]{opacity:.4;cursor:not-allowed}
 @media (max-width:480px){.lvSum .stable th,.lvSum .stable td{padding-left:6px;padding-right:6px}} /* 좁은 화면: 연차 현황 5칸이 한 화면에 */
+.ptBar .ptabs{margin:0 0 -1px;gap:2px}.ptBar .ptab{height:36px;padding:0 10px;font-size:14px} /* 업무 관리 프로젝트 탭: 다른 화면의 밑줄 탭과 같은 모양 */
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1170,10 +1162,10 @@ div.tfNote{height:auto;overflow:auto}
 
   <div id="postNew" hidden></div>
 
-  <!-- 업무 목록: 검색 · 프로젝트 칩 · 파트 칩 · 목록/보드 한 줄 -->
+  <!-- 프로젝트 탭(밑줄 탭) → 요약 카드 → 정렬 · 목록/보드 -->
+  <div class="vbar ptBar"><div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div></div>
   <div id="tkSum"></div>
   <div class="ltBar cvFilt">
-    <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
     <select class="sel" id="lSort" aria-label="목록 정렬"><option value="req">요청일 최신순</option><option value="due">마감 임박순</option></select>
     <div class="seg" id="viewSeg">

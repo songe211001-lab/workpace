@@ -178,6 +178,16 @@ begin
   insert into public.wb_outbox (email, name, kind, line) values (v_email, coalesce(m->>'name', ''), p_kind, p_line);
 end $$;
 
+-- 업무 담당자 전원(주 담당 assigneeId + 함께 담당 coIds)의 구성원 id
+create or replace function public.wb_task_people(p jsonb)
+returns setof text language sql immutable as $$
+  select distinct x from (
+    select nullif(p->>'assigneeId', '') as x
+    union all
+    select jsonb_array_elements_text(case when jsonb_typeof(p->'coIds') = 'array' then p->'coIds' else '[]'::jsonb end)
+  ) s where coalesce(x, '') <> '';
+$$;
+
 -- 업무·댓글·휴가·투입 문서가 바뀌면 알림을 만듦
 create or replace function public.wb_enqueue()
 returns trigger language plpgsql security definer set search_path = public, auth as $$
@@ -199,20 +209,25 @@ begin
     select '"' || (r->>'title') || '"' || coalesce(' (' || (p.data->>'name') || ')', '') into v_head
       from (select 1) x left join public.wb_docs p on p.coll = 'projects' and p.id = r->>'projectId';
     if tg_op = 'INSERT' then
-      perform public.wb_queue(n->>'assigneeId', 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'));
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'))
+        from public.wb_task_people(n) x;
     elsif tg_op = 'DELETE' then
-      perform public.wb_queue(o->>'assigneeId', 'task', v_actor || '님이 ' || v_head || ' 업무를 삭제했어요');
-    elsif coalesce(n->>'assigneeId', '') <> coalesce(o->>'assigneeId', '') then
-      perform public.wb_queue(n->>'assigneeId', 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'));
-      perform public.wb_queue(o->>'assigneeId', 'task', v_actor || '님이 ' || v_head || ' 업무의 담당자를 다른 사람으로 바꿨어요');
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 삭제했어요') from public.wb_task_people(o) x;
     else
+      -- 새로 담당이 된 사람 / 담당에서 빠진 사람
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'))
+        from public.wb_task_people(n) x where x not in (select public.wb_task_people(o));
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무의 담당자에서 나를 뺐어요')
+        from public.wb_task_people(o) x where x not in (select public.wb_task_people(n));
+      -- 계속 담당인 사람에게는 바뀐 내용
       v_chg := concat_ws(', ',
         case when (n->>'status') is distinct from (o->>'status') then '진행 현황 ' || public.wb_status(o->>'status') || ' → ' || public.wb_status(n->>'status') end,
         case when coalesce(n->>'dueDate', '') <> coalesce(o->>'dueDate', '') then '완료 일정 ' || public.wb_md(o->>'dueDate') || ' → ' || public.wb_md(n->>'dueDate') end,
         case when (n->>'priority') is distinct from (o->>'priority') then '우선순위 ' || public.wb_pri(o->>'priority') || ' → ' || public.wb_pri(n->>'priority') end,
         case when coalesce(n->>'title', '') <> coalesce(o->>'title', '') then '요청내용 변경' end);
       if v_chg <> '' then
-        perform public.wb_queue(n->>'assigneeId', 'task', v_actor || '님이 ' || v_head || ' 업무를 바꿨어요: ' || v_chg);
+        perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 바꿨어요: ' || v_chg)
+          from public.wb_task_people(n) x where x in (select public.wb_task_people(o));
       end if;
     end if;
 
@@ -220,9 +235,9 @@ begin
     select data into t from public.wb_docs where coll = 'tasks' and id = n->>'taskId';
     if t is null then return null; end if;
     v_line := v_actor || '님이 "' || (t->>'title') || '"에 댓글을 남겼어요: ' || left(n->>'text', 120);
-    perform public.wb_queue(t->>'assigneeId', 'comment', v_line);
+    perform public.wb_queue(x, 'comment', v_line) from public.wb_task_people(t) x;
     select id into v_req from public.wb_docs where coll = 'members' and data->>'name' = t->>'requester' limit 1;
-    if v_req is distinct from (t->>'assigneeId') then perform public.wb_queue(v_req, 'comment', v_line); end if;
+    if v_req is not null and v_req not in (select public.wb_task_people(t)) then perform public.wb_queue(v_req, 'comment', v_line); end if;
 
   elsif v_coll = 'leaves' then
     r := coalesce(n, o);
@@ -264,7 +279,7 @@ begin
       from public.wb_docs t left join public.wb_docs p on p.coll = 'projects' and p.id = t.data->>'projectId'
      where t.coll = 'tasks' and coalesce(t.data->>'status', '') not in ('done', 'hold')
        and coalesce(t.data->>'dueDate', '') ~ '^\d{4}-\d{2}-\d{2}$' and (t.data->>'dueDate')::date <= v_today + 1
-       and (t.data->>'assigneeId' = mm.id or (coalesce(t.data->>'assigneeId', '') = '' and t.data->>'assignee' = mm.data->>'name'));
+       and (mm.id in (select public.wb_task_people(t.data)) or (coalesce(t.data->>'assigneeId', '') = '' and t.data->>'assignee' = mm.data->>'name'));
     if v_lines is null then continue; end if;
     select email into v_email from auth.users where id::text = mm.data->>'userId';
     if v_email is null then continue; end if;

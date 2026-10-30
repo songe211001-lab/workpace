@@ -1095,6 +1095,8 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .cpEd{width:100%;box-sizing:border-box;min-height:72px;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px;line-height:1.6;background:var(--surface);outline:none}.cpEd:focus{border-color:var(--accent)}
 .mnBodyEd{min-height:90px;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px;font-weight:400;color:var(--fg);line-height:1.6;background:var(--surface);outline:none}.mnBodyEd:focus{border-color:var(--accent)}
 div.tfNote{height:auto;overflow:auto}
+.rtPop{position:fixed;z-index:1000;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.16);padding:4px}
+.rtPop[hidden]{display:none}.rtPop .rtBar{flex-wrap:nowrap}.rtPop .rtPal{position:static}.rtPop .rtSw{left:0;top:calc(100% + 4px)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2025,20 +2027,49 @@ function rtLinkify(clean){const d=document.createElement('div');d.innerHTML=clea
 const rtPal=(cmd,lab,C)=>`<details class="rtPal"><summary class="rtB" aria-label="${lab}" title="${lab}"><span class="${cmd==='foreColor'?'rtFgI':'rtBgI'}">가</span></summary><span class="rtSw">${C.map(([c,n])=>`<button type="button" data-rtc="${cmd}" data-v="${c}" aria-label="${lab} ${n}" title="${n}" style="--c:${c}"></button>`).join('')}</span></details>`;
 const rtBtns=()=>`<span class="rtBar" role="toolbar" aria-label="글자 서식">${[['bold','굵게 (Ctrl+B)','<b>B</b>'],['italic','기울임 (Ctrl+I)','<i>I</i>'],['underline','밑줄 (Ctrl+U)','<u>U</u>'],['strikeThrough','취소선','<s>S</s>']].map(([c,l,g])=>`<button type="button" class="rtB" data-rtc="${c}" aria-label="${l}" aria-pressed="false" title="${l}">${g}</button>`).join('')}${rtPal('foreColor','글자색',RT_FG)}${rtPal('hiliteColor','배경 강조색',RT_BG)}<button type="button" class="rtB rtClr" data-rtc="removeFormat" aria-label="서식 지우기" title="서식 지우기">서식 지우기</button></span>`;
 // 편집칸: 도구 줄 + contenteditable. 읽기 전용이면 도구 줄 없이 보기만
-const rtEditor=(cls,attrs,html,ph)=>`<div class="rtWrap">${canWrite?rtBtns():''}<div class="${cls}" contenteditable="${canWrite}" data-rt role="textbox" aria-multiline="true" ${attrs} data-ph="${esc(ph||'')}">${html}</div></div>`;
+const rtEditor=(cls,attrs,html,ph)=>`<div class="rtWrap"><div class="${cls}" contenteditable="${canWrite}" data-rt role="textbox" aria-multiline="true" ${attrs} data-ph="${esc(ph||'')}">${html}</div></div>`;
+// 서식 도구는 글자를 고르면 그 위에 뜨는 상자 하나(모든 편집칸이 같이 씀)
+let rtPop=null,rtEdCur=null,rtRange=null,rtRaf=0;
+const rtPopEl=()=>{if(!rtPop){rtPop=document.createElement('div');rtPop.className='rtPop';rtPop.hidden=true;rtPop.innerHTML=rtBtns();document.body.append(rtPop);}return rtPop;};
+// 지금 선택이 쓰기 가능한 편집칸 안의 글자면 그 편집칸
+function rtSelEd(){const s=getSelection();if(!canWrite||!s.rangeCount||s.isCollapsed||!String(s).trim())return null;
+  const n=s.anchorNode,ed=(n.nodeType===1?n:n.parentElement)?.closest?.('[data-rt]');return ed&&ed.getAttribute('contenteditable')==='true'&&ed.contains(s.focusNode)?ed:null;}
+function rtPlace(){
+  const pop=rtPopEl(),ed=rtSelEd();
+  if(!ed){if(!pop.querySelector('details[open]')&&!pop.contains(document.activeElement))pop.hidden=true;return;}
+  rtEdCur=ed;rtRange=getSelection().getRangeAt(0).cloneRange();pop.hidden=false;
+  const r=rtRange.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight,touch=matchMedia('(pointer:coarse)').matches;
+  const top=touch||r.top-ph-8<4?Math.min(r.bottom+8,innerHeight-ph-4):r.top-ph-8; // 터치는 기본 복사 메뉴와 겹치지 않게 아래
+  pop.style.top=Math.max(4,top)+'px';pop.style.left=Math.max(8,Math.min(innerWidth-pw-8,r.left+r.width/2-pw/2))+'px';rtState();}
+const rtLater=()=>{cancelAnimationFrame(rtRaf);rtRaf=requestAnimationFrame(rtPlace);};
+document.addEventListener('selectionchange',rtLater);document.addEventListener('mouseup',rtLater);document.addEventListener('keyup',rtLater);
+addEventListener('scroll',()=>{if(rtPop&&!rtPop.hidden)rtLater();},true);addEventListener('resize',()=>{if(rtPop&&!rtPop.hidden)rtLater();});
 document.addEventListener('mousedown',e=>{if(e.target.closest?.('.rtBar'))e.preventDefault();}); // 눌러도 편집칸 선택이 풀리지 않게
+const rtBack=()=>{if(!rtEdCur)return;rtEdCur.focus();if(rtRange){const s=getSelection();s.removeAllRanges();s.addRange(rtRange);}};
 document.addEventListener('click',e=>{
   document.querySelectorAll('details.rtPal[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});
-  const b=e.target.closest?.('.rtBar [data-rtc]');if(!b)return;const ed=b.closest('.rtWrap')?.querySelector('[data-rt]');if(!ed||ed.getAttribute('contenteditable')!=='true')return;
-  const sel=getSelection(),r=sel.rangeCount&&ed.contains(sel.anchorNode)?sel.getRangeAt(0):null;ed.focus();if(r){sel.removeAllRanges();sel.addRange(r);}
+  const b=e.target.closest?.('.rtBar [data-rtc]');if(!b||!rtEdCur||rtEdCur.getAttribute('contenteditable')!=='true')return;
+  rtBack();
   const c=b.dataset.rtc;document.execCommand('styleWithCSS',false,c==='foreColor'||c==='hiliteColor');document.execCommand(c,false,b.dataset.v||null);document.execCommand('styleWithCSS',false,false); // Ctrl+B 등 단축키가 <b>로 들어가게 되돌림
-  b.closest('details')?.removeAttribute('open');rtState();
+  // 굵게 등 태그에 바로 붙은 색은 안쪽 span으로 옮김(저장할 때 span의 색만 남기 때문)
+  const fix=rtEdCur.querySelectorAll('b[style],i[style],u[style],s[style],strike[style]');
+  if(fix.length){const g=getSelection(),k=g.rangeCount?g.getRangeAt(0):null,pos=k&&[k.startContainer,k.startOffset,k.endContainer,k.endOffset]; // 옮기는 동안 선택이 풀리지 않게 기억했다 되살림
+    fix.forEach(el=>{const sp=document.createElement('span');sp.style.color=el.style.color;sp.style.backgroundColor=el.style.backgroundColor;while(el.firstChild)sp.append(el.firstChild);el.append(sp);el.removeAttribute('style');});
+    if(pos){const r=document.createRange();try{r.setStart(pos[0],pos[1]);r.setEnd(pos[2],pos[3]);g.removeAllRanges();g.addRange(r);}catch(err){}}}
+  b.closest('details')?.removeAttribute('open');rtLater();
 });
-function rtState(){const ed=document.activeElement?.closest?.('[data-rt]'),bar=ed?.closest('.rtWrap')?.querySelector('.rtBar');if(!bar)return;
+function rtState(){const bar=rtPop?.querySelector('.rtBar');if(!bar||rtPop.hidden)return;
   bar.querySelectorAll('[aria-pressed]').forEach(b=>{let on=false;try{on=document.queryCommandState(b.dataset.rtc);}catch(err){}b.setAttribute('aria-pressed',String(on));});}
-document.addEventListener('selectionchange',rtState);
 document.addEventListener('paste',e=>{const ed=e.target.closest?.('[data-rt]');if(!ed||e.defaultPrevented)return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));}); // 붙여넣기는 글자만
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('details.rtPal[open]').forEach(d=>d.open=false);});
+document.addEventListener('keydown',e=>{
+  const open=rtPop&&!rtPop.hidden;
+  if(open&&e.altKey&&e.key==='F10'){e.preventDefault();rtPop.querySelector('button,summary')?.focus();return;} // 도구 상자로 이동
+  if(e.key!=='Escape')return;
+  const pal=[...document.querySelectorAll('details.rtPal[open]')];if(pal.length){pal.forEach(d=>d.open=false);return;}
+  if(!open)return;
+  if(rtPop.contains(document.activeElement)){rtBack();return;} // 편집칸으로 돌아감
+  getSelection().collapseToEnd();rtPop.hidden=true;
+});
 
 /* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
 let cvtCases=[],cvtRuns=[];
@@ -4532,13 +4563,13 @@ function renderReport(){
         <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
       <div class="rsecBody rtWrap">
         <div class="rcounts">${R_KINDS.map(([k,l])=>`<label>${l}<input type="number" min="0" class="rcnt" data-k="${k}" data-note="cnt" value="${+c.counts[k]||0}" ${ro?'disabled':''}></label>`).join('')}${!ro&&c.project?'<button class="btn ghost sm" type="button" data-refill>자동 계산으로 다시 채우기</button>':''}${!c.inCount?'<span class="legend">운영 건수 미포함</span>':''}</div>
-        ${ro?'':`<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button>${rtBtns()}</div>`}
+        ${ro?'':`<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>`}
         <div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
       </div></section>`;}).join('');
   const simple=cats.map(c=>{const s=c.sec;
     return `<section class="rsec rsimple" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>${!c.project&&!ro?'<button class="btn sm" type="button" data-cdel>삭제</button>':''}</header>
-      <div class="rsecBody rtWrap">${ro?'':`<div class="rtools">${rtBtns()}</div>`}<div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div></div></section>`;}).join('');
+      <div class="rsecBody rtWrap"><div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div></div></section>`;}).join('');
   const addCat=ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`;
   area.innerHTML=`
     <div class="rtool">

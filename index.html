@@ -1111,6 +1111,10 @@ div.tfNote{height:auto;overflow:auto}
 .evTable .evf.evSt{height:24px;width:auto;min-width:0;border:0;border-radius:999px;padding:0 4px 0 9px;font-size:11.5px;font-weight:700}
 .evTable .evf.evSt.evp-완료{background:var(--ok-soft);color:var(--ok)}.evTable .evf.evSt.evp-진행{background:#e3edff;color:#1c5fbf}.evTable .evf.evSt.evp-대기{background:var(--warn-soft);color:var(--warn)}.evTable .evf.evSt.evp-연장{background:#fff1d0;color:#9a6200}.evTable .evf.evSt.evp-비노출{background:var(--sunk);color:var(--ink-soft)}
 .evTable .evf.evPillSel{height:24px;width:auto;min-width:0;border:0;border-radius:999px;padding:0 4px 0 9px;font-size:11.5px;font-weight:700;background:var(--sunk);color:var(--ink-soft)} /* 작업유형·구분: 회색 알약 */
+.pjTag{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:6px;background:var(--sunk);color:var(--fg);font-size:12px;font-weight:700;white-space:nowrap}.pjTag .dot{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
+.tkTable td:nth-child(5),.tkTable td:nth-child(6){white-space:nowrap}
+.tkWho{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:150px}.tkWho .who{white-space:nowrap}
+.tkPart{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-soft);white-space:nowrap}.tkPart::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--c)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1866,10 +1870,10 @@ function postRow(p){
   const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
   const late=postLate(p),own=!k.length&&canWrite;
   return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
-    <td>${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}</td>
+    <td>${pj?`<span class="pjTag" style="--c:${esc(pj.color)}"><span class="dot" aria-hidden="true"></span>${esc(pj.name)}</span>`:''}</td>
     <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>${k.length?`<span class="legend">요청 ${k.length}건${doing?` · 진행 ${doing}`:''}</span>`:''}</td>
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
-    <td class="prWho">${esc(partOf(p.part).label)} · ${whoMany(p,22,'담당 미지정')}</td>
+    <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
     <td>${p.requester?esc(p.requester):'<span class="legend">—</span>'}</td>
     <td>${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</td></tr>`;
 }

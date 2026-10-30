@@ -1107,6 +1107,9 @@ div.tfNote{height:auto;overflow:auto}
 .tkTable td{vertical-align:middle}.tkTable .tkTitle{min-width:220px}.tkTable .tkTitle .pTitle{display:block}.tkTable .prDate{white-space:nowrap}
 .tkTable .tkYear td{background:var(--sunk);padding:6px 12px}
 .postOpen>#tkSum{display:none}
+/* 이벤트 관리 표의 상태 칸: 위 통계 칩(.cvPill)과 같은 알약 */
+.evTable .evf.evSt{height:24px;width:auto;min-width:0;border:0;border-radius:999px;padding:0 4px 0 9px;font-size:11.5px;font-weight:700}
+.evTable .evf.evSt.evp-완료{background:var(--ok-soft);color:var(--ok)}.evTable .evf.evSt.evp-진행{background:#e3edff;color:#1c5fbf}.evTable .evf.evSt.evp-대기{background:var(--warn-soft);color:var(--warn)}.evTable .evf.evSt.evp-연장{background:#fff1d0;color:#9a6200}.evTable .evf.evSt.evp-비노출{background:var(--sunk);color:var(--ink-soft)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2867,7 +2870,7 @@ function evDeadlines(rows,soon=7){const T=new Date(todayStr()+'T00:00:00'),over=
 
 function evCell(r,k){
   const ro=!canWrite?'disabled':'';
-  if(k==='status')return `<td><select class="evf evSt st-${esc(r.status)}" data-f="status" aria-label="상태" ${ro}>${EV_STATUS.map(o=>`<option ${r.status===o?'selected':''}>${o}</option>`).join('')}</select></td>`;
+  if(k==='status')return `<td><select class="evf evSt st-${esc(r.status)} evp-${esc(r.status)}" data-f="status" aria-label="상태" ${ro}>${EV_STATUS.map(o=>`<option ${r.status===o?'selected':''}>${o}</option>`).join('')}</select></td>`;
   if(EV_SEL[k]){const cur=String(r[k]??''),o=['',...EV_SEL[k]];if(cur&&!o.includes(cur))o.push(cur);
     return `<td><select class="evf" data-f="${k}" aria-label="${EV_LABEL[k]}" ${ro}>${o.map(v=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${v?esc(v):'선택'}</option>`).join('')}</select></td>`;}
   const miss=est.missing&&evMissing(r,k)?' evMiss':'';
@@ -2910,8 +2913,7 @@ function renderEventOps(){
   const bulk=canWrite&&est.sel.size?`<div class="bulkBar evBulk" role="region" aria-label="선택한 이벤트 한꺼번에 바꾸기"><b>${est.sel.size}건 선택</b>${EV_STATUS.map(s=>`<button type="button" class="btn sm" data-bulk="${s}">${s}로 변경</button>`).join('')}<button type="button" class="btn danger sm" id="evBulkDel">선택 삭제</button></div>`:'';
   area.innerHTML=`<div class="rtool">${tools}</div>${tabs}
     <div class="panel cvHead"><div class="cvHeadT"><h3>${esc(mo.label)}</h3><span class="legend">이벤트 ${rows.length}건 · 다음 ID ${evMaxId()+1}</span><span class="spacer"></span>${canWrite?`<button class="btn ghost sm" type="button" data-evdelm="${esc(mo.key)}">이 달 삭제</button><button class="btn sm" type="button" id="evAddRow">+ 행 추가</button><button class="btn primary sm" type="button" id="evAddMonth">새 달 만들기</button>`:''}</div>
-      <div class="cvStats">${['전체',...EV_STATUS].map(f=>`<button type="button" class="cvStat" data-evf="${f}" aria-pressed="${est.filter===f}" title="${f==='전체'?'모두 보기':'이 상태만 보기'}"><span class="cvPill evp-${f}">${f}</span><b class="num">${f==='전체'?rows.length:cnt(f)}</b></button>`).join('')}
-        <span class="cvProg"><button type="button" class="cvStat" id="evMissing" aria-pressed="${est.missing}" title="시작일·종료일·이벤트ID·이벤트명이 빈 행 (누르면 표에 표시)"><span class="cvPill ${miss?'cv-MAJOR':'cv-NT'}">미입력</span><b class="num">${miss}</b></button></span></div></div>
+      <div class="cvStats">${['전체',...EV_STATUS].map(f=>`<button type="button" class="cvStat" data-evf="${f}" aria-pressed="${est.filter===f}" title="${f==='전체'?'모두 보기':'이 상태만 보기'}"><span class="cvPill evp-${f}">${f}</span><b class="num">${f==='전체'?rows.length:cnt(f)}</b></button>`).join('')}<button type="button" class="cvStat" id="evMissing" aria-pressed="${est.missing}" title="시작일·종료일·이벤트ID·이벤트명이 빈 행 (누르면 표에 표시)"><span class="cvPill ${miss?'cv-MAJOR':'cv-NT'}">미입력</span><b class="num">${miss}</b></button></div></div>
     ${bulk}
     <div class="tablebox"><table class="stable evTable" data-mid="${esc(mid)}">${evHead(true)}<tbody>${body}</tbody></table></div>
     <p class="legend evLegend">칸을 고친 뒤 다른 곳을 누르면 저장돼요. 엑셀에서 여러 칸을 복사해 붙여넣을 수 있어요. 행은 끌어서 순서를 바꿀 수 있어요.</p>

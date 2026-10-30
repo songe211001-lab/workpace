@@ -1030,6 +1030,13 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .cvDetGrid p{margin:4px 0 0;white-space:pre-wrap;font-size:12.5px;line-height:1.6;color:var(--ink-soft)}
 .cvDetAct{display:flex;gap:6px;margin-top:8px}
 @media (max-width:600px){.cvDetGrid{grid-template-columns:1fr}.cvProg{margin-left:0}}
+.asPick{position:relative;display:inline-block;min-width:150px;max-width:100%}
+.asPick>summary{list-style:none;cursor:pointer;display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px;padding-right:24px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 13px) 50%,calc(100% - 9px) 50%;background-size:4px 4px;background-repeat:no-repeat}
+.asPick>summary::-webkit-details-marker{display:none}
+.asList{position:absolute;z-index:40;top:calc(100% + 4px);left:0;min-width:190px;max-height:280px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;display:flex;flex-direction:column;gap:2px}
+.asList .cfItem{padding:6px 8px;font-size:13px;color:var(--fg);border-radius:6px}.asList .cfItem:hover{background:var(--sunk)}
+.asHint{padding:4px 8px 2px;border-top:1px solid var(--line);margin-top:2px}
+.who+.who{margin-left:8px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1249,8 +1256,8 @@ function passF(t){
   const q=state.q.trim().toLowerCase();
   return (state.part==='all'||t.part===state.part)&&
     (state.status==='all'||(state.status==='open'?t.status!=='done':t.status===state.status))&&
-    (state.assignee==='all'||(state.assignee==='me'?isMine(t):t.assignee===state.assignee))&&
-    (!q||[t.title,t.requester,t.assignee,t.jiraKey,t.rmsNo,t.note,projOf(t.projectId)?.name].some(v=>(v||'').toLowerCase().includes(q)));
+    (state.assignee==='all'||(state.assignee==='me'?isMine(t):asNames(t).includes(state.assignee)))&&
+    (!q||[t.title,t.requester,...asNames(t),t.jiraKey,t.rmsNo,t.note,projOf(t.projectId)?.name].some(v=>(v||'').toLowerCase().includes(q)));
 }
 function filtered(){return scoped().filter(passF);}
 function sorted(list){
@@ -1350,7 +1357,7 @@ function renderTabs(){
 function renderFilters(){
   state.part='all'; // 직무(파트) 구분 탭은 없앴다. 예전에 골라 둔 파트로 목록이 걸러진 채 남지 않게 항상 전체
   $('#fStatus').innerHTML=[['all','전체 현황'],['open','미완료 전체'],...STATUSES.map(s=>[s.k,s.label])].map(([k,l])=>`<option value="${k}" ${state.status===k?'selected':''}>${l}</option>`).join('');
-  const names=[...new Set(scoped().map(t=>t.assignee).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const names=[...new Set(scoped().flatMap(asNames))].sort((a,b)=>a.localeCompare(b,'ko'));
   const me=myMember();if(state.assignee==='me'&&storeReady&&!me)state.assignee='all';
   if(state.assignee!=='all'&&state.assignee!=='me'&&!names.includes(state.assignee))state.assignee='all';
   $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
@@ -1367,7 +1374,7 @@ function renderBoard(list){
       return `<div class="card${late?' is-late':''}" draggable="${canWrite}" data-id="${esc(t.id)}" tabindex="0">
         ${state.project==='all'&&p?`<div class="proj"><span class="dot" style="background:${esc(p.color)}"></span>${esc(p.name)}</div>`:''}
         <div class="t">${t.jiraKey?`<span class="jira">${esc(t.jiraKey)}</span>`:''}${rmsBadge(t)}${esc(t.title)}</div>
-        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${who(t.assignee,t.assigneeId,16)}</span>
+        <div class="meta"><span class="part"><span class="sw" style="background:${pt.c}"></span>${pt.label} · ${whoMany(t,16)}</span>
         <span class="num ${late?'late':''}">${t.dueDate?fmtDate(t.dueDate)+' '+(t.status==='done'?'':dday(t.dueDate)):''}</span></div>
         ${canWrite?`<div class="cardSt">${stSel(t)}</div>`:''}
       </div>`;}).join('')}
@@ -1385,6 +1392,22 @@ function avatarHtml(m,size=28){
 // 이름 앞에 프로필 원: 구성원(id·이름)으로 찾고, 없으면 첫 글자 원
 const personOf=(name,id)=>(id&&memOf(id))||members.find(m=>m.name===name)||(name?{name}:null);
 const who=(name,id,size=20,fallback='미지정')=>name?`<span class="who">${avatarHtml(personOf(name,id),size)}<span>${esc(name)}</span></span>`:esc(fallback);
+// 담당자 여러 명: 주 담당 assignee/assigneeId(알림·집계 기준, 처음 고른 사람) + 함께 담당 coIds(구성원 id)
+const asNames=t=>[t.assignee,...(t.coIds||[]).map(id=>memOf(id)?.name)].filter(Boolean);
+const whoMany=(t,size=20,fb='미지정')=>{const L=[[t.assignee,t.assigneeId],...(t.coIds||[]).map(id=>[memOf(id)?.name,id])].filter(x=>x[0]);return L.length?L.map(([n,i])=>who(n,i,size)).join(''):esc(fb);};
+// 고른 값 목록(구성원 id 또는 'name:이름') → 저장할 칸
+const asData=vals=>{const v=vals[0]||'',m=v.startsWith('name:')?null:memOf(v);return {assignee:m?m.name:v.slice(5),assigneeId:m?m.id:'',coIds:vals.slice(1).filter(x=>!x.startsWith('name:')&&memOf(x))};};
+const asValsOf=t=>{const m=taskMember(t),o=t.assignee&&!m?'name:'+t.assignee:'';return [m?.id||o,...(t.coIds||[])].filter(Boolean);};
+const asLabel=vals=>vals.map(v=>v.startsWith('name:')?v.slice(5):memOf(v)?.name).filter(Boolean).join(', ');
+// 담당자 고르기: 체크 목록(여러 명). 고른 순서대로 저장, 맨 처음이 주 담당
+function asPick(id,vals,orphan){const L=[...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.map(m=>[m.id,m.name])];
+  return `<details class="asPick" id="${id}" data-vals="${esc(vals.join(','))}"><summary class="sel" aria-label="담당자 (여러 명 선택)">${esc(asLabel(vals)||'담당자 미지정')}</summary><div class="asList" role="group" aria-label="담당자">${L.length?L.map(([v,n])=>`<label class="cfItem"><input type="checkbox" value="${esc(v)}" ${vals.includes(v)?'checked':''}>${esc(n)}</label>`).join(''):'<span class="legend">구성원을 먼저 추가해 주세요.</span>'}<span class="legend asHint">처음 고른 사람이 주 담당이에요</span></div></details>`;}
+const asVals=sel=>(document.querySelector(sel)?.dataset.vals||'').split(',').filter(Boolean);
+document.addEventListener('change',e=>{const p=e.target.closest?.('.asPick');if(!p||e.target.type!=='checkbox')return;e.stopPropagation();
+  const x=e.target.value;let v=asVals('#'+p.id).filter(y=>y!==x);if(e.target.checked)v.push(x);p.dataset.vals=v.join(',');p.querySelector('summary').textContent=asLabel(v)||'담당자 미지정';
+  p.dispatchEvent(new Event('aspick',{bubbles:true}));},true);
+document.addEventListener('click',e=>{document.querySelectorAll('details.asPick[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('details.asPick[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
 const whoBy=(uid,size=20)=>avatarHtml(members.find(m=>m.userId===uid)||{name:actorName(uid)},size);
 /* ---------- 게시물(최상위 업무) · 요청(parentId로 게시물에 붙은 하위 업무) ---------- */
 const isPost=t=>!t.parentId||!tasks.some(x=>x.id===t.parentId);
@@ -1415,11 +1438,12 @@ function renderPostNew(){
   box.hidden=!canWrite||!storeReady||!projects.length;
   if(box.hidden||box.contains(document.activeElement))return; // 입력 중엔 다시 그리지 않음
   const people=[...new Set([...members.map(m=>m.name),...tasks.map(x=>x.requester)].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const pnAsKeep=asVals('#pnAs'); // 다시 그려도 고른 담당자 유지
   keepVals(box,`<form class="postNew${pnOpen?' open':''}" id="pnForm" novalidate><h3><button type="button" class="pnToggle" id="pnToggle" aria-expanded="${pnOpen}" aria-controls="pnRowBox">프로젝트 등록하기<span class="chevron" aria-hidden="true">${pnOpen?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'}</span></button></h3><div class="pnRow" id="pnRowBox">
     <label class="pnF"><span>프로젝트</span><select class="sel" id="pnProj">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'?state.project:projects[0].id)}</select></label>
     <label class="pnF pnT"><span>제목</span><input class="sel" id="pnTitle" placeholder="업무 제목을 입력해 주세요" maxlength="200"></label>
     <label class="pnF"><span>파트</span><select class="sel" id="pnPart">${optH(PARTS.map(p=>[p.k,p.label]),state.part!=='all'?state.part:PARTS[0].k)}</select></label>
-    <label class="pnF"><span>담당자</span><select class="sel" id="pnAs"><option value="">담당자 미지정</option>${optH(members.map(m=>[m.id,m.name]),'')}</select></label>
+    <div class="pnF"><span>담당자</span>${asPick('pnAs',pnAsKeep)}</div>
     <label class="pnF"><span>요청자</span><input class="sel" id="pnReq" list="pnPeople" placeholder="이름 또는 부서"></label>
     <label class="pnF"><span>요청일</span><input class="sel" type="date" id="pnReqD" value="${todayStr()}"></label>
     <label class="pnF"><span>마감일</span><input class="sel" type="date" id="pnDue"></label>
@@ -1429,14 +1453,14 @@ function renderPostNew(){
 $('#postNew').addEventListener('click',e=>{if(!e.target.closest('#pnToggle')||!matchMedia('(max-width:600px)').matches)return;pnOpen=!pnOpen;const f=$('#pnForm');f.classList.toggle('open',pnOpen);e.target.closest('#pnToggle').setAttribute('aria-expanded',String(pnOpen));f.querySelector('.chevron').innerHTML=pnOpen?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';if(pnOpen)$('#pnTitle').focus();});
 $('#postNew').addEventListener('submit',async e=>{
   e.preventDefault();if(!canWrite)return;
-  const v=id=>$('#'+id).value.trim(), m=memOf($('#pnAs').value), now=new Date().toISOString();
-  const data={projectId:v('pnProj'),part:v('pnPart'),title:v('pnTitle'),assignee:m?m.name:'',assigneeId:m?m.id:'',parentId:'',requester:v('pnReq'),
+  const v=id=>$('#'+id).value.trim(), now=new Date().toISOString();
+  const data={projectId:v('pnProj'),part:v('pnPart'),title:v('pnTitle'),...asData(asVals('#pnAs')),parentId:'',requester:v('pnReq'),
     jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:2,requestDate:v('pnReqD'),dueDate:v('pnDue'),doneDate:'',estHours:'',actHours:'',link:'',note:'',updatedAt:now,createdAt:now};
   if(!data.title){$('#pnErr').textContent='제목을 입력해 주세요.';$('#pnTitle').focus();return;}
   if(data.dueDate&&data.requestDate&&data.dueDate<data.requestDate){$('#pnErr').textContent='마감일이 요청일보다 빨라요. 날짜를 확인해 주세요.';$('#pnDue').focus();return;}
   $('#pnSave').disabled=true;
   try{const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);
-    ['pnTitle','pnReq','pnDue','pnAs'].forEach(id=>$('#'+id).value='');$('#pnReqD').value=todayStr();$('#pnErr').textContent='';toast('등록했습니다');}
+    ['pnTitle','pnReq','pnDue'].forEach(id=>$('#'+id).value='');$('#pnAs').outerHTML=asPick('pnAs',[]);$('#pnReqD').value=todayStr();$('#pnErr').textContent='';toast('등록했습니다');}
   catch(err){handleWriteError(err,'#pnErr');}
   finally{$('#pnSave').disabled=false;document.activeElement?.blur();render();}
 });
@@ -1464,7 +1488,7 @@ function postRow(p){
   return `<li class="postRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <span class="prMain">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span></span>
     <span class="pMeta num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</span>
-    <span class="pMeta prWho">${k.length?`(요청 ${k.length}건${doing?` · 진행 ${doing}`:''}) `:''}${esc(partOf(p.part).label)} · ${who(p.assignee,p.assigneeId,22,'담당 미지정')}${p.requester?` · 요청 ${esc(p.requester)}`:''}</span>
+    <span class="pMeta prWho">${k.length?`(요청 ${k.length}건${doing?` · 진행 ${doing}`:''}) `:''}${esc(partOf(p.part).label)} · ${whoMany(p,22,'담당 미지정')}${p.requester?` · 요청 ${esc(p.requester)}`:''}</span>
     ${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</li>`;
 }
 function renderList(){
@@ -1483,12 +1507,13 @@ const tfFold=new Set();let tfSavedMsg='';
 const tfWlSum=list=>Math.round(list.reduce((a,w)=>a+(+w.hours||0),0)*100)/100;
 function renderPost(p){
   const main=$('#main');
+  if(main.dataset.post===p.id&&($('#tfAs')?.open||$('#cpAs')?.open))return; // 담당자 고르는 중엔 다시 그리지 않음
   if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf]'))return; // 칸 입력 중엔 다시 그리지 않음
   const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
   const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
-    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${who(t.assignee,t.assigneeId,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
+    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${whoMany(t,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select><button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">${canWrite?'수정':'보기'}</button></div>
       <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   // 칸 만들기: 편집 권한이 없으면 글자로만
@@ -1509,7 +1534,7 @@ function renderPost(p){
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
       ${row('진행 현황',!isReq&&k.length?`<span class="pill s-${st.k}" title="요청 업무들의 상태로 정해져요">${st.label}</span><span class="legend">요청 업무들의 상태로 정해져요</span>`:sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
       ${row('파트',sel('part',PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
-      ${row('담당자',sel('assignee',[['','미지정'],...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.map(m=>[m.id,m.name])],cm?.id||(orphan?'name:'+orphan:''),'담당자')+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
+      ${row('담당자',(ro?`<span class="tfVal">${esc(asNames(p).join(', ')||'—')}</span>`:asPick('tfAs',asValsOf(p),orphan))+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
       ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
       ${row('기간',`${date('requestDate',p.requestDate,'요청일')}<span class="legend">~</span>${date('dueDate',p.dueDate,'마감일')}${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}`)}
       ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
@@ -1535,7 +1560,7 @@ function renderPost(p){
     ${canWrite?`<div class="composer"><textarea id="cpText" rows="3" maxlength="1000" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}" placeholder="${isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요"}"></textarea>
       <div class="cpRow">${isReq?'':`<label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
       <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="파트">${optH(PARTS.map(x=>[x.k,x.label]),(nextPart(p.part)||partOf(p.part)).k)}</select>
-      <select class="sel" id="cpAs" aria-label="담당자"><option value="">담당자 미지정</option>${optH(members.map(m=>[m.id,m.name]),'')}</select>
+      ${asPick('cpAs',main.dataset.post===p.id?asVals('#cpAs'):[])}
       <label class="pnD">마감<input class="sel" type="date" id="cpDue"></label></span>`}
       <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
   </div>`;
@@ -1547,6 +1572,7 @@ function renderPost(p){
 async function tfSave(p,f,raw){
   const patch={};
   if(f==='title'){const v=raw.trim();if(!v){toast('제목을 입력해 주세요.');render();return;}patch.title=v;}
+  else if(f==='assignees')Object.assign(patch,asData(raw));
   else if(f==='assignee'){const m=raw.startsWith('name:')?null:memOf(raw);patch.assignee=m?m.name:raw.slice(5);patch.assigneeId=m?m.id:'';}
   else if(f==='priority')patch.priority=+raw;
   else if(f==='estHours'||f==='actHours')patch[f]=raw===''?'':Math.max(0,+raw);
@@ -1581,12 +1607,12 @@ async function sendPost(p,btn){
   btn.disabled=true;
   try{
     if(isReq&&$('#cpDue').value&&$('#cpDue').value<todayStr()){$('#cpErr').textContent='마감일이 오늘보다 빨라요. 날짜를 확인해 주세요.';btn.disabled=false;return;}
-    if(isReq){const m=memOf($('#cpAs').value), now=new Date().toISOString();
-      const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),assignee:m?m.name:'',assigneeId:m?m.id:'',parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',
+    if(isReq){const now=new Date().toISOString();
+      const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),...asData(asVals('#cpAs')),parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',
         jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,updatedAt:now,createdAt:now};
       const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);toast('업무 요청을 등록했어요');}
     else await db.collection('comments').add({taskId:p.id,text,by:actorId,at:new Date().toISOString()});
-    $('#cpText').value='';if($('#cpReq')){$('#cpDue').value='';$('#cpAs').value='';$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
+    $('#cpText').value='';if($('#cpReq')){$('#cpDue').value='';$('#cpAs').outerHTML=asPick('cpAs',[]);$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
   }catch(err){handleWriteError(err,'#cpErr');}finally{btn.disabled=false;}
 }
 async function setReqStatus(id,st){
@@ -1812,6 +1838,8 @@ $('#main').addEventListener('click',async e=>{
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
   const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(row.dataset.post?rootOf(t).id:t.id);
 });
+// 상세의 담당자 목록을 닫으면 저장
+$('#main').addEventListener('toggle',e=>{if(e.target.id!=='tfAs'||e.target.open||!canWrite)return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'assignees',asVals('#tfAs'));},true);
 $('#main').addEventListener('keydown',e=>{if(e.key!=='Enter')return;
   if(e.target.matches?.('input[data-tf]')){e.preventDefault();e.target.blur();return;}
   if(e.target.tagName==='INPUT'&&e.target.closest('.wlAdd')){e.preventDefault();const p=tasks.find(x=>x.id===state.post);if(p)tfAddWl(p);return;}
@@ -1838,7 +1866,7 @@ $('#main').addEventListener('dragend',()=>{dragId=null;document.querySelectorAll
 
 /* ---------- 내 업무: 로그인 계정을 구성원 한 명과 연결(members.userId) ---------- */
 function myMember(){return actorId?members.find(m=>m.userId===actorId):null;}
-function isMine(t){const m=myMember();return !!m&&(t.assigneeId===m.id||(!t.assigneeId&&t.assignee===m.name));}
+function isMine(t){const m=myMember();return !!m&&(t.assigneeId===m.id||(t.coIds||[]).includes(m.id)||(!t.assigneeId&&t.assignee===m.name));}
 function openWhoAmI(){
   if(!actorId){toast('로그인 정보를 확인할 수 없어 내 업무를 쓸 수 없어요.');return;}
   if(!members.length){toast('휴가 관리 › 구성원 관리에서 구성원을 먼저 추가해 주세요.');return;}
@@ -1889,7 +1917,7 @@ function openTask(t,prefill){
       <div class="f"><label for="tPart">파트 <b>*</b></label><select id="tPart">${opt(PARTS.map(p=>[p.k,p.label]),t.part)}</select></div>
       ${t.parentId&&tasks.some(x=>x.id===t.parentId)?`<div class="f full"><button type="button" class="hlink" id="tParent">게시물 열기: ${esc(rootOf(t).title)}</button></div>`:''}
       <div class="f full"><label for="tTitle">요청내용 <b>*</b></label><input id="tTitle" value="${esc(t.title||'')}" placeholder="예: 메인 배너 영역 반응형 수정" maxlength="200"></div>
-      <div class="f"><label for="tAssignee">담당자</label><select id="tAssignee"><option value="">미지정</option>${orphan?`<option value="name:${esc(orphan)}" selected>${esc(orphan)} (구성원 아님)</option>`:''}${members.map(m=>`<option value="${esc(m.id)}" ${curMem?.id===m.id?'selected':''}>${esc(m.name)}${projOf(m.projectId)?` · ${esc(projOf(m.projectId).name)}`:''}</option>`).join('')}</select>${members.length?'':'<span class="hint">휴가 관리 › 구성원 관리에서 구성원을 먼저 추가해 주세요.</span>'}${orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''}</div>
+      <div class="f"><label>담당자</label>${asPick('tAs',asValsOf(t),orphan)}${members.length?'':'<span class="hint">휴가 관리 › 구성원 관리에서 구성원을 먼저 추가해 주세요.</span>'}${orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''}</div>
       <div class="f"><label for="tRequester">요청자</label><input id="tRequester" list="peopleList" value="${esc(t.requester||'')}" placeholder="이름 또는 부서"><span class="hint" id="reqHint"></span></div>
       <div class="f"><label for="tStatus">진행 현황</label><select id="tStatus">${opt(STATUSES.map(s=>[s.k,s.label]),t.status)}</select></div>
       <div class="f"><label for="tPri">우선순위</label><select id="tPri">${opt(PRIS.map((l,i)=>[i,l]),t.priority??2)}</select></div>
@@ -1996,8 +2024,8 @@ function openTask(t,prefill){
     $('#cmBox').addEventListener('input',e=>e.stopPropagation());
   }
   // 담당자 휴가일에 마감이 걸리면 알려 줌
-  const dueSync=()=>{const av=$('#tAssignee').value,m=av.startsWith('name:')?null:memOf(av),l=m&&leaveOn(m.id,$('#tDue').value);$('#dueLeave').textContent=l?`담당자가 이날 휴가예요 (${leaveLabel(l)})`:'';};
-  dueSync();$('#tAssignee').addEventListener('change',dueSync);$('#tDue').addEventListener('change',dueSync);
+  const dueSync=()=>{const av=asVals('#tAs')[0]||'',m=av.startsWith('name:')?null:memOf(av),l=m&&leaveOn(m.id,$('#tDue').value);$('#dueLeave').textContent=l?`담당자가 이날 휴가예요 (${leaveLabel(l)})`:'';};
+  dueSync();$('#tAs').addEventListener('aspick',dueSync);$('#tDue').addEventListener('change',dueSync);
   // 다음 파트로 넘기기: 같은 요청을 다음 파트 업무로 새로 만듦(parentId로 연결)
   $('#tParent')?.addEventListener('click',()=>{const r=rootOf(t);closeModal();openPost(r.id);});
   $('#tNext')?.addEventListener('click',()=>{const np=nextPart(t.part),pt=partOf(t.part);
@@ -2011,10 +2039,9 @@ function openTask(t,prefill){
   $('#taskForm').addEventListener('submit',async e=>{
     e.preventDefault();if(ro)return;
     const num=v=>v===''?'':Math.max(0,+v);
-    const av=$('#tAssignee').value, am=av.startsWith('name:')?null:memOf(av);
     const data={
       projectId:$('#tProject').value,part:$('#tPart').value,title:$('#tTitle').value.trim(),
-      assignee:am?am.name:av.slice(5),assigneeId:am?am.id:'',parentId:t.parentId||'',requester:$('#tRequester').value.trim(),
+      ...asData(asVals('#tAs')),parentId:t.parentId||'',requester:$('#tRequester').value.trim(),
       jiraKey:$('#tJira').value.trim().toUpperCase(),rmsNo:$('#tRms').value.trim(),rmsUrl:$('#tRmsUrl').value.trim(),
       status:$('#tStatus').value,priority:+$('#tPri').value,
       requestDate:$('#tReq').value,dueDate:$('#tDue').value,doneDate:$('#tDone').value,
@@ -2177,7 +2204,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
     push(d,`<div class="ev evd" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" title="${esc((p?p.name+' · ':'')+ev.title)}"><span class="evtag">배포</span>${esc(p?.name||ev.title)}</div>`);}
   if(cf.due)for(const t of workItems().filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
-    push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(t.assignee||'미지정'))}">마감 · ${esc(t.title)}</div>`);
+    push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(asNames(t).join(', ')||'미지정'))}">마감 · ${esc(t.title)}</div>`);
   let cells='';
   for(const d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
     const k=ymd(d), items=byDay[k]||[];
@@ -3772,7 +3799,7 @@ function buildReport(ws,pid){
   const inR=(d,a,b)=>!!d&&d>=a&&d<=b;
   const T=workItems().filter(t=>pid==='all'||t.projectId===pid);
   const key=t=>(t.jiraKey?`${t.jiraKey} `:'')+(t.rmsNo?`RMS ${t.rmsNo} `:'');
-  const who=t=>t.assignee||'담당 미지정';
+  const who=t=>asNames(t).join(', ')||'담당 미지정';
   const rules={
     done:[t=>t.status==='done'&&inR(t.doneDate,ws,we),t=>`${key(t)}${t.title} — ${who(t)} · 완료 ${md(t.doneDate)}${t.actHours!==''&&t.actHours!=null?` · ${hrs(t.actHours)}h`:''}`],
     doing:[t=>t.status==='doing'||t.status==='review',t=>`${key(t)}${t.title} — ${who(t)} · ${statusOf(t.status).label}${t.dueDate?` · 마감 ${md(t.dueDate)}`:''}`],

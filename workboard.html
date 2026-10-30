@@ -1037,6 +1037,21 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .asList .cfItem{padding:6px 8px;font-size:13px;color:var(--fg);border-radius:6px}.asList .cfItem:hover{background:var(--sunk)}
 .asHint{padding:4px 8px 2px;border-top:1px solid var(--line);margin-top:2px}
 .who+.who{margin-left:8px}
+.rtWrap{display:flex;flex-direction:column;gap:6px;min-width:0}
+.rtBar{display:flex;align-items:center;gap:2px;flex-wrap:wrap}
+.rtB{all:unset;box-sizing:border-box;cursor:pointer;min-width:30px;height:30px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;font-size:13.5px;color:var(--ink-soft);border:1px solid transparent}
+.rtB:hover{background:var(--sunk)}.rtB:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.rtB[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-dark);border-color:var(--accent)}
+.rtClr{font-size:12px}
+.rtPal{position:relative;display:inline-block}.rtPal>summary{list-style:none}.rtPal>summary::-webkit-details-marker{display:none}
+.rtFgI{font-weight:800;border-bottom:3px solid #d6336c;line-height:1.05}.rtBgI{font-weight:800;background:#fff3bf;padding:0 4px;border-radius:3px;color:var(--fg)}
+.rtSw{position:absolute;z-index:40;top:calc(100% + 4px);left:0;display:flex;gap:6px;padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.rtSw button{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}.rtSw button:focus-visible,.rtSw button:hover{outline:2px solid var(--accent);outline-offset:2px}
+[data-rt]{white-space:pre-wrap;overflow-wrap:anywhere;cursor:text}
+[data-rt]:empty::before{content:attr(data-ph);color:var(--muted);pointer-events:none}
+.cpEd{width:100%;box-sizing:border-box;min-height:72px;max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px;line-height:1.6;background:var(--surface);outline:none}.cpEd:focus{border-color:var(--accent)}
+.mnBodyEd{min-height:90px;border:1px solid var(--line);border-radius:var(--r);padding:8px 10px;font-size:13px;font-weight:400;color:var(--fg);line-height:1.6;background:var(--surface);outline:none}.mnBodyEd:focus{border-color:var(--accent)}
+div.tfNote{height:auto;overflow:auto}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1508,14 +1523,14 @@ const tfWlSum=list=>Math.round(list.reduce((a,w)=>a+(+w.hours||0),0)*100)/100;
 function renderPost(p){
   const main=$('#main');
   if(main.dataset.post===p.id&&($('#tfAs')?.open||$('#cpAs')?.open))return; // 담당자 고르는 중엔 다시 그리지 않음
-  if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf]'))return; // 칸 입력 중엔 다시 그리지 않음
+  if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf],#cpText'))return; // 칸 입력 중엔 다시 그리지 않음
   const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
-  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`
+  const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${rtShow(c.html,c.text)}</div></li>`
     :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${whoMany(t,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select><button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">${canWrite?'수정':'보기'}</button></div>
-      <div class="cmBody">${esc(t.note||t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
+      <div class="cmBody">${t.note?rtShow(t.noteHtml,t.note):esc(t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   // 칸 만들기: 편집 권한이 없으면 글자로만
   const txt=(f,v,lab,extra='')=>ro?`<span class="tfVal">${esc(v||'—')}</span>`:`<input type="text" class="tfIn" data-tf="${f}" value="${esc(v??'')}" aria-label="${lab}" ${extra}>`;
   const sel=(f,arr,cur,lab)=>ro?`<span class="tfVal">${esc((arr.find(([x])=>String(x)===String(cur))||[,'—'])[1])}</span>`:`<select class="tfIn" data-tf="${f}" aria-label="${lab}">${optH(arr,cur)}</select>`;
@@ -1526,7 +1541,7 @@ function renderPost(p){
   const people=[...new Set([...members.map(m=>m.name),...tasks.flatMap(x=>[x.assignee,x.requester])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const link=p.link?(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link):'';
   const wlKeep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||cm?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
-  const fold=tfFold.has(p.id),np=nextPart(p.part);
+  const fold=tfFold.has(p.id),np=nextPart(p.part),cpKeep=main.dataset.post===p.id&&$('#cpText')?rtClean($('#cpText').innerHTML):''; // 다시 그려도 쓰던 댓글 유지
   const html=`<div class="postView tfPage">
     <div class="tfHead"><button class="hlink" type="button" id="postBack" data-back="${isReq?esc(p.parentId):''}">← ${isReq?'게시물':'목록'}</button>${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}<span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span></div>
     ${isReq?`<p class="legend" style="margin:0">게시물: ${esc(rootOf(p).title)}</p>`:''}
@@ -1548,7 +1563,7 @@ function renderPost(p){
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="tfLive">실시간 연결됨</span>${p.updatedAt?`<span class="legend">마지막 수정: ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}<span class="spacer"></span>
       <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
-      ${fold?'':ro?`<div class="tfNote tfNoteRo">${esc(p.note||'')||'<span class="legend">내용이 없어요.</span>'}</div>`:`<textarea class="tfNote" data-tf="note" aria-label="내용" placeholder="요청 배경, 변경 이력, 이슈">${esc(p.note||'')}</textarea>`}
+      ${fold?'':ro?`<div class="tfNote tfNoteRo">${p.note||p.noteHtml?rtShow(p.noteHtml,p.note):'<span class="legend">내용이 없어요.</span>'}</div>`:rtEditor('tfNote','data-tf="note" aria-label="내용"',p.noteHtml?rtClean(p.noteHtml):rtFromText(p.note),'요청 배경, 변경 이력, 이슈')}
       <span class="err" id="tErr"></span></section>
     <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span>${canWrite&&np?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(np.label)}(으)로 넘기기</button>`:''}</div>
       ${wl.length?`<ul class="hitems">${wl.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
@@ -1557,7 +1572,7 @@ function renderPost(p){
     ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
     <h3 class="tlTitle">${isReq?'댓글':'댓글 · 업무 요청'} <span class="legend">${items.length}</span></h3>
     <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 업무 요청이'} 없어요</li>`}</ul>
-    ${canWrite?`<div class="composer"><textarea id="cpText" rows="3" maxlength="1000" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}" placeholder="${isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요"}"></textarea>
+    ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}"`,cpKeep,isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요")}
       <div class="cpRow">${isReq?'':`<label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
       <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="파트">${optH(PARTS.map(x=>[x.k,x.label]),(nextPart(p.part)||partOf(p.part)).k)}</select>
       ${asPick('cpAs',main.dataset.post===p.id?asVals('#cpAs'):[])}
@@ -1578,6 +1593,7 @@ async function tfSave(p,f,raw){
   else if(f==='estHours'||f==='actHours')patch[f]=raw===''?'':Math.max(0,+raw);
   else if(f==='jiraKey')patch.jiraKey=raw.trim().toUpperCase();
   else if(f==='note')patch.note=raw.replace(/\s+$/,'');
+  else if(f==='noteRich'){patch.note=raw.text;patch.noteHtml=raw.html;}
   else patch[f]=raw.trim();
   if(f==='requestDate'||f==='dueDate'){const r=f==='requestDate'?patch[f]:p.requestDate,d=f==='dueDate'?patch[f]:p.dueDate;
     if(r&&d&&d<r){toast('마감일이 요청일보다 빨라요. 날짜를 확인해 주세요.');render();return;}}
@@ -1601,7 +1617,8 @@ async function tfAddWl(p){
   catch(err){handleWriteError(err,'#wlErr');}finally{if($('#wlAddBtn'))$('#wlAddBtn').disabled=false;}
 }
 async function sendPost(p,btn){
-  const text=$('#cpText').value.trim(), isReq=!!$('#cpReq')?.checked;
+  const rr=rtRead($('#cpText')),text=rr.text.trim(), isReq=!!$('#cpReq')?.checked;
+  if(text.length>1000){$('#cpErr').textContent='1000자까지 쓸 수 있어요.';return;}
   if(!text){$('#cpErr').textContent=isReq?'요청 내용을 입력해 주세요.':'댓글 내용을 입력해 주세요.';return;}
   if(!isReq&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
   btn.disabled=true;
@@ -1609,10 +1626,10 @@ async function sendPost(p,btn){
     if(isReq&&$('#cpDue').value&&$('#cpDue').value<todayStr()){$('#cpErr').textContent='마감일이 오늘보다 빨라요. 날짜를 확인해 주세요.';btn.disabled=false;return;}
     if(isReq){const now=new Date().toISOString();
       const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),...asData(asVals('#cpAs')),parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',
-        jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,updatedAt:now,createdAt:now};
+        jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,noteHtml:rr.html,updatedAt:now,createdAt:now};
       const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);toast('업무 요청을 등록했어요');}
-    else await db.collection('comments').add({taskId:p.id,text,by:actorId,at:new Date().toISOString()});
-    $('#cpText').value='';if($('#cpReq')){$('#cpDue').value='';$('#cpAs').outerHTML=asPick('cpAs',[]);$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
+    else await db.collection('comments').add({taskId:p.id,text,...(rr.html?{html:rr.html}:{}),by:actorId,at:new Date().toISOString()});
+    $('#cpText').innerHTML='';$('#cpText').blur();render();if($('#cpReq')){$('#cpDue').value='';$('#cpAs').outerHTML=asPick('cpAs',[]);$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
   }catch(err){handleWriteError(err,'#cpErr');}finally{btn.disabled=false;}
 }
 async function setReqStatus(id,st){
@@ -1621,6 +1638,60 @@ async function setReqStatus(id,st){
   try{await db.collection('tasks').doc(id).update(patch);logChange('task','update',id,t.title,t,{...t,...patch});toast(`'${statusOf(st).label}'(으)로 바꿨어요`);}
   catch(err){handleWriteError(err);render();}
 }
+
+/* ---------- 글자 서식(굵게·기울임·밑줄·취소선·글자색·배경 강조색) — 업무 내용 · 댓글/요청 · 매뉴얼 단계 설명 · 주간 보고 본문 ----------
+   저장: 일반 텍스트 칸(note·text·body·t)은 그대로 채우고(검색·내보내기·알림용), 서식은 정화한 HTML을 따로(noteHtml·html·bodyHtml·h).
+   정화: b·i·u·s·span·br·div·p만, span은 아래 팔레트의 color·background-color만 남김 */
+const RT_FG=[['#d6336c','빨강'],['#e8590c','주황'],['#2b8a3e','초록'],['#1971c2','파랑'],['#7048e8','보라'],['#868e96','회색']];
+const RT_BG=[['#fff3bf','노랑'],['#d3f9d8','연두'],['#d0ebff','하늘'],['#ffe3e3','분홍']];
+const rtHex=v=>{v=String(v||'').trim().toLowerCase();const m=v.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);return m?'#'+[m[1],m[2],m[3]].map(x=>(+x).toString(16).padStart(2,'0')).join(''):v;};
+function rtClean(html){
+  if(!html)return '';
+  const src=new DOMParser().parseFromString(`<body>${html}</body>`,'text/html').body,out=document.createElement('div'); // DOMParser 문서는 스크립트·이미지를 실행·불러오지 않음
+  const MAP={strong:'b',em:'i',strike:'s',del:'s'},KEEP=['b','i','u','s','br','div','p'];
+  const walk=(from,to)=>{for(const n of [...from.childNodes]){
+    if(n.nodeType===3){to.append(n.data);continue;}if(n.nodeType!==1)continue;
+    const tag=n.tagName.toLowerCase();if(/^(script|style|iframe|object|embed|template|noscript|svg|math|img|video|audio|link|meta|textarea|select|button|input)$/.test(tag))continue;
+    const t=MAP[tag]||tag;let el=null;
+    if(KEEP.includes(t))el=document.createElement(t);
+    else if(t==='span'||t==='font'){const fg=rtHex(n.style?.color||n.getAttribute('color')),bg=rtHex(n.style?.backgroundColor);
+      const st=[RT_FG.some(c=>c[0]===fg)?`color:${fg}`:'',RT_BG.some(c=>c[0]===bg)?`background-color:${bg}`:''].filter(Boolean).join(';');
+      if(st){el=document.createElement('span');el.setAttribute('style',st);}}
+    if(el){to.append(el);if(t!=='br')walk(n,el);}else walk(n,to);}};
+  walk(src,out);return out.innerHTML;
+}
+// 정화한 HTML → 줄바꿈을 살린 일반 텍스트
+function rtText(clean){const d=document.createElement('div');d.innerHTML=clean;let out='';
+  const walk=n=>{for(const c of n.childNodes){if(c.nodeType===3){out+=c.data;continue;}if(c.nodeType!==1)continue;
+    if(c.tagName==='BR'){out+='\n';continue;}const blk=c.tagName==='DIV'||c.tagName==='P';if(blk&&out&&!out.endsWith('\n'))out+='\n';walk(c);if(blk&&!out.endsWith('\n'))out+='\n';}};
+  walk(d);return out.replace(/\n$/,'');}
+const rtFmt=h=>/<(b|i|u|s|span)[\s>]/.test(h||'');
+const rtFromText=t=>esc(t||'').replace(/\n/g,'<br>');
+const rtShow=(html,text)=>html?rtClean(html):esc(text||'');
+// 편집칸 내용 → {text, html}. 서식이 없으면 html은 ''
+const rtRead=ed=>{const h=rtClean(ed.innerHTML);return {text:rtText(h).replace(/\s+$/,''),html:rtFmt(h)?h:''};};
+// 주소는 보여 줄 때만 링크로(저장하지 않음)
+function rtLinkify(clean){const d=document.createElement('div');d.innerHTML=clean;const tw=document.createTreeWalker(d,NodeFilter.SHOW_TEXT),L=[];while(tw.nextNode())L.push(tw.currentNode);
+  L.forEach(t=>{const parts=t.data.split(/(https?:\/\/[^\s<]+)/);if(parts.length<2)return;const f=document.createDocumentFragment();
+    parts.forEach((p,i)=>{if(i%2){const a=document.createElement('a');a.href=p;a.target='_blank';a.rel='noopener';a.textContent=p;f.append(a);}else if(p)f.append(p);});t.replaceWith(f);});
+  return d.innerHTML;}
+const rtPal=(cmd,lab,C)=>`<details class="rtPal"><summary class="rtB" aria-label="${lab}" title="${lab}"><span class="${cmd==='foreColor'?'rtFgI':'rtBgI'}">가</span></summary><span class="rtSw">${C.map(([c,n])=>`<button type="button" data-rtc="${cmd}" data-v="${c}" aria-label="${lab} ${n}" title="${n}" style="--c:${c}"></button>`).join('')}</span></details>`;
+const rtBtns=()=>`<span class="rtBar" role="toolbar" aria-label="글자 서식">${[['bold','굵게 (Ctrl+B)','<b>B</b>'],['italic','기울임 (Ctrl+I)','<i>I</i>'],['underline','밑줄 (Ctrl+U)','<u>U</u>'],['strikeThrough','취소선','<s>S</s>']].map(([c,l,g])=>`<button type="button" class="rtB" data-rtc="${c}" aria-label="${l}" aria-pressed="false" title="${l}">${g}</button>`).join('')}${rtPal('foreColor','글자색',RT_FG)}${rtPal('hiliteColor','배경 강조색',RT_BG)}<button type="button" class="rtB rtClr" data-rtc="removeFormat" aria-label="서식 지우기" title="서식 지우기">서식 지우기</button></span>`;
+// 편집칸: 도구 줄 + contenteditable. 읽기 전용이면 도구 줄 없이 보기만
+const rtEditor=(cls,attrs,html,ph)=>`<div class="rtWrap">${canWrite?rtBtns():''}<div class="${cls}" contenteditable="${canWrite}" data-rt role="textbox" aria-multiline="true" ${attrs} data-ph="${esc(ph||'')}">${html}</div></div>`;
+document.addEventListener('mousedown',e=>{if(e.target.closest?.('.rtBar'))e.preventDefault();}); // 눌러도 편집칸 선택이 풀리지 않게
+document.addEventListener('click',e=>{
+  document.querySelectorAll('details.rtPal[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});
+  const b=e.target.closest?.('.rtBar [data-rtc]');if(!b)return;const ed=b.closest('.rtWrap')?.querySelector('[data-rt]');if(!ed||ed.getAttribute('contenteditable')!=='true')return;
+  const sel=getSelection(),r=sel.rangeCount&&ed.contains(sel.anchorNode)?sel.getRangeAt(0):null;ed.focus();if(r){sel.removeAllRanges();sel.addRange(r);}
+  const c=b.dataset.rtc;document.execCommand('styleWithCSS',false,c==='foreColor'||c==='hiliteColor');document.execCommand(c,false,b.dataset.v||null);document.execCommand('styleWithCSS',false,false); // Ctrl+B 등 단축키가 <b>로 들어가게 되돌림
+  b.closest('details')?.removeAttribute('open');rtState();
+});
+function rtState(){const ed=document.activeElement?.closest?.('[data-rt]'),bar=ed?.closest('.rtWrap')?.querySelector('.rtBar');if(!bar)return;
+  bar.querySelectorAll('[aria-pressed]').forEach(b=>{let on=false;try{on=document.queryCommandState(b.dataset.rtc);}catch(err){}b.setAttribute('aria-pressed',String(on));});}
+document.addEventListener('selectionchange',rtState);
+document.addEventListener('paste',e=>{const ed=e.target.closest?.('[data-rt]');if(!ed||e.defaultPrevented)return;e.preventDefault();document.execCommand('insertText',false,e.clipboardData.getData('text/plain'));}); // 붙여넣기는 글자만
+document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('details.rtPal[open]').forEach(d=>d.open=false);});
 
 /* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
 let cvtCases=[],cvtRuns=[];
@@ -1838,6 +1909,8 @@ $('#main').addEventListener('click',async e=>{
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
   const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(row.dataset.post?rootOf(t).id:t.id);
 });
+// 상세의 '내용'(서식 편집칸)은 칸에서 나갈 때 저장
+$('#main').addEventListener('focusout',e=>{const ed=e.target.closest?.('[data-rt][data-tf="note"]');if(!ed||!canWrite||ed.contains(e.relatedTarget))return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'noteRich',rtRead(ed));});
 // 상세의 담당자 목록을 닫으면 저장
 $('#main').addEventListener('toggle',e=>{if(e.target.id!=='tfAs'||e.target.open||!canWrite)return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'assignees',asVals('#tfAs'));},true);
 $('#main').addEventListener('keydown',e=>{if(e.key!=='Enter')return;
@@ -2004,7 +2077,7 @@ function openTask(t,prefill){
     resolveNames(list.map(c=>c.by)).then(()=>{if($('#cmList'))$('#cmList').querySelectorAll('[data-by]').forEach(el=>el.textContent=actorName(el.dataset.by));});
     const draft=$('#cmText')?.value||'';
     box.innerHTML=`<label>댓글 <span class="legend">${list.length?list.length+'개':''}</span></label>
-      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${esc(c.text)}</div></li>`).join('')}</ul>
+      <ul class="cmList" id="cmList">${list.map(c=>`<li><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(c.at.slice(0,16).replace('T',' '))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${rtShow(c.html,c.text)}</div></li>`).join('')}</ul>
       ${canWrite&&actorId?`<div class="cmAdd"><textarea id="cmText" rows="2" placeholder="진행 상황, 확인 요청 등을 남겨 주세요" maxlength="1000">${esc(draft)}</textarea><button type="button" class="btn" id="cmAddBtn">댓글 등록</button></div>`:''}<span class="err" id="cmErr"></span>`;
   };
   if(!isNew){
@@ -3113,7 +3186,7 @@ Object.assign(MN_TPL,{
     ...mnQA('2097-1166')]},
   image:{title:'이미지 경로 생성 매뉴얼',category:'이벤트 운영',summary:'',figmaUrl:MN_BOARD+'2086-2530',links:[],steps:[
     {title:'(BO) 이미지 경로 생성',body:'이미지 관리 목록에서 등록하고, 상세의 이미지 경로를 복사해 써요. (혜택 상세 HTML 등)',figmaUrl:MN_BOARD+'2094-722',table:mnRows([['구분','PC / MO'],['이미지','이미지 등록 (이미지 파일 첨부)'],['이미지 대체 텍스트','이벤트 명 혹은 대표 타이틀 입력'],['이미지경로','선택 시, 복사 가능']])}]}});
-const mnStepOf=s=>({id:mnUid(),title:s.title||'',body:s.body||'',table:(s.table||[]).map(r=>({...r})),checks:[...(s.checks||[])],links:(s.links||[]).map(l=>({...l})),figmaUrl:s.figmaUrl||''});
+const mnStepOf=s=>({id:mnUid(),title:s.title||'',body:s.body||'',bodyHtml:s.bodyHtml||'',table:(s.table||[]).map(r=>({...r})),checks:[...(s.checks||[])],links:(s.links||[]).map(l=>({...l})),figmaUrl:s.figmaUrl||''});
 const mnCur=()=>(mnst.edit||mnst.step)&&mnDraft&&mnDraft.id===mnst.id?mnDraft:manuals.find(m=>m.id===mnst.id);
 const mnCats=()=>[...new Set(manuals.map(m=>m.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
 const mnNextVer=v=>{const [a,b]=String(v||'1.0').split('.').map(Number);return `${a||1}.${(b||0)+1}`;};
@@ -3122,6 +3195,7 @@ const mnFmt=s=>s?fmtDT(s):'';
 function mnParseLinks(t){return String(t||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{const i=l.lastIndexOf('|');let label=i>0?l.slice(0,i).trim():'';const url=(i>0?l.slice(i+1):l).trim();if(!label)label=/figma\.com/i.test(url)?'피그마':url.replace(/^https?:\/\//,'').slice(0,40);return {label,url};});}
 const mnLinksText=L=>(L||[]).map(x=>`${x.label} | ${x.url}`).join('\n');
 // 본문: 줄 그대로, 주소는 링크로, '■'로 시작하는 줄은 소제목
+const mnBodyHtml=s=>s.bodyHtml?rtLinkify(rtClean(s.bodyHtml)):mnText(s.body);
 const mnText=s=>String(s||'').split('\n').map(l=>{const h=esc(l).replace(/https?:\/\/[^\s<]+/g,u=>`<a href="${u}" target="_blank" rel="noopener">${u}</a>`);return l.trim().startsWith('■')?`<b class="mnH">${h}</b>`:h;}).join('\n');
 const mnLinks=L=>(L||[]).filter(x=>safeUrl(x.url)).map(x=>`<a class="chip mnLink" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener">${esc(x.label)} ↗</a>`).join('');
 const mnFig=u=>safeUrl(u)?`<a class="btn ghost sm" href="${esc(safeUrl(u))}" target="_blank" rel="noopener">피그마에서 보기 ↗</a>`:'';
@@ -3141,7 +3215,7 @@ const mnPinBtn=(id,on)=>`<button type="button" class="mnPin" data-mpin="${esc(id
 const mnCardHtml=(m,pins)=>`<div class="mnCardW"><button type="button" class="mnCard" data-mopen="${esc(m.id)}"><span class="mnCardTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}</span></span><b>${esc(m.title||'(제목 없음)')}</b>${m.summary?`<span class="legend mnSum">${esc(m.summary)}</span>`:''}<span class="legend">단계 ${(m.steps||[]).length}개 · ${esc(mnFmt(m.updatedAt))}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}${mnRunsOf(m.id).length?` · <span class="mnCardRun">진행 중 ${mnRunsOf(m.id).length}건</span>`:''}</span></button>${mnPinBtn(m.id,pins.includes(m.id))}</div>`;
 function renderManuals(){
   const area=$('#manualsArea');
-  if(area.contains(document.activeElement)&&document.activeElement.matches('input,textarea'))return; // 입력 중엔 다시 그리지 않음
+  if(area.contains(document.activeElement)&&document.activeElement.matches('input,textarea,[data-rt]'))return; // 입력 중엔 다시 그리지 않음
   if(document.activeElement?.id==='mnQ'&&!mnForce)return; // 검색어 입력 중(헤더로 옮겨 간 칸)
   mnForce=false;
   if(mnst.id&&!manuals.some(m=>m.id===mnst.id)){mnst.id=null;mnst.edit=false;mnDraft=null;}
@@ -3167,7 +3241,7 @@ function renderManuals(){
   area.innerHTML=`<div class="rtool">${tools}</div>${body}`;
 }
 const mnStepView=(s,i,tl='')=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}"><div class="mnStepHead"><span class="mnNo">${i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}${tl}</div>
-      ${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}
+      ${s.body?`<div class="mnBody">${mnBodyHtml(s)}</div>`:''}
       ${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><thead><tr><th>항목</th><th>입력 기준</th></tr></thead><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label||'')}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}
       ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
       ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
@@ -3190,7 +3264,7 @@ function mnDetail(area){
   const card=(s,i)=>(ed||(canWrite&&mnst.step===s.id))?`<section class="panel mnStep mnEd" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}">
       <div class="mnStepHead"><span class="mnNo">${i+1}</span><input class="sel" data-sf="title" value="${esc(s.title||'')}" placeholder="단계 제목" aria-label="단계 제목" maxlength="80">
         <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button type="button" class="btn ghost sm" data-sdel>삭제</button>${mnStepTools(s,i,true)}</div>
-      <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span><textarea class="sel" data-sf="body" rows="${Math.min(14,Math.max(3,String(s.body||'').split('\n').length+1))}">${esc(s.body||'')}</textarea></label>
+      <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span></label>${rtEditor('mnBodyEd','data-sf="body" aria-label="단계 설명"',s.bodyHtml?rtClean(s.bodyHtml):rtFromText(s.body),'')}
       <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표를 복사해 칸에 붙여넣으면 행이 생겨요</span></span>
         ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></div>`).join('')}
         <button type="button" class="btn sm" data-radd>+ 행 추가</button></div>
@@ -3240,14 +3314,14 @@ function mnVerUpModal(){const m=mnCur(),nv=mnNextVer(m.version);
 }
 // 이전 버전: 목록 → 고르면 그 버전 단계를 지금과 비교(바뀜 · 지금은 없음 · 새로 생김)
 function mnVersModal(sel){const m=mnCur(),V=manualVers.filter(v=>v.manualId===m.id).sort((a,b)=>b.at.localeCompare(a.at)),v=V.find(x=>x.id===sel);
-  const same=(a,b)=>JSON.stringify([a.title,a.body,a.table,a.checks,a.links,a.figmaUrl])===JSON.stringify([b.title,b.body,b.table,b.checks,b.links,b.figmaUrl]);
+  const same=(a,b)=>JSON.stringify([a.title,a.body,a.bodyHtml||'',a.table,a.checks,a.links,a.figmaUrl])===JSON.stringify([b.title,b.body,b.bodyHtml||'',b.table,b.checks,b.links,b.figmaUrl]);
   let body;
   if(!V.length)body='<p class="legend" style="margin:0">아직 보관한 버전이 없어요. \'버전 올리기\'를 하면 그때 내용이 여기에 남아요.</p>';
   else if(!v)body=`<div class="trList">${V.map(x=>`<div class="trItem"><div class="trMain"><b>v${esc(x.version)} 보관</b><span class="legend">${esc(mnFmt(x.at))}${x.by?` · ${esc(x.by)}`:''}${x.note?` · 메모: ${esc(x.note)}`:''}</span></div><div class="trActs"><button type="button" class="btn sm" data-vsel="${esc(x.id)}">보기</button></div></div>`).join('')}</div>`;
   else{const old=v.snapshot?.steps||[],now=m.steps||[];
     body=`<p class="legend" style="margin:0">v${esc(v.version)} (${esc(mnFmt(v.at))} 보관) 내용이에요. 지금(v${esc(m.version||'1.0')})과 다른 단계를 표시했어요.</p>
       <div class="trList">${old.map((s,i)=>{const c=now.find(x=>x.id===s.id),tag=!c?'<span class="lateTag">지금은 없음</span>':same(s,c)?'':'<span class="lateTag mnChanged">바뀜</span>';
-        return `<details class="trItem mnVer"><summary><b>${i+1}. ${esc(s.title||'(제목 없음)')}</b>${tag}</summary>${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label)}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</details>`;}).join('')}
+        return `<details class="trItem mnVer"><summary><b>${i+1}. ${esc(s.title||'(제목 없음)')}</b>${tag}</summary>${s.body?`<div class="mnBody">${mnBodyHtml(s)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label)}</th><td>${mnText(r.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</details>`;}).join('')}
       ${now.filter(c=>!old.some(s=>s.id===c.id)).map(c=>`<div class="trItem"><b>${esc(c.title||'(제목 없음)')}</b><span class="lateTag mnNew">새로 생김</span></div>`).join('')}</div>`;}
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:640px"><header><h2>이전 버전 · ${esc(m.title||'')}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr">${body}</div><footer><span></span><div class="r">${v?'<button class="btn" type="button" id="mnVBack">← 버전 목록</button>':''}<button class="btn" type="button" id="mnVClose">닫기</button></div></footer></div></div>`;
@@ -3269,6 +3343,7 @@ onArea('#manualsArea','input',e=>{const el=e.target;
   if(!mnDraft)return;
   if(el.dataset.mf){const f=el.dataset.mf;mnDraft[f]=f==='links'?mnParseLinks(el.value):el.value;mnQueue();return;}
   const sid=el.closest('[data-sid]')?.dataset.sid,s=sid&&mnDraft.steps.find(x=>x.id===sid);if(!s)return;
+  if(el.dataset.rt!=null&&el.dataset.sf==='body'){const r=rtRead(el);s.body=r.text;s.bodyHtml=r.html;mnQueue();return;}
   if(el.dataset.sf){const f=el.dataset.sf;s[f]=f==='checks'?el.value.split('\n').map(x=>x.trim()).filter(Boolean):f==='links'?mnParseLinks(el.value):el.value;
     if(f==='title'){const b=document.querySelector(`.mnTocBtn[data-mgo="${CSS.escape(sid)}"]`);if(b)b.textContent=`${mnDraft.steps.indexOf(s)+1}. ${el.value||'(제목 없음)'}`;}mnQueue();return;}
   if(el.dataset.tf){const r=s.table[+el.closest('[data-row]').dataset.row];if(r){r[el.dataset.tf]=el.value;mnQueue();}}
@@ -3364,7 +3439,7 @@ function mnRunView(area){
       <h2>${esc(r.title)}</h2><div class="mnProg">${mnBar(p)}</div>${t?`<button type="button" class="btn ghost sm mnTaskLink" data-mtask="${esc(t.id)}">연결 업무: ${esc(t.title)} ↗</button>`:''}</section>
     ${(m?.steps||[]).map((s,i)=>{const ks=(s.checks||[]).length?s.checks.map((c,j)=>[`${s.id}:${j}`,esc(c)]):[[`${s.id}:s`,'이 단계 완료']],all=ks.every(([k])=>done[k]);
       return `<section class="panel mnStep${all?' mnStepDone':''}"><div class="mnStepHead"><span class="mnNo">${all?'✓':i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}</div>
-        <div class="mnChks">${ks.map(([k,l])=>box(k,l)).join('')}</div>${s.body||(s.table||[]).length?`<details class="mnMore"><summary>단계 설명 보기</summary>${s.body?`<div class="mnBody">${mnText(s.body)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(x=>`<tr><th scope="row">${esc(x.label)}</th><td>${mnText(x.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}</details>`:''}${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;}).join('')}`;
+        <div class="mnChks">${ks.map(([k,l])=>box(k,l)).join('')}</div>${s.body||(s.table||[]).length?`<details class="mnMore"><summary>단계 설명 보기</summary>${s.body?`<div class="mnBody">${mnBodyHtml(s)}</div>`:''}${(s.table||[]).length?`<div class="tablebox"><table class="stable mnTable"><tbody>${s.table.map(x=>`<tr><th scope="row">${esc(x.label)}</th><td>${mnText(x.rule)}</td></tr>`).join('')}</tbody></table></div>`:''}</details>`:''}${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;}).join('')}`;
 }
 function mnRunStart(m){
   const posts=tasks.filter(t=>!t.parentId).sort((a,b)=>(b.requestDate||'').localeCompare(a.requestDate||''));
@@ -3964,14 +4039,14 @@ function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `
 // 본문 소제목(■ 반영 N건 · ■ 진행 N건 · ■ 접수… N건)의 숫자 = 운영 건수. 한쪽을 고치면 다른 쪽도 같이 바뀜
 const V3_HEAD={done:/^(■\s*반영\s*)(\d+)(\s*건)/,doing:/^(■\s*진행\s*)(\d+)(\s*건)/,recv:/^(■\s*접수[^\d]*?)(\d+)(\s*건)/};
 function v3HeadCounts(lines){const o={};lines.forEach(l=>{for(const k in V3_HEAD){const m=String(l.t||'').match(V3_HEAD[k]);if(m&&!(k in o))o[k]=+m[2];}});return o;}
-const v3SetHeads=(lines,counts)=>lines.map(l=>{for(const k in V3_HEAD)if(V3_HEAD[k].test(l.t||''))return {...l,t:l.t.replace(V3_HEAD[k],(_,a,n,b)=>a+(+counts[k]||0)+b)};return l;});
+const v3SetHeads=(lines,counts)=>lines.map(l=>{for(const k in V3_HEAD)if(V3_HEAD[k].test(l.t||''))return {...l,t:l.t.replace(V3_HEAD[k],(_,a,n,b)=>a+(+counts[k]||0)+b),h:undefined};return l;});
 // 저장된 본문에 새로 생긴 업무를 끼워 넣음(이번 주부터, 확정 전). 업무마다 'id:구분'을 sec.auto에 적어 두어
 // 사용자가 지운 줄은 다시 넣지 않음. 다른 구분에 자동으로 넣었던 줄(글자 그대로)은 옮겨 감. 소제목 숫자도 함께 ±1
 const v3Line={done:t=>`${t.title}(${md(t.doneDate)})`,doing:t=>`${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`,recv:t=>`${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`};
 function v3Merge(c,sec,thu){
   const a=v3Auto(c,thu),seen=new Set(sec.auto||[]);let L=sec.lines.map(l=>({...l})),changed=false;
   const head=k=>L.findIndex(l=>V3_HEAD[k].test(l.t||'')),isHead=l=>/^■/.test(l.t||'')||/^-{5,}/.test(l.t||'');
-  const bump=(k,n)=>{const i=head(k);if(i>=0)L[i]={...L[i],t:L[i].t.replace(V3_HEAD[k],(_,x,m,y)=>x+Math.max(0,+m+n)+y)};};
+  const bump=(k,n)=>{const i=head(k);if(i>=0)L[i]={...L[i],t:L[i].t.replace(V3_HEAD[k],(_,x,m,y)=>x+Math.max(0,+m+n)+y),h:undefined};};
   const block=k=>{const i=head(k);if(i<0)return null;let j=i+1;while(j<L.length&&!isHead(L[j]))j++;return [i,j];};
   for(const k of ['done','doing','recv'])for(const t of a.lists[k]){
     const key=t.id+':'+k;if(seen.has(key)||!t.title)continue;const b=block(k);if(!b)continue;
@@ -4000,14 +4075,16 @@ function v3Data(){
     return Array.isArray(sec.lines)?{...c,sec,counts:{...base,...v3HeadCounts(sec.lines)},lines:sec.lines}:{...c,sec,counts:base,lines:v3Draft(c,thu)};})};
 }
 // 편집칸은 줄 목록(lines: [{t, hl}])으로만 저장하고 다시 그림 — 서식·스크립트가 섞이지 않게
-const linesHtml=L=>L.map(l=>`<div${l.hl?' class="hl"':''}>${l.t?esc(l.t):'<br>'}</div>`).join('');
+const linesHtml=L=>L.map(l=>`<div${l.hl?' class="hl"':''}>${l.h?rtClean(l.h):l.t?esc(l.t):'<br>'}</div>`).join('');
 function readLines(ed){const out=[];ed.childNodes.forEach(n=>{if(n.nodeType===3){if(n.textContent.trim()||out.length)out.push({t:n.textContent,hl:false});return;}
-  if(n.nodeType===1)out.push({t:n.textContent,hl:n.classList.contains('hl')});});return out;}
+  if(n.nodeType===1){const h=rtClean(n.innerHTML);out.push({t:n.textContent,hl:n.classList.contains('hl'),...(rtFmt(h)?{h}:{})});}});return out;}
 function edLinesInSel(ed){const sel=getSelection();if(!sel.rangeCount)return [];const r=sel.getRangeAt(0);
   const kids=[...ed.children].filter(c=>r.intersectsNode(c));if(kids.length)return kids;
   let n=r.startContainer;while(n&&n.parentNode!==ed)n=n.parentNode;return n&&n.nodeType===1?[n]:[];}
 function toggleHl(ed){const ls=edLinesInSel(ed);if(!ls.length)return;const on=!ls.every(l=>l.classList.contains('hl'));
-  ls.forEach(l=>{l.classList.toggle('hl',on);const t=l.textContent;if(on&&!t.startsWith('✔'))l.textContent='✔ '+t;if(!on&&t.startsWith('✔'))l.textContent=t.replace(/^✔\s?/,'');if(!l.textContent)l.innerHTML='<br>';});}
+  // ✔ 표시만 앞에 붙이고 빼서, 줄 안의 글자 서식은 그대로 둠
+  ls.forEach(l=>{l.classList.toggle('hl',on);const t=l.textContent;if(on&&!t.startsWith('✔'))l.prepend('✔ ');
+    if(!on&&t.startsWith('✔')){const w=document.createTreeWalker(l,NodeFilter.SHOW_TEXT);while(w.nextNode()){const x=w.currentNode;if(x.data.trim()){x.data=x.data.replace(/^\s*✔\s?/,'');break;}}}if(!l.textContent)l.innerHTML='<br>';});}
 function insertHr(ed){const ls=edLinesInSel(ed),d=document.createElement('div');d.textContent='----------';(ls.length?ls[ls.length-1]:ed.lastChild)?.after?.(d)||ed.append(d);}
 // 저장: 구역 단위 부분 저장(다른 사람이 다른 구역을 고쳐도 덮어쓰지 않음)
 async function v3SaveDoc(patch){const id=v3Id(rstate.week3),doc=v3Doc(),at=new Date().toISOString();
@@ -4031,15 +4108,15 @@ function renderReport(){
     return `<section class="rsec ${fold?'fold':''}" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${c.color?`<span class="rdot" style="background:${esc(c.color)}"></span>`:''}${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>
         <button class="btn ghost sm" type="button" data-fold aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${!c.project&&!ro?'<button class="btn danger sm" type="button" data-cdel>삭제</button>':''}</header>
-      <div class="rsecBody">
+      <div class="rsecBody rtWrap">
         <div class="rcounts">${R_KINDS.map(([k,l])=>`<label>${l}<input type="number" min="0" class="rcnt" data-k="${k}" data-note="cnt" value="${+c.counts[k]||0}" ${ro?'disabled':''}></label>`).join('')}${!ro&&c.project?'<button class="btn ghost sm" type="button" data-refill>자동 계산으로 다시 채우기</button>':''}${!c.inCount?'<span class="legend">운영 건수 미포함</span>':''}</div>
-        ${ro?'':'<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button></div>'}
-        <div class="rEditor" data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
+        ${ro?'':`<div class="rtools"><button class="btn sm" type="button" data-hl>강조</button><button class="btn sm" type="button" data-hr>구분선 넣기</button>${rtBtns()}</div>`}
+        <div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div>
       </div></section>`;}).join('');
   const simple=cats.map(c=>{const s=c.sec;
     return `<section class="rsec rsimple" data-cid="${esc(c.id)}">
       <header class="rsecHead"><h3>${esc(c.name)}</h3><span class="legend rlive">실시간 연결됨</span>${s.updatedAt?`<span class="legend">마지막 수정: ${esc(s.updatedByName||'—')} · ${esc(fmtDT(s.updatedAt))}</span>`:''}<span class="spacer"></span>${!c.project&&!ro?'<button class="btn sm" type="button" data-cdel>삭제</button>':''}</header>
-      <div class="rsecBody"><div class="rEditor" data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div></div></section>`;}).join('');
+      <div class="rsecBody rtWrap">${ro?'':`<div class="rtools">${rtBtns()}</div>`}<div class="rEditor" data-rt data-note="body" contenteditable="${!ro}" spellcheck="false" aria-label="${esc(c.name)} 본문">${linesHtml(c.lines)}</div></div></section>`;}).join('');
   const addCat=ro?'':`<div class="rAddCat"><input class="search" id="rCatName" data-note="cat" maxlength="30" placeholder="새 카테고리명" aria-label="새 카테고리명"><label class="cfItem"><input type="checkbox" id="rCatIn" checked>운영건수(반영/진행/접수) 포함</label><button class="btn" type="button" id="rCatAdd">카테고리 추가</button></div>`;
   area.innerHTML=`
     <div class="rtool">

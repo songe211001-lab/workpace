@@ -1124,6 +1124,8 @@ div.tfNote{height:auto;overflow:auto}
 .tlDot{display:inline-block;min-width:20px;border-radius:999px;background:#e3edff;color:#1c5fbf;font-size:12px;font-weight:700}
 .tlEv td{background:var(--bg)}
 .lvSum{margin-top:12px;padding:12px 16px}.lvSum>summary{cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:8px}.lvSum:not([open])>summary{margin-bottom:0}
+.lvSum .tablebox,.lvStat .tablebox{border:0;border-radius:0} /* 패널 안 표는 패널 테두리 하나만 */
+.hideTag{margin-left:6px;font-size:11px;font-weight:700;color:var(--muted);background:var(--sunk);border-radius:4px;padding:1px 6px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1777,7 +1779,7 @@ function renderTabs(){
 function renderFilters(){
   state.part='all'; // 직무(파트) 구분 탭은 없앴다. 예전에 골라 둔 파트로 목록이 걸러진 채 남지 않게 항상 전체
   $('#fStatus').innerHTML=[['all','전체 현황'],['open','미완료 전체'],...STATUSES.map(s=>[s.k,s.label])].map(([k,l])=>`<option value="${k}" ${state.status===k?'selected':''}>${l}</option>`).join('');
-  const names=[...new Set(scoped().flatMap(asNames))].sort((a,b)=>a.localeCompare(b,'ko'));
+  const names=[...new Set(scoped().flatMap(asNames))].filter(n=>!members.some(m=>m.name===n&&m.hideInWork)).sort((a,b)=>a.localeCompare(b,'ko'));
   const me=myMember();if(state.assignee==='me'&&storeReady&&!me)state.assignee='all';
   if(state.assignee!=='all'&&state.assignee!=='me'&&!names.includes(state.assignee))state.assignee='all';
   $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
@@ -1967,7 +1969,7 @@ function renderPost(p){
       <span class="err" id="tErr"></span></section>
     <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span>${canWrite&&np?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(np.label)}(으)로 넘기기</button>`:''}</div>
       ${wl.length?`<ul class="hitems">${wl.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
-      ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
+      ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.filter(m=>isShown(m)||m.id===cm?.id).map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
       <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span></section>
     ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
     <h3 class="tlTitle">${isReq?'댓글':'댓글 · 업무 요청'} <span class="legend">${items.length}</span></h3>
@@ -2415,7 +2417,7 @@ const asData=vals=>{const v=vals[0]||'',m=v.startsWith('name:')?null:memOf(v);re
 const asValsOf=t=>{const m=taskMember(t),o=t.assignee&&!m?'name:'+t.assignee:'';return [m?.id||o,...(t.coIds||[])].filter(Boolean);};
 const asLabel=vals=>vals.map(v=>v.startsWith('name:')?v.slice(5):memOf(v)?.name).filter(Boolean).join(', ');
 // 담당자 고르기: 체크 목록(여러 명). 고른 순서대로 저장, 맨 처음이 주 담당
-function asPick(id,vals,orphan){const L=[...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.map(m=>[m.id,m.name])];
+function asPick(id,vals,orphan){const L=[...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.filter(m=>isShown(m)||vals.includes(m.id)).map(m=>[m.id,m.name])]; // 숨긴 구성원은 이미 지정된 경우만
   return `<details class="asPick" id="${id}" data-vals="${esc(vals.join(','))}"><summary class="sel" aria-label="담당자 (여러 명 선택)">${esc(asLabel(vals)||'담당자 미지정')}</summary><div class="asList" role="group" aria-label="담당자">${L.length?L.map(([v,n])=>`<label class="cfItem"><input type="checkbox" value="${esc(v)}" ${vals.includes(v)?'checked':''}>${esc(n)}</label>`).join(''):'<span class="legend">구성원을 먼저 추가해 주세요.</span>'}<span class="legend asHint">처음 고른 사람이 주 담당이에요</span></div></details>`;}
 const asVals=sel=>(document.querySelector(sel)?.dataset.vals||'').split(',').filter(Boolean);
 document.addEventListener('change',e=>{const p=e.target.closest?.('.asPick');if(!p||e.target.type!=='checkbox')return;e.stopPropagation();
@@ -2711,6 +2713,10 @@ let members=[], leaves=[];
 const lstate={year:+todayStr().slice(0,4),month:todayStr().slice(0,7),member:'all',project:'all'};
 const ltype=k=>LEAVE_TYPES.find(t=>t.k===k)||LEAVE_TYPES[0];
 const memOf=id=>members.find(m=>m.id===id);
+const shownMembers=()=>members.filter(m=>!m.hideInWork);
+const isShown=m=>!!m&&!m.hideInWork;
+const memberParts=()=>[...PARTS,{k:'planPM',label:'기획 PM',c:'#6c4bd8'},{k:'planPL',label:'기획 PL',c:'#8b6be8'}]; // 파트 설정이 바뀌어도 따라감
+const memberPartOf=k=>memberParts().find(x=>x.k===k);
 const nextPart=k=>PARTS[PARTS.findIndex(p=>p.k===k)+1]||null;
 // 그 구성원이 그날 휴가인지 (휴가 기록 또는 undefined)
 const leaveOn=(memberId,d)=>d?leaves.find(l=>l.memberId===memberId&&leaveDates(l).includes(d)):undefined;
@@ -2737,14 +2743,14 @@ function renderTodayOff(){
   const el=$('#todayOff');
   if(!storeReady||!members.length){el.textContent='';return;}
   const t=todayStr();
-  const off=leaves.filter(l=>leaveDates(l).includes(t)&&memOf(l.memberId));
+  const off=leaves.filter(l=>leaveDates(l).includes(t)&&isShown(memOf(l.memberId)));
   el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${who(memOf(l.memberId).name,l.memberId,20)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
 }
 
 // 일정·연차 관리(예전 '일정 관리' + '연차 관리'): 탭 = 달력(일정·연차 함께 등록·수정 + 연차 현황) / 연차 현황 / 구성원 타임라인
 let lsub=(()=>{try{return localStorage.getItem('wb-lsub')||'cal';}catch(e){return 'cal';}})(),lvSumOpen=true;
 function annualTable(Y){
-  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
+  const rows=shownMembers().sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const s=memberStats(m,Y);
     return `<tr><td class="nowrap"><b>${who(m.name,m.id,24)}</b></td><td class="r num">${s.quota==null?'—':fmtDays(s.quota)+'일'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td></tr>`;}).join('');
   return `<div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th class="r">연간</th><th class="r">사용</th><th class="r">예정</th><th class="r">잔여</th><th class="r">기타 휴가</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
@@ -2755,7 +2761,7 @@ function leaveTimeline(month){
   const short=l=>{const t=ltype(l.type);return t.k==='annual'?'연차':t.days===.5?'반차':t.days===.25?'반반':t.label.slice(0,2);};
   const evRow=`<tr class="tlEv"><td class="tlName"><b>일정</b></td>${days.map(d=>{const L=events.filter(e=>(e.kind==='event'||e.kind==='project')&&e.start<=d&&(e.end||e.start)>=d);
     return `<td class="${cls(d)}">${L.length?`<span class="tlDot" title="${esc(L.map(e=>e.title).join(', '))}">${L.length}</span>`:''}</td>`;}).join('')}<td></td></tr>`;
-  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(mb=>{const s=memberStats(mb,y);
+  const rows=shownMembers().sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(mb=>{const s=memberStats(mb,y);
     return `<tr><td class="tlName">${who(mb.name,mb.id,20)}</td>${days.map(d=>{const l=leaveOn(mb.id,d);return `<td class="${cls(d)}">${l?`<span class="tlLv ${ltype(l.type).cls}" data-lid="${esc(l.id)}" tabindex="0" title="${esc(mb.name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${short(l)}</span>`:''}</td>`;}).join('')}<td class="r num ${s.remain!=null&&s.remain<0?'late':''}">${s.remain==null?'—':fmtDays(s.remain)+'일'}</td></tr>`;}).join('');
   return `<div class="panel"><h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button><span class="mlabel">${y}.${String(m).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button><button class="btn ghost sm" type="button" id="lThis">이번 달</button></div><span class="legend">칸을 누르면 그 연차를 열어요</span></h3>
     <div class="statWrap"><table class="tlTable"><thead><tr><th class="tlName">이름</th>${days.map(d=>`<th class="${cls(d)}">${+d.slice(8)}<br><small>${'일월화수목금토'[new Date(d+'T00:00:00').getDay()]}</small></th>`).join('')}<th class="r">잔여</th></tr></thead><tbody>${evRow}${rows}</tbody></table></div></div>`;
@@ -2776,7 +2782,7 @@ function renderLeave(){
   const Y=+lstate.month.slice(0,4);
   const tabs=`<div class="vbar"><div class="vtabs" role="tablist">${[['cal','달력'],['status','연차 현황'],['line','구성원 타임라인']].map(([k,l])=>`<button type="button" class="vtab" role="tab" data-lsub="${k}" aria-selected="${lsub===k}">${l}</button>`).join('')}</div></div>`;
   const tools=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="lAddLeave">+ 연차 신청</button>':''}</div>`;
-  area.innerHTML=tools+tabs+(lsub==='status'?`<div class="panel"><h3><span>${Y}년 연차 현황</span></h3>${annualTable(Y)}</div>`
+  area.innerHTML=tools+tabs+(lsub==='status'?`<div class="panel lvStat"><h3><span>${Y}년 연차 현황</span></h3>${annualTable(Y)}</div>`
     :lsub==='line'?leaveTimeline(lstate.month)
     :`${calPanel(lstate,calFilter(),true,false)}<details class="panel lvSum"${lvSumOpen?' open':''}><summary><b>${Y}년 연차 현황</b><span class="legend">사용 · 예정 · 잔여</span></summary>${annualTable(Y)}</details>`);
   // 타임라인은 오늘 날짜가 보이게 가로로 맞춤
@@ -2791,7 +2797,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   const last=new Date(cy,cm,0), end=new Date(last);end.setDate(last.getDate()+(7-((last.getDay()+6)%7)-1));
   const a0=ymd(start), b0=ymd(end);
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
-  if(cf.leave)for(const l of [...leaves].filter(l=>memOf(l.memberId)).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
+  if(cf.leave)for(const l of [...leaves].filter(l=>isShown(memOf(l.memberId))).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
     push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${avatarHtml(memOf(l.memberId),14)}${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
   if(cf.event)for(const ev of events.filter(e=>e.kind==='project'||e.kind==='event')){const p=ev.kind==='project'?projOf(ev.projectId):null;for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
     push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
@@ -4236,7 +4242,7 @@ function openLeave(l,date,endDate,only){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="leaveForm" novalidate>
     <header><h2>${isNew?'연차 신청':ro?'연차 신청 상세':'연차 신청 수정'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
-      <div class="f"><label for="lvMember">구성원 <b>*</b></label><select id="lvMember"><option value="">선택</option>${opt(members.map(m=>[m.id,m.name]),l.memberId)}</select></div>
+      <div class="f"><label for="lvMember">구성원 <b>*</b></label><select id="lvMember"><option value="">선택</option>${opt(members.filter(m=>isShown(m)||m.id===l.memberId).map(m=>[m.id,m.name]),l.memberId)}</select></div>
       <input type="hidden" id="lvType" value="${esc(l.type||'annual')}">${l.type&&l.type!=='annual'?`<div class="f"><label>종류</label><span>${esc(ltype(l.type).label)}</span></div>`:''}
       <div class="f"><label for="lvDate" id="lvDateLbl">날짜</label><input type="date" id="lvDate" value="${esc(l.date||'')}"></div>
       <div class="f" id="lvEndWrap"><label for="lvEnd">종료일</label><input type="date" id="lvEnd" value="${esc(l.endDate||l.date||'')}"></div>
@@ -4307,13 +4313,13 @@ function renderAccounts(){
   if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
   if(hasAdminApi()&&acctAdmins===null){acctAdmins=new Set();loadAdmins();}
   const Y=+todayStr().slice(0,4), adm=hasAdminApi();
-  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=PARTS.find(x=>x.k===m.part),pj=projOf(m.projectId),q=quotaOf(m,Y);
-    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b></td><td class="nowrap">${esc(m.email||'—')}</td>
+  const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=memberPartOf(m.part),pj=projOf(m.projectId),q=quotaOf(m,Y);
+    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b>${m.hideInWork?'<span class="hideTag" title="업무·일정에 표시 안 함">숨김</span>':''}</td><td class="nowrap">${esc(m.email||'—')}</td>
       <td class="nowrap">${m.userId?'<span class="pill s-done">연결됨</span>':'<span class="pill s-wait">미연결</span>'}</td>
       <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td><td class="r num">${q==null?'—':fmtDays(q)+'일'}</td>
       <td>${roleBadgeOf(adm&&m.userId&&acctAdmins.has(m.userId)?'admin':m.role||'')}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="acQ" type="search" placeholder="이름·메일·파트·프로젝트 검색" aria-label="계정 검색" value="${esc(acstate.q)}"></label><span class="spacer"></span><button class="btn primary" type="button" id="acAdd">+ 계정 추가</button></div>
-    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th class="r">${Y}년 연차</th><th>역할</th></tr></thead><tbody>${rows}
+    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th class="r">${Y}년 연차</th><th>관리자 권한</th></tr></thead><tbody>${rows}
       <tr class="mEmpty" ${members.length?'hidden':''}><td colspan="7">${members.length?'검색 결과가 없어요':'아직 계정이 없어요. 「+ 계정 추가」로 추가하세요.'}</td></tr></tbody></table></div>
     <p class="legend" style="margin:0">회사 메일을 적어 두면 그 메일로 처음 로그인한 사람이 이 계정에 자동으로 연결돼요.${adm?' 관리자는 로그인이 연결된 계정만 지정할 수 있어요.':''}</p>`;
   acFilter();
@@ -4335,11 +4341,12 @@ function openAccount(m){
         <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
       <div class="f"><label for="acName">이름 <b>*</b></label><input id="acName" maxlength="20" value="${esc(m.name)}"></div>
       <div class="f"><label for="acEmail">회사 메일</label><input id="acEmail" type="email" spellcheck="false" value="${esc(m.email||'')}" placeholder="${m.userId?'로그인 연결됨':'로그인 연결용 (선택)'}"></div>
-      <div class="f"><label for="acPart">파트</label><select id="acPart"><option value="">파트 없음</option>${opt(PARTS.map(p=>[p.k,p.label]),m.part)}</select></div>
+      <div class="f"><label for="acPart">파트</label><select id="acPart"><option value="">파트 없음</option>${opt(memberParts().map(p=>[p.k,p.label]),m.part)}</select></div>
+      <div class="f"><label>업무·일정 표시</label><label class="cfItem"><input type="checkbox" id="acShow" ${m.hideInWork?'':'checked'} ${canWrite?'':'disabled'}>업무·일정에 표시</label><span class="hint">끄면 담당자 고르기·연차 달력·타임라인 등에서 빠져요. 이미 배정된 업무의 이름은 그대로 보여요.</span></div>
       <div class="f"><label for="acProj">주 프로젝트</label><select id="acProj"><option value="">없음</option>${opt(projects.map(p=>[p.id,p.name]),m.projectId)}</select></div>
       <div class="f"><label for="acQuota">${Y}년 연차 (일)</label><input id="acQuota" type="number" min="0" step="0.5" inputmode="decimal" value="${esc(quotaOf(m,Y)??'')}"></div>
       <div class="f"><label>로그인</label><span>${m.userId?'연결됨':'아직 로그인하지 않음'}</span></div>
-      <div class="f"><label for="acRole">역할</label><select id="acRole"><option value="">역할 없음</option>${hasAdminApi()?`<option value="admin" ${wasAdm?'selected':''} ${m.userId?'':'disabled'}>관리자${m.userId?'':' (로그인 연결 후)'}</option>`:''}${ROLES.slice(1).map(([k,l])=>`<option value="${k}" ${!wasAdm&&m.role===k?'selected':''}>${l}</option>`).join('')}</select>${hasAdminApi()?'<span class="hint">관리자는 모든 메뉴와 관리자 메뉴를 쓸 수 있어요. 마지막 관리자는 해제할 수 없어요.</span>':''}</div>
+      <div class="f"><label for="acRole">관리자 권한</label><select id="acRole"><option value="">권한 없음</option>${hasAdminApi()?`<option value="admin" ${wasAdm?'selected':''} ${m.userId?'':'disabled'}>관리자${m.userId?'':' (로그인 연결 후)'}</option>`:''}${ROLES.slice(1).map(([k,l])=>`<option value="${k}" ${!wasAdm&&m.role===k?'selected':''}>${l}</option>`).join('')}</select>${hasAdminApi()?'<span class="hint">관리자는 모든 메뉴와 관리자 메뉴를 쓸 수 있어요. 마지막 관리자는 해제할 수 없어요.</span>':''}</div>
     </div>
     <footer><div id="acDelZone">${isNew?'':'<button class="btn danger" type="button" id="acDel">삭제</button>'}</div><span class="err" id="acErr"></span>
       <div class="r"><button class="btn" type="button" id="acCancel">취소</button><button class="btn primary" type="submit" id="acSave">${isNew?'추가':'저장'}</button></div></footer>
@@ -4366,7 +4373,7 @@ function openAccount(m){
   });
   $('#acForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const roleSel=$('#acRole').value, name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, projectId=$('#acProj').value, qv=$('#acQuota').value, q=qv===''?'':Math.max(0,+qv);
+    const roleSel=$('#acRole').value, name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, hide=!$('#acShow').checked, projectId=$('#acProj').value, qv=$('#acQuota').value, q=qv===''?'':Math.max(0,+qv);
     if(!name){$('#acErr').textContent='이름을 입력해 주세요.';$('#acName').focus();return;}
     if(members.some(x=>x.id!==m.id&&x.name===name)){$('#acErr').textContent='같은 이름이 있어요. 동명이인은 이름 뒤에 구분을 붙여 주세요.';return;}
     const staffOk=typeof isStaffEmail==='function'?isStaffEmail:()=>true;
@@ -4374,14 +4381,14 @@ function openAccount(m){
     if(email&&members.some(x=>x.id!==m.id&&(x.email||'').toLowerCase()===email)){$('#acErr').textContent='이미 다른 계정에 쓰인 메일이에요.';return;}
     $('#acSave').disabled=true;
     try{
-      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,role:roleSel==='admin'?'':roleSel,quotas:{[Y]:q},...(typeof avatar==='string'&&avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
+      if(isNew){const ref=await db.collection('members').add({name,email,projectId,part,hideInWork:hide,role:roleSel==='admin'?'':roleSel,quotas:{[Y]:q},...(typeof avatar==='string'&&avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{projectId,part,quota:q});}
       else{
         // 관리자 지정·해제를 먼저(마지막 관리자 해제 오류면 아무것도 저장하지 않음)
         const on=roleSel==='admin';
         if(canAdm&&on!==wasAdm){await window.wbAuth.setAdmin(m.userId,on);acctAdmins[on?'add':'delete'](m.userId);navKey='';}
         const role=on?(m.role||''):roleSel;
-        const old={...m}, avCh=typeof avatar==='string'&&avatar!==(old.avatar||''), ch=avCh||(old.role||'')!==role||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
-        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,role,quotas:{[Y]:q},...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
+        const old={...m}, avCh=typeof avatar==='string'&&avatar!==(old.avatar||''), ch=avCh||(old.role||'')!==role||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||!!old.hideInWork!==hide||(old.projectId||'')!==projectId||String(quotaOf(old,Y)??'')!==String(q);
+        if(ch){await db.collection('members').doc(m.id).update({name,email,projectId,part,hideInWork:hide,role,quotas:{[Y]:q},...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,projectId:old.projectId||'',part:old.part||'',quota:quotaOf(old,Y)??''},{name,projectId,part,quota:q});
           // 이름을 바꾸면 이 사람이 담당한 업무의 담당자 이름도 함께 바꿈(집계·필터가 이름 기준이라)
           if(old.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===old.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});}
       }

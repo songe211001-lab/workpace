@@ -967,7 +967,6 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .pnF{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--ink-soft);min-width:0}
 .pnF.pnT{flex:2 1 220px}.pnF.pnT .sel{width:100%;max-width:none}
 .pnRow .pnF .sel{flex:none}.pnRow .pnF select.sel{width:auto}
-.listTitle{margin:6px 0 0;font-size:16px;font-weight:800;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .ltBar{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap}
 .ltBar .searchBox{margin:0;width:280px;max-width:100%}
 .ltBar .ptabs{flex:0 1 auto;flex-wrap:wrap;overflow:visible;gap:4px}
@@ -979,7 +978,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .ltBar .ptab[aria-selected="true"] .c{color:inherit;background:rgba(255,255,255,.25)}
 .ltBar .ptab[aria-selected="true"] .dot{box-shadow:0 0 0 1.5px #fff}
 .ltBar .ptabAdd{border-style:dashed}
-.postOpen>.ltBar,.postOpen>.listTitle{display:none}
+.postOpen>.ltBar{display:none}
 .postList{background:transparent;border:0;border-radius:0;border-top:1px solid var(--line)}
 .postRow{display:grid;grid-template-columns:minmax(0,2fr) 220px minmax(0,1.6fr) auto;align-items:center;gap:6px 16px;padding:14px 12px;border-top:0;border-bottom:1px solid var(--line)}
 .prMain{display:flex;align-items:center;gap:8px;min-width:0}.prMain .pTitle{flex:1 1 auto}
@@ -1060,6 +1059,11 @@ div.tfNote{height:auto;overflow:auto}
 .cvHeadT .legend{font-size:12.5px}
 .evLegend{margin:8px 0 0}
 .evBulk{margin:0 0 10px}
+.tkTable .tkRow{cursor:pointer}.tkTable .tkRow:hover td,.tkTable .tkRow:focus-visible td{background:var(--bg)}.tkTable .tkRow:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tkTable .tkRow.is-late td:first-child{box-shadow:inset 3px 0 0 var(--bad-strong)}
+.tkTable td{vertical-align:middle}.tkTable .tkTitle{min-width:220px}.tkTable .tkTitle .pTitle{display:block}.tkTable .prDate{white-space:nowrap}
+.tkTable .tkYear td{background:var(--sunk);padding:6px 12px}
+.postOpen>#tkSum{display:none}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1089,8 +1093,8 @@ div.tfNote{height:auto;overflow:auto}
   <div id="postNew" hidden></div>
 
   <!-- 업무 목록: 검색 · 프로젝트 칩 · 파트 칩 · 목록/보드 한 줄 -->
-  <h3 class="listTitle">업무 목록</h3>
-  <div class="ltBar">
+  <div id="tkSum"></div>
+  <div class="ltBar cvFilt">
     <div class="ptabs" id="ptabs" role="tablist" aria-label="프로젝트"></div>
     <span class="spacer"></span>
     <select class="sel" id="lSort" aria-label="목록 정렬"><option value="req">요청일 최신순</option><option value="due">마감 임박순</option></select>
@@ -1346,7 +1350,7 @@ function renderBody(){
   if(state.mode==='accounts'){if(document.activeElement?.id!=='acQ')renderAccounts();return;}
   if(state.mode==='history'){if(document.activeElement?.id!=='hQ')renderHistory();return;}
   if(state.mode==='report'){if(!document.activeElement?.dataset?.note)renderReport();return;}
-  renderTabs();renderFilters();
+  renderTabs();renderFilters();renderTkSum();
   const main=$('#main');
   renderPostNew();
   if(state.post&&storeReady&&!tasks.some(x=>x.id===state.post))state.post=null;
@@ -1362,7 +1366,7 @@ function renderBody(){
     main.innerHTML=`<div class="empty"><h2>아직 등록된 업무가 없습니다</h2><p>${canWrite?"위 '프로젝트 등록하기'에서 첫 업무를 등록하고, 게시물에 댓글로 업무를 요청해 보세요.":'등록된 업무가 생기면 여기에 보여요.'}</p></div>`;return;
   }
   if(post){renderPost(post);return;}
-  if(state.view==='board')renderBoard(list);
+  if(state.view==='board')renderBoard(state.late?list.filter(isLate):list);
   else renderList();
 }
 
@@ -1370,11 +1374,11 @@ function renderBody(){
 const statTable=list=>`<div class="statWrap"><table class="statTable"><thead><tr>${list.map(([k,,c])=>`<th class="${c}">${k}</th>`).join('')}</tr></thead><tbody><tr>${list.map(([,v,c])=>`<td class="${c}">${v}</td>`).join('')}</tr></tbody></table></div>`;
 
 function renderTabs(){
-  const pt=periodTasks(), count=id=>pt.filter(t=>(id==='all'||t.projectId===id)&&(state.period!=='all'||t.status!=='done')).length;
+  const count=id=>{const s0=state.project;state.project=id;const n=storeReady?postList().length:0;state.project=s0;return n;}; // 목록 건수와 같은 기준
   const tabs=[{id:'all',name:'전체 프로젝트'},...projects];
   if(state.project!=='all'&&!projOf(state.project))state.project='all';
   const admin=canWrite&&!!db&&(typeof adminUI!=='function'||adminUI());
-  $('#ptabs').innerHTML=tabs.map(p=>`<span class="ptabW"><button class="ptab" role="tab" type="button" data-p="${esc(p.id)}" aria-selected="${state.project===p.id}">${p.color?`<span class="dot" style="background:${esc(p.color)}"></span>`:''}${esc(p.name)}<span class="c" title="${state.period==='all'?'미완료':'이 기간 업무'}">${count(p.id)}</span></button>${admin&&p.id!=='all'?`<button type="button" class="ptabMore" data-pedit="${esc(p.id)}" aria-label="${esc(p.name)} 프로젝트 수정·순서·삭제" title="수정·순서·삭제">⋯</button>`:''}</span>`).join('')+(admin?'<button type="button" class="ptab ptabAdd" id="pAddTab">+ 프로젝트</button>':'');
+  $('#ptabs').innerHTML=tabs.map(p=>`<span class="ptabW"><button class="ptab" role="tab" type="button" data-p="${esc(p.id)}" aria-selected="${state.project===p.id}">${p.color?`<span class="dot" style="background:${esc(p.color)}"></span>`:''}${esc(p.name)}<span class="c" title="지금 조건의 업무">${count(p.id)}</span></button>${admin&&p.id!=='all'?`<button type="button" class="ptabMore" data-pedit="${esc(p.id)}" aria-label="${esc(p.name)} 프로젝트 수정·순서·삭제" title="수정·순서·삭제">⋯</button>`:''}</span>`).join('')+(admin?'<button type="button" class="ptab ptabAdd" id="pAddTab">+ 프로젝트</button>':'');
 }
 
 function renderFilters(){
@@ -1493,7 +1497,7 @@ function postList(){
   const r=periodRange(), byRoot=new Map();
   for(const t of tasks){if(state.project!=='all'&&t.projectId!==state.project)continue;if(r&&!inPeriod(t,r))continue;if(!passF(t))continue;const p=rootOf(t);byRoot.set(p.id,p);}
   const key=p=>(p.requestDate||(p.createdAt||'').slice(0,10))+'|'+(p.createdAt||'');
-  const L=[...byRoot.values()].sort((a,b)=>key(b).localeCompare(key(a)));
+  const L=[...byRoot.values()].filter(p=>!state.late||postLate(p)).sort((a,b)=>key(b).localeCompare(key(a)));
   if(state.lsort!=='due')return L;
   // 마감 임박순: 남은 마감(요청이 있으면 끝나지 않은 요청 중 가장 이른 마감)이 이른 순, 마감 없음·끝난 건은 뒤로
   const dk=p=>postDue(p,kidsOf(p))||'9999';
@@ -1505,24 +1509,46 @@ const soonTag=d=>{if(!d||d<todayStr())return '';const n=Math.round((new Date(d+'
 const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
 // 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
 const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
+// 게시물이 지연인지(요청이 있으면 요청 중 하나라도 지연)
+const postLate=p=>{const k=kidsOf(p);return k.length?k.some(isLate):isLate(p);};
 function postRow(p){
   const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
-  const late=k.length?k.some(isLate):isLate(p),own=!k.length&&canWrite;
-  return `<li class="postRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
-    <span class="prMain">${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}<span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span></span>
-    <span class="pMeta num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</span>
-    <span class="pMeta prWho">${k.length?`(요청 ${k.length}건${doing?` · 진행 ${doing}`:''}) `:''}${esc(partOf(p.part).label)} · ${whoMany(p,22,'담당 미지정')}${p.requester?` · 요청 ${esc(p.requester)}`:''}</span>
-    ${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</li>`;
+  const late=postLate(p),own=!k.length&&canWrite;
+  return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
+    <td>${pj?`<span class="svcTag" style="--c:${esc(pj.color)}">${esc(pj.name)}</span>`:''}</td>
+    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${rmsBadge(p)}${esc(p.title)}</span>${k.length?`<span class="legend">요청 ${k.length}건${doing?` · 진행 ${doing}`:''}</span>`:''}</td>
+    <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
+    <td class="prWho">${esc(partOf(p.part).label)} · ${whoMany(p,22,'담당 미지정')}</td>
+    <td>${p.requester?esc(p.requester):'<span class="legend">—</span>'}</td>
+    <td>${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</td></tr>`;
 }
+// 목록: 회귀 검증과 같은 표. 요청일 최신순이면 연도 구분 줄(접기)
 function renderList(){
   const posts=postList();
   if(!posts.length){$('#main').innerHTML=`<div class="empty"><h2>조건에 맞는 업무가 없습니다</h2><p>${state.period!=='all'?`${esc(periodLabel(periodRange()))}에 해당하는 업무가 없습니다. 기간을 바꿔 보세요.`:'필터를 바꾸거나 검색어를 지워 보세요.'}</p></div>`;return;}
-  const fold=new Set(state.yfold||[]), years=new Map();
-  for(const p of posts){const y=state.lsort==='due'?'마감 임박순':(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
-  $('#main').innerHTML=`<div class="postView">${[...years].map(([y,ps])=>{const c=fold.has(y);return `<section class="yGroup">
-    <button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${c?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</span></button>
-    ${c?'':`<ul class="postList">${ps.map(postRow).join('')}</ul>`}</section>`;}).join('')}<p class="legend">${posts.length}건 · 행을 누르면 게시물(댓글·업무 요청)을 열어요</p></div>`;
+  const fold=new Set(state.yfold||[]),arw=c=>c?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>';
+  let body='';
+  if(state.lsort==='due')body=posts.map(postRow).join('');
+  else{const years=new Map();for(const p of posts){const y=(p.requestDate||p.createdAt||'').slice(0,4)||'날짜 없음';if(!years.has(y))years.set(y,[]);years.get(y).push(p);}
+    for(const [y,ps] of years){const c=fold.has(y);body+=`<tr class="tkYear"><td colspan="6"><button type="button" class="yHead" data-year="${esc(y)}" aria-expanded="${!c}">${esc(y)}${/^\d+$/.test(y)?'년':''}<span class="legend">${ps.length}건</span><span aria-hidden="true">${arw(c)}</span></button></td></tr>${c?'':ps.map(postRow).join('')}`;}}
+  $('#main').innerHTML=`<div class="statWrap"><table class="stable tkTable"><thead><tr><th>프로젝트</th><th>제목</th><th>기간</th><th>파트 · 담당자</th><th>요청자</th><th>진행 현황</th></tr></thead><tbody>${body}</tbody></table></div>
+    <p class="legend evLegend">${posts.length}건 · 행을 누르면 게시물(댓글·업무 요청)을 열어요</p>`;
 }
+// 목록 위 요약 카드: 상태별 건수(누르면 진행 현황 필터) + 지연(추가 필터). 건수 = 그 상태를 골랐을 때 목록에 보이는 게시물 수
+function renderTkSum(){
+  const box=$('#tkSum');if(!box)return;
+  if(!storeReady||!projects.length||!tasks.length){box.innerHTML='';return;}
+  const s0=state.status,l0=state.late,cnt={};state.late=false;
+  for(const k of ['all',...STATUSES.map(x=>x.k)]){state.status=k;cnt[k]=postList().length;}
+  state.status=s0;const all=postList(),late=all.filter(postLate).length;state.late=l0;const shown=postList().length;
+  const pj=state.project!=='all'&&projOf(state.project);
+  box.innerHTML=`<div class="panel cvHead"><div class="cvHeadT"><h3>${pj?esc(pj.name):'전체 프로젝트'}</h3><span class="legend">${shown}건 · 지연 ${late}건</span></div>
+    <div class="cvStats">${[['all','전체'],...STATUSES.map(x=>[x.k,x.label])].map(([k,l])=>`<button type="button" class="cvStat" data-tkst="${k}" aria-pressed="${state.status===k}" title="${k==='all'?'모두 보기':'이 상태만 보기'}"><span class="cvPill${k==='all'?'':' s-'+k}">${l}</span><b class="num">${cnt[k]}</b></button>`).join('')}
+      <span class="cvProg"><button type="button" class="cvStat" id="tkLate" aria-pressed="${!!state.late}" title="지연된 업무만 보기"><span class="cvPill ${late?'cv-MAJOR':'cv-NT'}">지연</span><b class="num">${late}</b></button></span></div></div>`;
+}
+$('#tkSum').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tkst){state.status=b.dataset.tkst;persistUI();render();return;}
+  if(b.id==='tkLate'){state.late=!state.late;persistUI();render();}});
 
 // 게시물 상세: 머리 + 댓글·요청 타임라인 + 작성칸
 // 게시물·요청 상세 = 수정 화면(게시판형). 칸을 고치고 다른 곳을 누르면 그 칸만 저장

@@ -889,7 +889,7 @@ a.rms:hover{text-decoration:underline}
 .mnStepHead input.sel{width:auto}
 .mnTwo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .mnTblEd{display:flex;flex-direction:column;gap:6px}.mnLab{font-size:14px;font-weight:600;color:var(--ink-soft)}
-.mnRowEd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:6px;align-items:start}
+.mnRowEd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr) auto;gap:6px;align-items:start}.mnRowBtns{display:flex;gap:2px}
 .mnTblEd>.btn{align-self:flex-start}
 .mnTpl{display:flex !important;flex-direction:row !important;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-weight:400 !important}
 .mnTpl span{display:flex;flex-direction:column;gap:2px;color:var(--fg)}.mnTpl:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
@@ -3391,8 +3391,8 @@ function mnDetail(area){
       <div class="mnStepHead"><span class="mnNo">${i+1}</span><input class="sel" data-sf="title" value="${esc(s.title||'')}" placeholder="단계 제목" aria-label="단계 제목" maxlength="80">
         <button type="button" class="btn ghost sm" data-smv="-1" ${i?'':'disabled'} aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-smv="1" ${i<steps.length-1?'':'disabled'} aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button type="button" class="btn ghost sm" data-sdel>삭제</button>${mnStepTools(s,i,true)}</div>
       <label>설명 <span class="legend">줄 그대로 보여요 · ■로 시작하면 소제목</span></label>${rtEditor('mnBodyEd','data-sf="body" aria-label="단계 설명"',s.bodyHtml?rtClean(s.bodyHtml):rtFromText(s.body),'')}
-      <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표를 복사해 칸에 붙여넣으면 행이 생겨요</span></span>
-        ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></div>`).join('')}
+      <div class="mnTblEd"><span class="mnLab">항목 표 <span class="legend">엑셀·피그마 표(2칸 이상)를 복사해 붙여넣으면 행이 생겨요</span></span>
+        ${(s.table||[]).map((r,j)=>`<div class="mnRowEd" data-row="${j}"><input class="sel" data-tf="label" value="${esc(r.label||'')}" placeholder="항목" aria-label="항목"><textarea class="sel" data-tf="rule" rows="${Math.min(6,Math.max(1,String(r.rule||'').split('\n').length))}" placeholder="입력 기준" aria-label="입력 기준">${esc(r.rule||'')}</textarea><span class="mnRowBtns"><button type="button" class="btn ghost sm" data-rmv="-1" ${j?'':'disabled'} aria-label="행 위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-rmv="1" ${j<s.table.length-1?'':'disabled'} aria-label="행 아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><button type="button" class="btn ghost sm" data-rdel aria-label="행 삭제">✕</button></span></div>`).join('')}
         <button type="button" class="btn sm" data-radd>+ 행 추가</button></div>
       <div class="mnTwo"><label>체크 항목 <span class="legend">한 줄에 하나</span><textarea class="sel" data-sf="checks" rows="3">${esc((s.checks||[]).join('\n'))}</textarea></label>
         <label>링크 <span class="legend">한 줄에 하나 · 이름 | 주소</span><textarea class="sel" data-sf="links" rows="3" spellcheck="false">${esc(mnLinksText(s.links))}</textarea></label></div>
@@ -3460,7 +3460,8 @@ function mnParseTsv(t){const rows=[];let row=[],cell='',q=false;t=t.replace(/\r/
   for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch==='"'&&t[i+1]==='"'){cell+='"';i++;}else if(ch==='"')q=false;else cell+=ch;}
     else if(ch==='"'&&cell==='')q=true;else if(ch==='\t'){row.push(cell);cell='';}else if(ch==='\n'){row.push(cell);rows.push(row);row=[];cell='';}else cell+=ch;}
   if(cell||row.length){row.push(cell);rows.push(row);}return rows.filter(r=>r.some(c=>c.trim()));}
-onArea('#manualsArea','paste',e=>{const inp=e.target.closest?.('[data-tf]');if(!inp||!mnDraft)return;const t=(e.clipboardData||window.clipboardData).getData('text');if(!/[\t\n]/.test(t.trim()))return;
+onArea('#manualsArea','paste',e=>{const inp=e.target.closest?.('[data-tf]');if(!inp||!mnDraft)return;const t=(e.clipboardData||window.clipboardData).getData('text');
+  if(!t.trim().includes('\t')){const c=mnParseTsv(t);if(c.length===1&&c[0].length===1&&/^\s*"/.test(t)){e.preventDefault();document.execCommand('insertText',false,c[0][0]);}return;} // 엑셀 한 칸(따옴표로 감싼 여러 줄)은 따옴표만 벗겨서
   e.preventDefault();const s=mnDraft.steps.find(x=>x.id===inp.closest('[data-sid]').dataset.sid),j=+inp.closest('[data-row]').dataset.row,rows=mnParseTsv(t);
   rows.forEach((r,k)=>{const v={label:(r.length>1?r[0]:r[0]||'').trim(),rule:(r.length>1?r.slice(1).join('\n'):'').trim()};if(s.table[j+k])s.table[j+k]=v;else s.table.push(v);});
   inp.blur();mnQueue(true);render();toast(`표에 ${rows.length}행을 넣었어요.`);});
@@ -3505,6 +3506,8 @@ onArea('#manualsArea','click',async e=>{
   if(b.dataset.sdel!=null){if(!b.dataset.ok){b.dataset.ok='1';b.textContent='한 번 더 누르면 삭제';return;}mnDraft.steps.splice(i,1);if(mnst.step===s.id){await mnSave();mnst.step=null;if(!mnst.edit)mnDraft=null;}else mnQueue(true);render();toast('단계를 지웠어요.');return;}
   if(b.dataset.radd!=null){s.table.push({label:'',rule:''});mnQueue(true);render();const rows=document.querySelectorAll(`#mn-${s.id} [data-row]`);rows[rows.length-1]?.querySelector('input')?.focus();return;}
   if(b.dataset.rdel!=null){s.table.splice(+b.closest('[data-row]').dataset.row,1);mnQueue(true);render();return;}
+  if(b.dataset.rmv){const r=+b.closest('[data-row]').dataset.row,d=+b.dataset.rmv,t=r+d;if(t<0||t>=s.table.length)return;[s.table[r],s.table[t]]=[s.table[t],s.table[r]];mnQueue(true);render();
+    const nb=document.querySelector(`#mn-${s.id} [data-row="${t}"] [data-rmv="${d}"]`);(nb&&!nb.disabled?nb:document.querySelector(`#mn-${s.id} [data-row="${t}"] [data-rmv="${-d}"]`))?.focus();return;}
 });
 
 /* ----- 매뉴얼 편집 편하게: 단계만 바로 편집(mnst.step) · 끌어서 순서 · 단계 복제 · 다른 매뉴얼에서 단계 가져오기 ----- */

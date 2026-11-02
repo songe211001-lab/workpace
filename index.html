@@ -1111,6 +1111,15 @@ div.tfNote{height:auto;overflow:auto}
 .rmsGo{min-width:28px;justify-content:center;text-decoration:none}.tkRms .rmsGo{min-width:0;height:24px;padding:0 6px}.rmsGo[aria-disabled]{opacity:.4;cursor:not-allowed}
 @media (max-width:480px){.lvSum .stable th,.lvSum .stable td{padding-left:6px;padding-right:6px}} /* 좁은 화면: 연차 현황 5칸이 한 화면에 */
 .ptBar .ptabs{margin:0 0 -1px;gap:2px}.ptBar .ptab{height:36px;padding:0 10px;font-size:14px} /* 업무 관리 프로젝트 탭: 다른 화면의 밑줄 탭과 같은 모양 */
+/* 프로필 사진 자르기 */
+.avCrop{flex-direction:row!important;flex-wrap:wrap;gap:14px;align-items:flex-start}.avCrop[hidden]{display:none!important}
+.avCropView{position:relative;width:200px;height:200px;overflow:hidden;border-radius:var(--r);background:var(--sunk);cursor:grab;touch-action:none;flex:none}
+.avCropView.drag{cursor:grabbing}.avCropView:focus-visible{outline:2px solid var(--accent-dark);outline-offset:2px}
+.avCropView::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 200px rgba(0,0,0,.45);outline:2px solid rgba(255,255,255,.9);outline-offset:-2px;pointer-events:none}
+.avCropView img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;user-select:none;pointer-events:none}
+.avCropTools{display:flex;flex-direction:column;gap:10px;flex:1 1 200px;min-width:0}
+.avZoom{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft)}.avZoom input{flex:1;min-width:0}
+.avCropBtns{display:flex;gap:6px;justify-content:flex-end}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2469,12 +2478,28 @@ document.addEventListener('change',e=>{const p=e.target.closest?.('.asPick');if(
 document.addEventListener('click',e=>{document.querySelectorAll('details.asPick[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;});});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('details.asPick[open]').forEach(d=>{d.open=false;d.querySelector('summary').focus();});});
 const whoBy=(uid,size=20)=>avatarHtml(members.find(m=>m.userId===uid)||{name:actorName(uid)},size);
-async function toAvatar(file){
-  const img=await createImageBitmap(file);
-  const n=Math.min(img.width,img.height), c=document.createElement('canvas');c.width=c.height=160;
-  c.getContext('2d').drawImage(img,(img.width-n)/2,(img.height-n)/2,n,n,0,0,160,160);img.close?.();
-  return c.toDataURL('image/jpeg',.85);
-}
+// 프로필 사진 자르기: 원 안에서 끌어 위치를 맞추고 슬라이더(휠·+/-)로 확대·축소 → 160px JPG
+function avCrop(box,file){return new Promise((done,fail)=>{const V=200,url=URL.createObjectURL(file),img=new Image();img.alt='';img.draggable=false;
+  img.onerror=()=>{URL.revokeObjectURL(url);fail(new Error('img'));};
+  img.onload=()=>{const w=img.naturalWidth,h=img.naturalHeight,s0=V/Math.min(w,h);let z=1,sc=s0,ox=(V-w*sc)/2,oy=(V-h*sc)/2,drag=null;
+    box.innerHTML=`<div class="avCropView" tabindex="0" role="img" aria-label="사진 위치 조정: 끌거나 방향키로 옮기고 +/- 로 확대·축소"></div><div class="avCropTools"><label class="avZoom"><span>축소</span><input type="range" id="avZ" min="1" max="4" step="0.01" value="1" aria-label="확대·축소"><span>확대</span></label><span class="hint">사진을 끌어 위치를 맞추고, 슬라이더나 마우스 휠로 크기를 조정해요. 원 안쪽이 프로필로 보여요.</span><div class="avCropBtns"><button class="btn" type="button" id="avCancel">취소</button><button class="btn primary" type="button" id="avOk">적용</button></div></div>`;
+    box.hidden=false;const view=box.querySelector('.avCropView'),zr=box.querySelector('#avZ');view.append(img);
+    const draw=()=>{ox=Math.min(0,Math.max(V-w*sc,ox));oy=Math.min(0,Math.max(V-h*sc,oy));img.style.transform=`translate(${ox}px,${oy}px) scale(${sc})`;};
+    const zoom=nz=>{const cx=(V/2-ox)/sc,cy=(V/2-oy)/sc;z=Math.min(4,Math.max(1,nz));sc=s0*z;ox=V/2-cx*sc;oy=V/2-cy*sc;draw();zr.value=z;}; // 가운데를 기준으로
+    draw();
+    view.onpointerdown=e=>{drag={x:e.clientX-ox,y:e.clientY-oy};view.setPointerCapture(e.pointerId);view.classList.add('drag');};
+    view.onpointermove=e=>{if(!drag)return;ox=e.clientX-drag.x;oy=e.clientY-drag.y;draw();};
+    view.onpointerup=view.onpointercancel=()=>{drag=null;view.classList.remove('drag');};
+    view.onwheel=e=>{e.preventDefault();zoom(z*(e.deltaY<0?1.1:1/1.1));};
+    view.onkeydown=e=>{const d={ArrowLeft:[-8,0],ArrowRight:[8,0],ArrowUp:[0,-8],ArrowDown:[0,8]}[e.key];
+      if(d){e.preventDefault();ox+=d[0];oy+=d[1];draw();}else if(e.key==='+'||e.key==='='){e.preventDefault();zoom(z+.1);}else if(e.key==='-'){e.preventDefault();zoom(z-.1);}};
+    zr.oninput=()=>zoom(+zr.value);
+    const end=v=>{box.hidden=true;box.innerHTML='';URL.revokeObjectURL(url);done(v);};
+    box.querySelector('#avCancel').onclick=()=>end(null);
+    box.querySelector('#avOk').onclick=()=>{const c=document.createElement('canvas'),k=160/V,g=c.getContext('2d');c.width=c.height=160;g.fillStyle='#fff';g.fillRect(0,0,160,160);
+      g.drawImage(img,ox*k,oy*k,w*sc*k,h*sc*k);end(c.toDataURL('image/jpeg',.85));};
+    view.focus();};
+  img.src=url;});}
 function openNotify(){
   const m=myMember();if(!m){openWhoAmI();return;}
   const nf={task:true,comment:true,leave:true,digest:true,...(m.notify||{})};
@@ -4368,7 +4393,8 @@ function openAccount(m){
       <div class="f full pfPhoto"><div id="acAvatar">${avatarHtml(m,72)}</div><div class="pfPhotoBtns">
         <button class="btn" type="button" id="acPick">사진 바꾸기</button><button class="btn ghost" type="button" id="acPhotoDel" ${m.avatar?'':'hidden'}>사진 지우기</button>
         <input type="file" id="acFile" accept="image/jpeg,image/png,image/webp" hidden aria-label="프로필 사진 파일">
-        <span class="hint">가운데를 정사각형으로 잘라 원 모양으로 보여요. JPG·PNG·WEBP</span></div></div>
+        <span class="hint">사진을 고르면 위치와 크기를 맞춰 자를 수 있어요. JPG·PNG·WEBP</span></div></div>
+      <div class="f full avCrop" id="acCrop" hidden></div>
       <div class="f"><label for="acName">이름 <b>*</b></label><input id="acName" maxlength="20" value="${esc(m.name)}"></div>
       <div class="f"><label for="acEmail">회사 메일</label><input id="acEmail" type="email" spellcheck="false" value="${esc(m.email||'')}" placeholder="${m.userId?'로그인 연결됨':'로그인 연결용 (선택)'}"></div>
       <div class="f"><label for="acPart">파트</label><select id="acPart"><option value="">파트 없음</option>${opt(memberParts().map(p=>[p.k,p.label]),m.part)}</select></div>
@@ -4393,7 +4419,7 @@ function openAccount(m){
     const f=e.target.files[0];e.target.value='';if(!f)return;
     if(!/^image\/(jpeg|png|webp)$/.test(f.type)){$('#acErr').textContent='JPG·PNG·WEBP 사진만 쓸 수 있어요.';return;}
     if(f.size>15*1024*1024){$('#acErr').textContent='15MB 이하 사진을 골라 주세요.';return;}
-    try{avatar=await toAvatar(f);$('#acErr').textContent='';modalDirty=true;showAv();}catch(err){$('#acErr').textContent='사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.';}
+    try{$('#acErr').textContent='';const v=await avCrop($('#acCrop'),f);if(v){avatar=v;modalDirty=true;showAv();}$('#acPick').focus();}catch(err){$('#acErr').textContent='사진을 읽지 못했어요. 다른 사진으로 시도해 주세요.';}
   });
   $('#acPhotoDel').onclick=()=>{avatar='';modalDirty=true;showAv();};
   $('#acDel')?.addEventListener('click',()=>{

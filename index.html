@@ -1121,6 +1121,7 @@ div.tfNote{height:auto;overflow:auto}
 .avZoom{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-soft)}.avZoom input{flex:1;min-width:0}
 .avCropBtns{display:flex;gap:6px;justify-content:flex-end}
 .mnRuleEd{min-height:36px;border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:14px;line-height:1.6;background:var(--surface);outline:none;white-space:pre-wrap;overflow-wrap:anywhere}.mnRuleEd:focus{border-color:var(--accent)} /* 항목 표 입력 기준(서식 편집칸) */
+.cvPrev{display:inline-flex;align-items:center;gap:4px;white-space:nowrap} /* 회귀 검증: 이전 회차 결과 + '동일' */
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -2134,6 +2135,7 @@ document.addEventListener('keydown',e=>{
 let cvtCases=[],cvtRuns=[];
 const CV_RES=[['PASS','PASS'],['MINOR','MINOR'],['MAJOR','MAJOR'],['N/A','N/A']]; // 비어 있으면 미점검(NOT TESTED)
 const cvst={run:null,svc:'all',res:'all',core:false,q:'',open:new Set()};
+let cvShown=[]; // 지금 표에 보이는 케이스(이전 회차와 동일 일괄 적용용)
 const cvCases=()=>cvtCases.slice().sort((a,b)=>(a.order??0)-(b.order??0));
 const cvRuns=()=>cvtRuns.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''));
 const cvR=(run,c)=>run?.['r_'+c.id]||'';
@@ -2158,16 +2160,17 @@ function renderRegress(){
   const L=C.filter(c=>(cvst.svc==='all'||c.svc===cvst.svc)&&(!cvst.core||c.core)
     &&(cvst.res==='all'||(cvst.res==='NT'?!cvR(run,c):cvst.res==='DIFF'?!!prev&&cvR(run,c)!==cvR(prev,c):cvR(run,c)===cvst.res))
     &&(!q||[c.group,c.item,c.method,c.expect,run?.['m_'+c.id]].some(v=>String(v||'').toLowerCase().includes(q))));
+  cvShown=L;const sameN=run&&prev&&w?L.filter(c=>!cvR(run,c)&&cvR(prev,c)).length:0;
   const filt=`<div class="cvFilt"><div class="seg" role="group" aria-label="서비스">${[['all','전체'],['FO','FO'],['BO','BO']].map(([k,l])=>`<button type="button" data-cvsvc="${k}" aria-pressed="${cvst.svc===k}">${l}</button>`).join('')}</div>
     <select class="sel" id="cvRes" aria-label="결과">${optH([['all','결과 전체'],['NT','미점검'],...CV_RES,['DIFF','이전 회차와 다름']],cvst.res)}</select>
     <label class="cfItem"><input type="checkbox" id="cvCore" ${cvst.core?'checked':''}>핵심만</label>
-    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="cvQ" type="search" placeholder="케이스 · 점검 항목 · 메모 검색" value="${esc(cvst.q)}" aria-label="검색"></label><span class="legend">${L.length}건</span></div>`;
+    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="cvQ" type="search" placeholder="케이스 · 점검 항목 · 메모 검색" value="${esc(cvst.q)}" aria-label="검색"></label><span class="legend">${L.length}건</span>${run&&prev&&w?`<span class="spacer"></span><button class="btn sm" type="button" id="cvSameAll" ${sameN?'':'disabled'} title="지금 보이는 케이스 중 미점검인 것을 이전 회차 결과로 채워요">미점검 → 이전 회차와 동일${sameN?` (${sameN})`:''}</button>`:''}</div>`;
   const rows=L.map(c=>{const v=cvR(run,c),op=cvst.open.has(c.id),memo=run?.['m_'+c.id]||'';
     return `<tr class="cvRow${v==='MAJOR'?' is-major':''}" data-cv="${esc(c.id)}"><td><span class="cvSvc">${esc(c.svc||'')}</span></td><td class="cvGrp">${esc(c.group||'')}</td>
       <td><button type="button" class="cvItem" data-cvopen aria-expanded="${op}" title="점검 방법 · 예상 결과 보기">${esc(c.item||'(점검 항목 없음)')}</button>${c.core?'<span class="cvCore">핵심</span>':''}</td>
       <td>${run&&w?`<select class="sel cvSel ${cvCls(v)}" data-cvr aria-label="결과">${optH([['','미점검'],...CV_RES],v)}</select>`:cvPill(v)}</td>
       <td>${run&&w?`<input class="sel cvMemo" data-cvm value="${esc(memo)}" placeholder="메모" aria-label="메모">`:esc(memo)}</td>
-      <td>${prev?cvPill(cvR(prev,c)):'<span class="legend">—</span>'}</td></tr>
+      <td><span class="cvPrev">${prev?cvPill(cvR(prev,c)):'<span class="legend">—</span>'}${prev&&run&&w&&cvR(prev,c)&&cvR(prev,c)!==v?'<button type="button" class="btn ghost sm" data-cvsame title="이전 회차 결과로 채우기">동일</button>':''}</span></td></tr>
       ${op?`<tr class="cvDet" data-cv="${esc(c.id)}"><td></td><td colspan="5"><div class="cvDetGrid"><div><b>점검 방법</b><p>${esc(c.method||'—')}</p></div><div><b>예상 결과</b><p>${esc(c.expect||'—')}</p></div></div>${w?'<div class="cvDetAct"><button type="button" class="btn ghost sm" data-cvedit>케이스 수정</button><button type="button" class="btn ghost sm" data-cvdel>케이스 삭제</button></div>':''}</td></tr>`:''}`;}).join('');
   area.innerHTML=`${tools}${head}${filt}<div class="statWrap"><table class="stable cvTable"><thead><tr><th>서비스</th><th>케이스</th><th>점검 항목</th><th>결과</th><th>메모</th><th>이전 회차${prev?`<br><span class="legend">${esc(cvRunName(prev))}</span>`:''}</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="legend">조건에 맞는 케이스가 없어요.</td></tr>'}</tbody></table></div>`;
 }
@@ -2196,7 +2199,12 @@ onArea('#regressArea','click',e=>{const b=e.target.closest('button');if(!b)retur
   if(b.id==='cvImport'){$('#cvFile').click();return;}
   if(b.id==='cvAddCase'){cvCaseModal(null);return;}
   if(b.id==='cvNewRun'){cvRunModal(null);return;}
-  const run=cvtRuns.find(r=>r.id===cvst.run);
+  const run=cvtRuns.find(r=>r.id===cvst.run),R=cvRuns(),prev=run&&R[R.indexOf(run)+1];
+  if(b.dataset.cvsame!=null&&c&&run&&prev&&canWrite){const k='r_'+id,v=cvR(prev,c);run[k]=v;render();
+    db.collection('cvt_runs').doc(run.id).update({[k]:v,updatedAt:new Date().toISOString()}).catch(err=>handleWriteError(err));return;}
+  if(b.id==='cvSameAll'&&run&&prev&&canWrite){const T=cvShown.filter(x=>!cvR(run,x)&&cvR(prev,x));if(!T.length)return;
+    evConfirm(`미점검 ${T.length}건을 이전 회차(${cvRunName(prev)}) 결과와 똑같이 채울까요?\n채운 뒤에도 하나씩 바꿀 수 있어요.`,async()=>{const patch={updatedAt:new Date().toISOString()};T.forEach(x=>{patch['r_'+x.id]=cvR(prev,x);});
+      await db.collection('cvt_runs').doc(run.id).update(patch);Object.assign(run,patch);logChange('regress','update',run.id,cvRunName(run),null,null,`이전 회차와 동일 ${T.length}건`);toast(`${T.length}건을 이전 회차와 동일하게 채웠어요`);render();},'채우기');return;}
   if(b.id==='cvRunEdit'&&run){cvRunModal(run);return;}
   if(b.id==='cvRunDel'&&run)evConfirm(`'${cvRunName(run)}' 회차를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvrun',`회차 · ${cvRunName(run)}`,[wbDocOf('cvt_runs',run)]);cvtRuns=cvtRuns.filter(x=>x.id!==run.id);logChange('regress','delete',run.id,cvRunName(run),null,null,'휴지통으로 옮김');render();});
 });

@@ -1070,6 +1070,7 @@ div.tfNote{height:auto;overflow:auto}
 .ptBar .ptabs{margin:0 0 -1px;gap:2px}.ptBar .ptab{height:36px;padding:0 10px;font-size:14px} /* 업무 관리 프로젝트 탭: 다른 화면의 밑줄 탭과 같은 모양 */
 .mnRuleEd{min-height:36px;border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:14px;line-height:1.6;background:var(--surface);outline:none;white-space:pre-wrap;overflow-wrap:anywhere}.mnRuleEd:focus{border-color:var(--accent)} /* 항목 표 입력 기준(서식 편집칸) */
 .cvPrev{display:inline-flex;align-items:center;gap:4px;white-space:nowrap} /* 회귀 검증: 이전 회차 결과 + '동일' */
+.evWho{color:var(--ink-soft);font-weight:500} /* 달력 일정 담당자 */
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1488,6 +1489,7 @@ const whoMany=(t,size=20,fb='미지정')=>{const L=[[t.assignee,t.assigneeId],..
 // 고른 값 목록(구성원 id 또는 'name:이름') → 저장할 칸
 const asData=vals=>{const v=vals[0]||'',m=v.startsWith('name:')?null:memOf(v);return {assignee:m?m.name:v.slice(5),assigneeId:m?m.id:'',coIds:vals.slice(1).filter(x=>!x.startsWith('name:')&&memOf(x))};};
 const asValsOf=t=>{const m=taskMember(t),o=t.assignee&&!m?'name:'+t.assignee:'';return [m?.id||o,...(t.coIds||[])].filter(Boolean);};
+const scWho=ev=>(ev.memberIds||[]).map(id=>memOf(id)?.name).filter(Boolean).join(', '); // 일정 담당자 이름
 const asLabel=vals=>vals.map(v=>v.startsWith('name:')?v.slice(5):memOf(v)?.name).filter(Boolean).join(', ');
 // 담당자 고르기: 체크 목록(여러 명). 고른 순서대로 저장, 맨 처음이 주 담당
 function asPick(id,vals,orphan){const L=[...(orphan?[['name:'+orphan,orphan+' (구성원 아님)']]:[]),...members.filter(m=>isShown(m)||vals.includes(m.id)).map(m=>[m.id,m.name])]; // 숨긴 구성원은 이미 지정된 경우만
@@ -2428,7 +2430,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   if(cf.leave)for(const l of [...leaves].filter(l=>isShown(memOf(l.memberId))).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
     push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${avatarHtml(memOf(l.memberId),14)}${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
   if(cf.event)for(const ev of events.filter(e=>e.kind==='project'||e.kind==='event')){const p=ev.kind==='project'?projOf(ev.projectId):null;for(let d=ev.start;d&&d<=(ev.end||ev.start);d=addDays(d,1))
-    push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}</div>`);}
+    push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(scWho(ev)?' · 담당 '+scWho(ev):'')+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}${scWho(ev)?`<span class="evWho"> · ${esc(scWho(ev))}</span>`:''}</div>`);}
   if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
     push(d,`<div class="ev evd" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" title="${esc((p?p.name+' · ':'')+ev.title)}"><span class="evtag">배포</span>${esc(p?.name||ev.title)}</div>`);}
   if(cf.due)for(const t of workItems().filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
@@ -3782,6 +3784,7 @@ function openSched(ev,date,endDate){
       <div class="f"><label for="scStart">시작일 <b>*</b></label><input type="date" id="scStart" value="${esc(ev.start||'')}"></div>
       <div class="f"><label for="scEnd">종료일</label><input type="date" id="scEnd" value="${esc(ev.end||ev.start||'')}"></div>
       <div class="f full"><label id="scColLbl">구분 색상</label><div class="scColors" role="radiogroup" aria-labelledby="scColLbl">${PCOLORS.map((c,i)=>`<label class="scColor" style="--c:${c}"><input type="radio" name="scColor" value="${c}" ${(ev.color||PCOLORS[0])===c?'checked':''} aria-label="색 ${i+1}"><span></span></label>`).join('')}</div></div>
+      <div class="f full"><label>담당자 <span class="legend">(여러 명 선택 가능)</span></label>${asPick('scAs',(ev.memberIds||[]).filter(id=>memOf(id)))}</div>
       <div class="f full"><label for="scNote">메모</label><input id="scNote" value="${esc(ev.note||'')}"></div>
     </div></fieldset>
     <footer><div id="scDelZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="scDel">삭제</button>':''}</div><span class="err" id="scErr"></span>
@@ -3797,7 +3800,7 @@ function openSched(ev,date,endDate){
   $('#scForm').addEventListener('submit',async e=>{
     e.preventDefault();if(ro)return;
     const s=$('#scStart').value, en=$('#scEnd').value;
-    const data={kind:'event',title:$('#scTitle').value.trim(),start:s,end:en&&en>=s?en:s,color:document.querySelector('#scForm [name="scColor"]:checked')?.value||PCOLORS[0],note:$('#scNote').value.trim(),updatedAt:new Date().toISOString()};
+    const data={kind:'event',title:$('#scTitle').value.trim(),start:s,end:en&&en>=s?en:s,color:document.querySelector('#scForm [name="scColor"]:checked')?.value||PCOLORS[0],note:$('#scNote').value.trim(),memberIds:asVals('#scAs').filter(v=>!v.startsWith('name:')),updatedAt:new Date().toISOString()};
     const err=!data.title?'제목을 입력해 주세요.':!data.start?'시작일을 입력해 주세요.':'';
     if(err){$('#scErr').textContent=err;return;}
     $('#scSave').disabled=true;

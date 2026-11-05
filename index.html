@@ -1959,7 +1959,7 @@ function renderPost(p){
     <div class="tfRows">
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
       ${row('진행 현황',!isReq&&k.length?`<span class="pill s-${st.k}" title="요청 업무들의 상태로 정해져요">${st.label}</span><span class="legend">요청 업무들의 상태로 정해져요</span>`:sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
-      ${row('파트',sel('part',PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
+      ${row('파트',sel('part',isReq?rqParts(p.part):PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
       ${row('담당자',(ro?`<span class="tfVal">${esc(asNames(p).join(', ')||'—')}</span>`:asPick('tfAs',asValsOf(p),orphan))+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
       ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
       ${row('기간',`${date('requestDate',p.requestDate,'요청일')}<span class="legend">~</span>${date('dueDate',p.dueDate,'마감일')}${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}`)}
@@ -1985,7 +1985,7 @@ function renderPost(p){
     <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 업무 요청이'} 없어요</li>`}</ul>
     ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}"`,cpKeep,isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요")}
       <div class="cpRow">${isReq?'':`<label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
-      <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="파트">${optH(PARTS.map(x=>[x.k,x.label]),(nextPart(p.part)||partOf(p.part)).k)}</select>
+      <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="요청할 파트">${optH(rqParts(),((x=>x&&x.k!=='plan'?x:null)(nextPart(p.part))||PARTS.find(x=>x.k!=='plan')||partOf(p.part)).k)}</select>
       ${asPick('cpAs',main.dataset.post===p.id?asVals('#cpAs'):[])}
       <label class="pnD">마감<input class="sel" type="date" id="cpDue"></label></span>`}
       <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
@@ -2559,7 +2559,7 @@ function openTask(t,prefill){
     <header><h2>${isNew?(t.parentId?'업무 요청 등록':'업무 등록'):ro?'업무 상세':'업무 수정'}</h2><button class="btn ghost" type="button" id="xClose" aria-label="닫기">닫기</button></header>
     <fieldset ${ro?'disabled':''} style="border:0;margin:0;padding:0;min-width:0"><div class="body">
       <div class="f"><label for="tProject">프로젝트 <b>*</b></label><select id="tProject">${opt(projects.map(p=>[p.id,p.name]),t.projectId)}</select></div>
-      <div class="f"><label for="tPart">파트 <b>*</b></label><select id="tPart">${opt(PARTS.map(p=>[p.k,p.label]),t.part)}</select></div>
+      <div class="f"><label for="tPart">파트 <b>*</b></label><select id="tPart">${opt(t.parentId?rqParts(t.part):PARTS.map(p=>[p.k,p.label]),t.part)}</select></div>
       ${t.parentId&&tasks.some(x=>x.id===t.parentId)?`<div class="f full"><button type="button" class="hlink" id="tParent">게시물 열기: ${esc(rootOf(t).title)}</button></div>`:''}
       <div class="f full"><label for="tTitle">요청내용 <b>*</b></label><input id="tTitle" value="${esc(t.title||'')}" placeholder="예: 메인 배너 영역 반응형 수정" maxlength="200"></div>
       <div class="f"><label>담당자</label>${asPick('tAs',asValsOf(t),orphan)}${members.length?'':'<span class="hint">휴가 관리 › 구성원 관리에서 구성원을 먼저 추가해 주세요.</span>'}${orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''}</div>
@@ -2798,6 +2798,7 @@ const isShown=m=>!!m&&!m.hideInWork;
 const memberParts=()=>[...PARTS,{k:'planPM',label:'기획 PM',c:'#6c4bd8'},{k:'planPL',label:'기획 PL',c:'#8b6be8'}]; // 파트 설정이 바뀌어도 따라감
 const memberPartOf=k=>memberParts().find(x=>x.k===k);
 const nextPart=k=>PARTS[PARTS.findIndex(p=>p.k===k)+1]||null;
+const rqParts=cur=>PARTS.filter(x=>x.k!=='plan'||x.k===cur).map(x=>[x.k,x.label]); // 업무 요청에 고를 수 있는 파트
 // 그 구성원이 그날 휴가인지 (휴가 기록 또는 undefined)
 const leaveOn=(memberId,d)=>d?leaves.find(l=>l.memberId===memberId&&leaveDates(l).includes(d)):undefined;
 const taskMember=t=>(t.assigneeId&&memOf(t.assigneeId))||members.find(m=>m.name===t.assignee);

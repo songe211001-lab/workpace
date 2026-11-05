@@ -1706,7 +1706,6 @@ function applyMode(){
   renderNav();
   if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  if(storeReady&&!pickShown&&!pickDone())setTimeout(openMenuPick,0); // 새로 들어올 때 메뉴 선택 화면
   const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='tasks';

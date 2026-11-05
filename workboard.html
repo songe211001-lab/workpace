@@ -1073,6 +1073,16 @@ div.tfNote{height:auto;overflow:auto}
 .evWho{color:var(--ink-soft);font-weight:500} /* 달력 일정 담당자 */
 .stable .lvMv{white-space:nowrap;width:1%;padding-left:4px;padding-right:4px}.lvMv .btn{padding:0 4px} /* 연차 현황 순서 버튼(관리자) */
 @media (max-width:480px){.lvMv .btn{display:flex;height:20px;min-height:0}.lvSum .stable .lvMv{padding-left:0;padding-right:0}} /* 좁은 화면: 위·아래를 세로로 */
+/* 업무 관리: 게시물의 파트별 요청 칩 · 요약 카드 파트별 줄 */
+.rqChips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.rqChip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:1px 2px 1px 8px;background:var(--surface);white-space:nowrap}
+.rqChip::before{content:"";width:3px;height:10px;border-radius:2px;background:var(--c)}
+.rqChip .pill{font-size:11px;padding:0 7px;line-height:18px}
+.rqChip.late{border-color:var(--bad-strong)}.rqChip .rqLate{color:var(--bad-strong);font-size:11px;padding-right:4px}
+.tkParts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.tkPartBtn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
+.tkPartBtn::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--c)}
+.tkPartBtn .lateTag{margin:0}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1301,7 +1311,8 @@ function passF(t){
   const q=state.q.trim().toLowerCase();
   return (state.part==='all'||t.part===state.part)&&
     (state.status==='all'||(state.status==='open'?t.status!=='done':t.status===state.status))&&
-    (state.assignee==='all'||(state.assignee==='me'?isMine(t):asNames(t).includes(state.assignee)))&&
+    (state.assignee==='all'||(state.assignee==='me'?isMine(t):state.assignee==='myreq'?isMyReq(t):asNames(t).includes(state.assignee)))&&
+    (!state.rpart||(!isPost(t)&&t.part===state.rpart))&&
     (!q||[t.title,t.requester,...asNames(t),t.jiraKey,t.rmsNo,t.note,projOf(t.projectId)?.name].some(v=>(v||'').toLowerCase().includes(q)));
 }
 function filtered(){return scoped().filter(passF);}
@@ -1405,9 +1416,9 @@ function renderFilters(){
   state.part='all'; // 직무(파트) 구분 탭은 없앴다. 예전에 골라 둔 파트로 목록이 걸러진 채 남지 않게 항상 전체
   $('#fStatus').innerHTML=[['all','전체 현황'],['open','미완료 전체'],...STATUSES.map(s=>[s.k,s.label])].map(([k,l])=>`<option value="${k}" ${state.status===k?'selected':''}>${l}</option>`).join('');
   const names=[...new Set(scoped().flatMap(asNames))].filter(n=>!members.some(m=>m.name===n&&m.hideInWork)).sort((a,b)=>a.localeCompare(b,'ko'));
-  const me=myMember();if(state.assignee==='me'&&storeReady&&!me)state.assignee='all';
-  if(state.assignee!=='all'&&state.assignee!=='me'&&!names.includes(state.assignee))state.assignee='all';
-  $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
+  const me=myMember();if((state.assignee==='me'||state.assignee==='myreq')&&storeReady&&!me)state.assignee='all';
+  if(!['all','me','myreq'].includes(state.assignee)&&!names.includes(state.assignee))state.assignee='all';
+  $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option><option value="myreq" ${state.assignee==='myreq'?'selected':''}>내가 요청한 업무</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
   if(document.activeElement!==$('#fSearch'))$('#fSearch').value=state.q;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
   $('#lSort').value=state.lsort==='due'?'due':'req';$('#lSort').hidden=state.view==='board';
@@ -1577,13 +1588,18 @@ const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-r
 // 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
 const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
 // 게시물이 지연인지(요청이 있으면 요청 중 하나라도 지연)
+// 게시물의 요청을 파트별로 묶은 칩: 파트 · 건수 · 상태(postStatus와 같은 규칙) · 지연
+function rqChips(k){if(!k.length)return '';const by=new Map();k.forEach(x=>{if(!by.has(x.part))by.set(x.part,[]);by.get(x.part).push(x);});
+  const ix=pk=>{const i=PARTS.findIndex(p=>p.k===pk);return i<0?99:i;};
+  return `<span class="rqChips">${[...by].sort((a,b)=>ix(a[0])-ix(b[0])).map(([pk,L])=>{const pt=partOf(pk),st=statusOf(postStatus({status:''},L)),late=L.filter(isLate).length,who=[...new Set(L.flatMap(asNames))].join(', ');
+    return `<span class="rqChip${late?' late':''}" style="--c:${pt.c}" title="${esc(`${pt.label} 요청 ${L.length}건 · ${st.label}${late?` · 지연 ${late}건`:''}${who?' · 담당 '+who:''}`)}">${esc(pt.label)}${L.length>1?' '+L.length:''}<span class="pill s-${st.k}">${st.label}</span>${late?'<span class="rqLate">지연</span>':''}</span>`;}).join('')}</span>`;}
 const postLate=p=>{const k=kidsOf(p);return k.length?k.some(isLate):isLate(p);};
 function postRow(p){
   const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
   const late=postLate(p),own=!k.length&&canWrite;
   return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <td>${pj?`<span class="pjTag" style="--c:${esc(pj.color)}"><span class="dot" aria-hidden="true"></span>${esc(pj.name)}</span>`:''}</td>
-    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${k.length?`<span class="legend">요청 ${k.length}건${doing?` · 진행 ${doing}`:''}</span>`:''}</td>
+    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${rqChips(k)}</td>
     <td>${rmsCell(p)}</td>
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
     <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
@@ -1612,11 +1628,15 @@ function renderTkSum(){
   const pj=state.project!=='all'&&projOf(state.project);
   box.innerHTML=`<div class="panel cvHead"><div class="cvHeadT"><h3>${pj?esc(pj.name):'전체 프로젝트'}</h3><span class="legend">${shown}건 · 지연 ${late}건</span></div>
     <div class="cvStats">${[['all','전체'],...STATUSES.map(x=>[x.k,x.label])].map(([k,l])=>`<button type="button" class="cvStat" data-tkst="${k}" aria-pressed="${state.status===k}" title="${k==='all'?'모두 보기':'이 상태만 보기'}"><span class="cvPill${k==='all'?'':' s-'+k}">${l}</span><b class="num">${cnt[k]}</b></button>`).join('')}
-      <span class="cvProg"><button type="button" class="cvStat" id="tkLate" aria-pressed="${!!state.late}" title="지연된 업무만 보기"><span class="cvPill ${late?'cv-MAJOR':'cv-NT'}">지연</span><b class="num">${late}</b></button></span></div></div>`;
+      <span class="cvProg"><button type="button" class="cvStat" id="tkLate" aria-pressed="${!!state.late}" title="지연된 업무만 보기"><span class="cvPill ${late?'cv-MAJOR':'cv-NT'}">지연</span><b class="num">${late}</b></button></span></div>${tkParts()}</div>`;
 }
+function tkParts(){const R=scoped().filter(t=>!isPost(t));if(!R.length)return '';
+  return `<div class="tkParts">${PARTS.filter(x=>x.k!=='plan').map(pt=>{const L=R.filter(t=>t.part===pt.k&&t.status!=='done'&&t.status!=='hold'),d=L.filter(t=>t.status==='doing'||t.status==='review').length,l=L.filter(isLate).length;
+    return `<button type="button" class="cvStat tkPartBtn" data-tkpart="${pt.k}" aria-pressed="${state.rpart===pt.k}" style="--c:${pt.c}" title="${esc(pt.label)} 요청이 있는 게시물만 보기">${esc(pt.label)}<span class="legend">남은 ${L.length} · 진행 ${d}</span>${l?`<b class="lateTag">지연 ${l}</b>`:''}</button>`;}).join('')}</div>`;}
 $('#tkSum').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.tkst){state.status=b.dataset.tkst;persistUI();render();return;}
-  if(b.id==='tkLate'){state.late=!state.late;persistUI();render();}});
+  if(b.id==='tkLate'){state.late=!state.late;persistUI();render();return;}
+  if(b.dataset.tkpart){state.rpart=state.rpart===b.dataset.tkpart?'':b.dataset.tkpart;render();}});
 
 // 게시물 상세: 머리 + 댓글·요청 타임라인 + 작성칸
 // 게시물·요청 상세 = 수정 화면(게시판형). 칸을 고치고 다른 곳을 누르면 그 칸만 저장
@@ -1728,7 +1748,7 @@ async function sendPost(p,btn){
   try{
     if(isReq&&$('#cpDue').value&&$('#cpDue').value<todayStr()){$('#cpErr').textContent='마감일이 오늘보다 빨라요. 날짜를 확인해 주세요.';btn.disabled=false;return;}
     if(isReq){const now=new Date().toISOString();
-      const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),...asData(asVals('#cpAs')),parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',
+      const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),...asData(asVals('#cpAs')),parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',requesterId:myMember()?.id||'',
         jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,noteHtml:rr.html,updatedAt:now,createdAt:now};
       const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);toast('업무 요청을 등록했어요');}
     else await db.collection('comments').add({taskId:p.id,text,...(rr.html?{html:rr.html}:{}),by:actorId,at:new Date().toISOString()});
@@ -2079,6 +2099,7 @@ $('#main').addEventListener('dragend',()=>{dragId=null;document.querySelectorAll
 
 /* ---------- 내 업무: 로그인 계정을 구성원 한 명과 연결(members.userId) ---------- */
 function myMember(){return actorId?members.find(m=>m.userId===actorId):null;}
+const isMyReq=t=>{const m=myMember();return !!m&&!isPost(t)&&(t.requesterId?t.requesterId===m.id:t.requester===m.name);}; // 내가 등록한 업무 요청
 function isMine(t){const m=myMember();return !!m&&(t.assigneeId===m.id||(t.coIds||[]).includes(m.id)||(!t.assigneeId&&t.assignee===m.name));}
 function openWhoAmI(){
   if(!actorId){toast('로그인 정보를 확인할 수 없어 내 업무를 쓸 수 없어요.');return;}

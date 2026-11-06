@@ -1959,9 +1959,9 @@ function renderPost(p){
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
   const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${rtShow(c.html,c.text)}</div></li>`
-    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">업무 요청</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span><b>${whoMany(t,22,'담당 미지정')}</b><span class="legend num">마감 ${fmtDate(t.dueDate)}${t.dueDate&&t.status!=='done'?' '+dday(t.dueDate):''}</span>
+    :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">진행 상태</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span>${asNames(t).length?`<b>${whoMany(t,22,'')}</b>`:''}${t.dueDate?`<span class="legend num">마감 ${fmtDate(t.dueDate)}${t.status!=='done'?' '+dday(t.dueDate):''}</span>`:''}
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select><button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">${canWrite?'수정':'보기'}</button></div>
-      <div class="cmBody">${t.note?rtShow(t.noteHtml,t.note):esc(t.title)}</div><div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
+      ${t.note?`<div class="cmBody">${rtShow(t.noteHtml,t.note)}</div>`:t.title!==p.title?`<div class="cmBody">${esc(t.title)}</div>`:''}<div class="legend">${t.requester?who(t.requester,'',16)+' · ':''}${esc(stamp(t.createdAt))}</div></li>`).join('');
   // 칸 만들기: 편집 권한이 없으면 글자로만
   const txt=(f,v,lab,extra='')=>ro?`<span class="tfVal">${esc(v||'—')}</span>`:`<input type="text" class="tfIn" data-tf="${f}" value="${esc(v??'')}" aria-label="${lab}" ${extra}>`;
   const sel=(f,arr,cur,lab)=>ro?`<span class="tfVal">${esc((arr.find(([x])=>String(x)===String(cur))||[,'—'])[1])}</span>`:`<select class="tfIn" data-tf="${f}" aria-label="${lab}">${optH(arr,cur)}</select>`;
@@ -2001,18 +2001,15 @@ function renderPost(p){
       ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.filter(m=>isShown(m)||m.id===cm?.id).map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
       <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span></section>
     ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
-    <h3 class="tlTitle">${isReq?'댓글':'댓글 · 업무 요청'} <span class="legend">${items.length}</span></h3>
-    <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 업무 요청이'} 없어요</li>`}</ul>
-    ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="${isReq?'댓글 내용':'댓글 또는 요청 내용'}"`,cpKeep,isReq?'진행 상황, 확인 요청 등을 남겨 주세요':"댓글을 남기거나, '업무 요청으로 등록'을 켜고 요청 내용을 적어 주세요")}
-      <div class="cpRow">${isReq?'':`<label class="toggle"><input type="checkbox" id="cpReq"> 업무 요청으로 등록</label>
-      <span class="cpFields" id="cpFields" hidden><select class="sel" id="cpPart" aria-label="요청할 파트">${optH(rqParts(),((x=>x&&x.k!=='plan'?x:null)(nextPart(p.part))||PARTS.find(x=>x.k!=='plan')||partOf(p.part)).k)}</select>
-      ${asPick('cpAs',main.dataset.post===p.id?asVals('#cpAs'):[])}
-      <label class="pnD">마감<input class="sel" type="date" id="cpDue"></label></span>`}
+    <h3 class="tlTitle">${isReq?'댓글':'댓글 · 파트 진행'} <span class="legend">${items.length}</span></h3>
+    <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 파트 진행 기록이'} 없어요</li>`}</ul>
+    ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="댓글 내용"`,cpKeep,isReq?'진행 상황, 확인 요청 등을 남겨 주세요':'댓글을 남기거나, 파트와 상태를 골라 진행 상황을 기록해 주세요')}
+      <div class="cpRow">${isReq?'':`<select class="sel" id="cpPart" aria-label="파트"><option value="">파트 선택 안 함 (댓글만)</option>${optH(rqParts(),'')}</select>
+      <select class="sel" id="cpSt" aria-label="상태" disabled>${optH(STATUSES.map(x=>[x.k,x.label]),'wait')}</select>`}
       <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
   </div>`;
   if(main.dataset.post===p.id)keepVals(main,html);else main.innerHTML=html;
   main.dataset.post=p.id;
-  if($('#cpFields'))$('#cpFields').hidden=!$('#cpReq').checked;
 }
 // 칸 하나 저장(그 칸만 update — 다른 사람이 다른 칸을 고쳐도 둘 다 남음)
 async function tfSave(p,f,raw){
@@ -2048,20 +2045,25 @@ async function tfAddWl(p){
     logChange('task','update',p.id,p.title,null,null,`작업 시간 기록 ${md(d)} ${m.name} ${hrs(h)}h`);toast('작업 시간을 기록했어요');}
   catch(err){handleWriteError(err,'#wlErr');}finally{if($('#wlAddBtn'))$('#wlAddBtn').disabled=false;}
 }
+// 게시물의 파트 항목(그 파트의 가장 최근 하위 업무)
+const partItem=(p,part)=>part?kidsOf(p).filter(x=>x.part===part).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0]:null;
 async function sendPost(p,btn){
-  const rr=rtRead($('#cpText')),text=rr.text.trim(), isReq=!!$('#cpReq')?.checked;
+  const rr=rtRead($('#cpText')),text=rr.text.trim(),part=$('#cpPart')?.value||'',st=$('#cpSt')?.value||'wait';
   if(text.length>1000){$('#cpErr').textContent='1000자까지 쓸 수 있어요.';return;}
-  if(!text){$('#cpErr').textContent=isReq?'요청 내용을 입력해 주세요.':'댓글 내용을 입력해 주세요.';return;}
-  if(!isReq&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
+  if(!text&&!part){$('#cpErr').textContent='댓글 내용을 입력하거나 파트를 골라 주세요.';return;}
+  if(text&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
   btn.disabled=true;
   try{
-    if(isReq&&$('#cpDue').value&&$('#cpDue').value<todayStr()){$('#cpErr').textContent='마감일이 오늘보다 빨라요. 날짜를 확인해 주세요.';btn.disabled=false;return;}
-    if(isReq){const now=new Date().toISOString();
-      const data={projectId:p.projectId,part:$('#cpPart').value,title:text.split('\n')[0].slice(0,60),...asData(asVals('#cpAs')),parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',requesterId:myMember()?.id||'',
-        jiraKey:'',rmsNo:'',rmsUrl:'',status:'wait',priority:p.priority??2,requestDate:todayStr(),dueDate:$('#cpDue').value,doneDate:'',estHours:'',actHours:'',link:'',note:text,noteHtml:rr.html,updatedAt:now,createdAt:now};
-      const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,data.title,null,data);toast('업무 요청을 등록했어요');}
+    if(part){const cur=partItem(p,part),pl=partOf(part).label,sl=statusOf(st).label;
+      if(cur){if(cur.status!==st)await setReqStatus(cur.id,st);}
+      else{const now=new Date().toISOString();
+        const data={projectId:p.projectId,part,title:p.title,assignee:'',assigneeId:'',parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',requesterId:myMember()?.id||'',
+          jiraKey:'',rmsNo:'',rmsUrl:'',status:st,priority:p.priority??2,requestDate:todayStr(),dueDate:'',doneDate:st==='done'?todayStr():'',estHours:'',actHours:'',link:'',note:'',updatedAt:now,createdAt:now};
+        const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,`${p.title} · ${pl}`,null,data);}
+      if(text)await db.collection('comments').add({taskId:p.id,text:`[${pl} · ${sl}] ${text}`,...(rr.html?{html:`<b>[${esc(pl)} · ${esc(sl)}]</b> ${rr.html}`}:{}),by:actorId,at:new Date().toISOString()});
+      toast(`${pl} 상태를 '${sl}'(으)로 정했어요`);}
     else await db.collection('comments').add({taskId:p.id,text,...(rr.html?{html:rr.html}:{}),by:actorId,at:new Date().toISOString()});
-    $('#cpText').innerHTML='';$('#cpText').blur();render();if($('#cpReq')){$('#cpDue').value='';$('#cpAs').outerHTML=asPick('cpAs',[]);$('#cpReq').checked=false;$('#cpFields').hidden=true;}$('#cpErr').textContent='';
+    $('#cpText').innerHTML='';$('#cpText').blur();if($('#cpPart')){$('#cpPart').value='';$('#cpSt').value='wait';$('#cpSt').disabled=true;}$('#cpErr').textContent='';render();
   }catch(err){handleWriteError(err,'#cpErr');}finally{btn.disabled=false;}
 }
 async function setReqStatus(id,st){
@@ -2390,7 +2392,7 @@ $('#main').addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.tf&&canWrite){const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,el.dataset.tf,el.value);if(el.tagName==='SELECT'||el.type==='date')el.blur();return;}
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
-  if(el.id==='cpReq')$('#cpFields').hidden=!el.checked;
+  if(el.id==='cpPart'){const st=$('#cpSt');st.disabled=!el.value;const p=tasks.find(x=>x.id===state.post),cur=p&&partItem(p,el.value);st.value=cur?cur.status:'wait';return;}
 });
 let dragId=null;
 $('#main').addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragId=c.dataset.id;e.dataTransfer.effectAllowed='move';});

@@ -1996,7 +1996,7 @@ function renderPost(p){
       <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
       ${fold?'':ro?`<div class="tfNote tfNoteRo">${p.note||p.noteHtml?rtShow(p.noteHtml,p.note):'<span class="legend">내용이 없어요.</span>'}</div>`:rtEditor('tfNote','data-tf="note" aria-label="내용"',p.noteHtml?rtClean(p.noteHtml):rtFromText(p.note),'요청 배경, 변경 이력, 이슈')}
       <span class="err" id="tErr"></span></section>
-    <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span>${canWrite&&np?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(np.label)}(으)로 넘기기</button>`:''}</div>
+    <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span></div>
       ${wl.length?`<ul class="hitems">${wl.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
       ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.filter(m=>isShown(m)||m.id===cm?.id).map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
       <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span></section>
@@ -2362,8 +2362,6 @@ $('#main').addEventListener('click',async e=>{
       if(tpl&&!tpl.includes('{no}')){$('#tErr').textContent='주소 규칙에 {no}를 넣어 주세요. 예: https://rms.회사.com/request/{no}';return;}
       try{const before={...site};await db.doc('settings/site').set({title:site.title,subtitle:site.subtitle||'',rmsTemplate:tpl,updatedAt:new Date().toISOString()});site={...site,rmsTemplate:tpl};logChange('site','update','site','RMS 주소 규칙',before,site);
         $('#tErr').textContent='';toast('RMS 주소 규칙을 저장했습니다');render();}catch(err){handleWriteError(err,'#tErr');}return;}
-    if(bid==='tNext'){const np=nextPart(p.part),pt=partOf(p.part);
-      openTask(null,{projectId:p.projectId,part:np.k,title:p.title,jiraKey:p.jiraKey||'',rmsNo:p.rmsNo||'',rmsUrl:p.rmsUrl||'',link:p.link||'',requester:p.assignee||p.requester||'',priority:p.priority??2,parentId:rootOf(p).id,prevId:p.id,note:`이전 단계: ${pt.label} · ${p.title}`});return;}
     if(bid==='tfDel'){const back=p.parentId&&tasks.some(x=>x.id===p.parentId)?p.parentId:null;
       const K=back?[]:kidsOf(p),ids=new Set([p.id,...K.map(x=>x.id)]),W=wlogs.filter(w=>ids.has(w.taskId));
       evConfirm(`'${p.title||'업무'}'을(를) 삭제할까요?${K.length?`\n붙어 있는 업무 요청 ${K.length}건도 같이 삭제돼요.`:''}\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('tasks','task',`업무 · ${p.title||'(제목 없음)'}${K.length?` (요청 ${K.length}건)`:''}`,[wbDocOf('tasks',p),...K.map(x=>wbDocOf('tasks',x)),...W.map(w=>wbDocOf('worklogs',w))]);logChange('task','delete',p.id,p.title,null,null,'휴지통으로 옮김');openPost(back);toast('휴지통으로 옮겼어요');});return;}
@@ -2608,7 +2606,7 @@ function openTask(t,prefill){
     </div></fieldset>
     <datalist id="peopleList">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <footer>
-      <div id="delZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="tDel">삭제</button>':''}${!isNew&&canWrite&&nextPart(t.part)?`<button class="btn" type="button" id="tNext" title="같은 요청으로 다음 파트 업무를 만들어요">${esc(nextPart(t.part).label)}(으)로 넘기기</button>`:''}</div>
+      <div id="delZone">${!isNew&&canWrite?'<button class="btn danger" type="button" id="tDel">삭제</button>':''}</div>
       <span class="err" id="tErr"></span>
       <div class="r"><button class="btn" type="button" id="tCancel">${ro?'닫기':'취소'}</button>${ro?'':`<button class="btn primary" type="submit" id="tSave">${isNew?'등록':'저장'}</button>`}</div>
     </footer>
@@ -2691,10 +2689,7 @@ function openTask(t,prefill){
   // 담당자 휴가일에 마감이 걸리면 알려 줌
   const dueSync=()=>{const av=asVals('#tAs')[0]||'',m=av.startsWith('name:')?null:memOf(av),l=m&&leaveOn(m.id,$('#tDue').value);$('#dueLeave').textContent=l?`담당자가 이날 휴가예요 (${leaveLabel(l)})`:'';};
   dueSync();$('#tAs').addEventListener('aspick',dueSync);$('#tDue').addEventListener('change',dueSync);
-  // 다음 파트로 넘기기: 같은 요청을 다음 파트 업무로 새로 만듦(parentId로 연결)
   $('#tParent')?.addEventListener('click',()=>{const r=rootOf(t);closeModal();openPost(r.id);});
-  $('#tNext')?.addEventListener('click',()=>{const np=nextPart(t.part),pt=partOf(t.part);
-    openTask(null,{projectId:t.projectId,part:np.k,title:t.title,jiraKey:t.jiraKey||'',rmsNo:t.rmsNo||'',rmsUrl:t.rmsUrl||'',link:t.link||'',requester:t.assignee||t.requester||'',priority:t.priority??2,parentId:rootOf(t).id,prevId:t.id,note:`이전 단계: ${pt.label} · ${t.title}`});});
   setTimeout(()=>{if(!ro)$('#tTitle').focus();},0);
   $('#tDel')?.addEventListener('click',()=>{
     $('#delZone').innerHTML=`<div class="confirm">이 업무를 삭제할까요? 휴지통에서 30일 동안 복구할 수 있어요. <button class="btn danger" type="button" id="tDelYes">삭제</button><button class="btn ghost" type="button" id="tDelNo">취소</button></div>`;
@@ -5111,7 +5106,7 @@ render();
   let pr=false,tr=false,ar=false,mr=false,lr=false,rr=false,sr=false;
   db.collection('assignments').onSnapshot(s=>{assigns=s.docs.map(x=>({id:x.id,...x.data()}));if(!sr){sr=true;ready();}render();},onErr);
   startHistory();
-  db.doc('settings/site').onSnapshot(s=>{site=s.exists?{...SITE_DEFAULT,...s.data()}:{...SITE_DEFAULT};renderBrand();},()=>{});
+  db.doc('settings/site').onSnapshot(s=>{const had=site.rmsTemplate||'';site=s.exists?{...SITE_DEFAULT,...s.data()}:{...SITE_DEFAULT};renderBrand();if((site.rmsTemplate||'')!==had)render();},()=>{});
   db.doc('settings/menus').onSnapshot(s=>{menuCfg=s.exists?s.data()||{}:{};if(mDraft&&JSON.stringify(mDraft)===mBase)mDraft=null; /* 고치지 않은 초안은 새 설정으로 */if(!mDraft)syncItems();navKey='';if(storeReady)render();},()=>{});
   db.collection('reports').onSnapshot(s=>{reports=s.docs.map(x=>({id:x.id,...x.data()}));if(!rr){rr=true;ready();}render();},onErr);
   db.collection('members').onSnapshot(s=>{members=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));applyExternal();if(!mr){mr=true;ready();}render();},onErr);

@@ -1135,6 +1135,15 @@ div.tfNote{height:auto;overflow:auto}
 .tkPartBtn{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700}
 .tkPartBtn::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--c)}
 .tkPartBtn .lateTag{margin:0}
+/* 업무 게시물 ↔ 이벤트 운영 연결 · 달력의 이벤트 운영 시작·종료 */
+.evLks{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-width:0}
+.evLk{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:3px 4px 3px 6px;background:var(--surface);max-width:100%}
+.evLk.warn{border-color:var(--bad-strong)}.evLk.gone{color:var(--ink-soft)}
+.evLk .cvPill{font-size:12px;padding:0 7px}
+.evLkIn{min-width:220px;flex:1 1 220px}
+.evPost.warn{color:var(--bad-strong)}
+.ev.evops{background:#e3edff;color:#1c5fbf;display:flex;align-items:center;gap:4px}
+tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1914,7 +1923,7 @@ function postRow(p){
   const late=postLate(p),own=!k.length&&canWrite;
   return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <td>${pj?`<span class="pjTag" style="--c:${esc(pj.color)}"><span class="dot" aria-hidden="true"></span>${esc(pj.name)}</span>`:''}</td>
-    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${rqChips(k)}</td>
+    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${rqChips(k)}${evWarnOf(p)?'<b class="lateTag" title="연결된 이벤트 운영 행과 상태가 서로 달라요">⚠ 이벤트 상태</b>':''}</td>
     <td>${rmsCell(p)}</td>
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
     <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
@@ -1960,7 +1969,7 @@ const tfWlSum=list=>Math.round(list.reduce((a,w)=>a+(+w.hours||0),0)*100)/100;
 function renderPost(p){
   const main=$('#main');
   if(main.dataset.post===p.id&&($('#tfAs')?.open||$('#cpAs')?.open))return; // 담당자 고르는 중엔 다시 그리지 않음
-  if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf],#cpText'))return; // 칸 입력 중엔 다시 그리지 않음
+  if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf],#cpText,#evLkIn'))return; // 칸 입력 중엔 다시 그리지 않음
   const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
   const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
@@ -1995,6 +2004,7 @@ function renderPost(p){
       ${row('Jira',txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"'))}
       ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn">주소 규칙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
       ${row('피그마 링크',`${txt('link',p.link,'피그마 링크','placeholder="Figma URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
+      ${isReq?'':row('이벤트 연결',evLinkCell(p,ro))}
       ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
     </div>
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
@@ -2362,6 +2372,8 @@ $('#main').addEventListener('click',async e=>{
   const p=state.post&&tasks.find(x=>x.id===state.post);
   if(p){
     if(e.target.id==='cpSend'){sendPost(p,e.target);return;}
+    const eg=e.target.closest('[data-evgo]');if(eg){evGoRow(eg.dataset.evgo);return;}
+    const eu=e.target.closest('[data-evun]');if(eu&&canWrite){evLinkSet(p,(p.evRowIds||[]).filter(x=>x!==eu.dataset.evun));return;}
     const ed=e.target.closest('[data-rqe]');if(ed){openPost(ed.dataset.rqe);return;}
     const bid=e.target.closest('button')?.id;
     if(bid==='tfFold'){tfFold.has(p.id)?tfFold.delete(p.id):tfFold.add(p.id);render();return;}
@@ -2399,6 +2411,9 @@ $('#main').addEventListener('change',e=>{
   if(el.dataset.tf&&canWrite){const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,el.dataset.tf,el.value);if(el.tagName==='SELECT'||el.type==='date')el.blur();return;}
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
   if(el.dataset.pst){setPostStatus(el.dataset.pst,el.value);el.blur();return;}
+  if(el.id==='evLkIn'&&canWrite){const p=tasks.find(x=>x.id===state.post),v=el.value.trim();if(!p||!v)return;const ids=p.evRowIds||[];
+    const r=evtRowsAll.find(x=>x.kind==='event'&&x.name&&!ids.includes(x.id)&&evOptLabel(x)===v);
+    if(!r){$('#tErr').textContent='목록에서 이벤트를 골라 주세요.';return;}$('#tErr').textContent='';el.value='';el.blur();evLinkSet(p,[...ids,r.id]);return;}
   if(el.id==='cpPart'){const st=$('#cpSt');st.disabled=!el.value;const p=tasks.find(x=>x.id===state.post),cur=p&&partItem(p,el.value);st.value=cur?cur.status:'wait';return;}
 });
 let dragId=null;
@@ -2900,6 +2915,13 @@ function calPanel(st,cf,withFilters,leaveRo){
     push(d,`<div class="ev evp" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" style="border-left-color:${esc((ev.kind==='event'?ev.color:p?.color)||'var(--muted)')}" title="${esc((p?p.name+' · ':'')+ev.title+(scWho(ev)?' · 담당 '+scWho(ev):'')+(ev.note?' · '+ev.note:''))}">${esc(ev.title)}${scWho(ev)?`<span class="evWho"> · ${esc(scWho(ev))}</span>`:''}</div>`);}
   if(cf.event)for(const ev of events.filter(e=>e.kind==='deploy')){const p=projOf(ev.projectId);for(const d of deployDates(ev,a0,b0))
     push(d,`<div class="ev evd" data-eid="${esc(ev.id)}" data-date="${d}" tabindex="0" title="${esc((p?p.name+' · ':'')+ev.title)}"><span class="evtag">배포</span>${esc(p?.name||ev.title)}</div>`);}
+  if(cf.evops&&withFilters&&menuOpen('eventops')){const seen=new Set(),iso=(v,r)=>evDotToIso(evParseDate(v,evtMonths.find(m=>m.id===r.monthId)?.key)||v);
+    for(const r of evtRowsAll){if(r.kind!=='event'||!r.name||r.status==='비노출')continue;const s0=iso(r.dueDate,r),e0=iso(r.reflectStatus,r)||s0;if(!s0&&!e0)continue;
+      const key=r.name+'|'+s0+'|'+e0;if(seen.has(key))continue;seen.add(key); // '연장'으로 이월된 같은 이벤트는 한 번만
+      const tip=esc(`이벤트 운영 · ${r.name} · ${r.status}${r.eid?' · ID '+r.eid:''} · ${s0?fmtDate(s0):'?'} ~ ${e0?fmtDate(e0):'?'}`);
+      const chip=lab=>`<div class="ev evops" data-evrow="${esc(r.id)}" tabindex="0" title="${tip}"><span class="evtag">${lab}</span>${esc(r.name)}</div>`;
+      if(s0&&s0===e0){if(s0>=a0&&s0<=b0)push(s0,chip('시작·종료'));continue;}
+      if(s0&&s0>=a0&&s0<=b0)push(s0,chip('시작'));if(e0&&e0!==s0&&e0>=a0&&e0<=b0)push(e0,chip('종료'));}}
   if(cf.due)for(const t of workItems().filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
     push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(asNames(t).join(', ')||'미지정'))}">마감 · ${esc(t.title)}</div>`);
   let cells='';
@@ -2911,7 +2933,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   lvDayItems=byDay;
   return `<div class="panel">
         <h3><div class="calnav"><button class="btn ghost" type="button" id="lPrev" aria-label="이전 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button><span class="mlabel">${cy}.${String(cm).padStart(2,'0')}</span><button class="btn ghost" type="button" id="lNext" aria-label="다음 달"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button><button class="btn ghost" type="button" id="lThis">이번 달</button></div>
-          ${withFilters?`<span class="calFilters">${[['event','일정'],['leave','연차'],['due','업무 마감']].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
+          ${withFilters?`<span class="calFilters">${[['event','일정'],['leave','연차'],['due','업무 마감'],...(menuOpen('eventops')?[['evops','이벤트 운영']]:[])].map(([k,l])=>`<label class="cfItem"><input type="checkbox" data-cf="${k}" ${cf[k]?'checked':''}>${l}</label>`).join('')}</span>`:''}</h3>
         <div class="cal">${['월','화','수','목','금','토','일'].map((d,i)=>`<div class="dow ${i>4?'we':''}">${d}</div>`).join('')}${cells}</div>
     </div>`;
 }
@@ -2923,7 +2945,7 @@ const lvMark=(sel,a,b)=>document.querySelectorAll(sel+' .day[data-date]').forEac
 document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b,sel,only}=lvDrag;lvDrag=null;lvMark(sel);if(a!==b){lvDragDone=true;calNew(only,a<b?a:b,a<b?b:a);}});
 const calNew=(only,a,b)=>only==='ask'?calAsk(a,b):only?openLeave(null,a,b,true):openSched(null,a,b);
 function bindCal(sel,st,only){
-  onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-more],.evdue,.lvRo')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
+  onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-evrow],[data-more],.evdue,.lvRo')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
   onArea(sel,'pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(sel,lvDrag.a,lvDrag.b);});
   onArea(sel,'click',e=>{
     if(lvDragDone){lvDragDone=false;return;}
@@ -2931,11 +2953,12 @@ function bindCal(sel,st,only){
     if(id==='lPrev'||id==='lNext'){const [y,m]=st.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);st.month=ymd(d).slice(0,7);st.year=d.getFullYear();render();return;}
     if(id==='lThis'){st.month=todayStr().slice(0,7);st.year=+todayStr().slice(0,4);render();return;}
     const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
+    const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}
     const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
     if(e.target.closest('.evdue,.lvRo'))return; // 업무 마감·(일정 관리의) 연차는 표시만
     const day=e.target.closest('.day');if(day&&canWrite)calNew(only,day.dataset.date);
   });
-  onArea(sel,'keydown',e=>{if(e.key!=='Enter')return;const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+  onArea(sel,'keydown',e=>{if(e.key!=='Enter')return;const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
 }
 bindCal('#leaveArea',lstate,'ask');
 
@@ -3037,10 +3060,35 @@ function evRowHtml(r,i,cur){
   return `<tr data-uid="${esc(r.id)}" ${cur&&canWrite?'draggable="true"':''}>${cur?`<td class="selCell"><input type="checkbox" class="evSel" ${est.sel.has(r.id)?'checked':''} aria-label="선택" ${canWrite?'':'disabled'}></td>`:''}
     <td class="evOrd"><span class="num">${i+1}</span>${canWrite?`<span class="evArr"><button type="button" class="btn ghost sm" data-mv="-1" aria-label="위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-mv="1" aria-label="아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></span>`:''}</td>
     ${evCols().map(([k])=>evCell(r,k)).join('')}
-    <td>${canWrite?'<button type="button" class="btn ghost sm evDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
+    <td class="nowrap">${evPostBtns(r)}${canWrite?'<button type="button" class="btn ghost sm evDel" aria-label="행 삭제">삭제</button>':''}</td></tr>`;
 }
 const evHead=cur=>`<thead><tr>${cur?`<th class="selCell"><input type="checkbox" id="evAll" aria-label="보이는 행 모두 선택" ${canWrite?'':'disabled'}></th>`:''}<th>순서</th>${evCols().map(([k,l])=>`<th${k==='name'?' style="min-width:180px"':''}>${esc(l)}${k==='name'?' <b class="req">*</b>':''}</th>`).join('')}<th></th></tr></thead>`;
 
+// 업무 게시물 ↔ 이벤트 운영 행 연결: 게시물의 evRowIds에만 저장하고, 이벤트 쪽은 tasks에서 찾아 보여 줌
+function evLinkedPosts(rid){return tasks.filter(t=>(t.evRowIds||[]).includes(rid));}
+function evMonthLabel(r){return evtMonths.find(m=>m.id===r.monthId)?.label||'';}
+function evOptLabel(r){return `${r.name}${r.eid?' · '+r.eid:''} (${evMonthLabel(r)})`;}
+// 상태 불일치: 이벤트가 끝남(완료·연장·비노출)인데 게시물은 완료가 아니거나 그 반대. 게시물이 보류면 보지 않음
+function evMismatch(r,p){if(!r||!p)return false;const ps=postStatus(p,kidsOf(p));return ps!=='hold'&&EV_DONE.has(r.status)!==(ps==='done');}
+function evWarnOf(p){return (p.evRowIds||[]).some(id=>evMismatch(evtRowsAll.find(r=>r.id===id),p));}
+// 이벤트 운영 화면의 그 행으로 이동(그 달 시트로 바꾸고 잠깐 강조)
+function evGoRow(rid){const r=evtRowsAll.find(x=>x.id===rid);if(!r){toast('이벤트 운영에서 삭제된 행이에요');return;}
+  const m=evtMonths.find(x=>x.id===r.monthId);if(m)est.month=m.key;evtTab='events';est.filter='전체';closeModal();state.mode='eventops';persistUI();render();window.scrollTo(0,0);
+  setTimeout(()=>{const tr=document.querySelector(`#eventOpsArea tr[data-uid="${CSS.escape(rid)}"]`);if(!tr)return;tr.scrollIntoView({block:'center'});tr.classList.add('evFlash');setTimeout(()=>tr.classList.remove('evFlash'),1800);},0);}
+// 게시물 상세의 '이벤트 연결' 칸
+function evLinkCell(p,ro){const ids=p.evRowIds||[],go=menuOpen('eventops');
+  const chips=ids.map(id=>{const r=evtRowsAll.find(x=>x.id===id),un=ro?'':`<button type="button" class="btn ghost sm" data-evun="${esc(id)}" aria-label="연결 해제" title="연결 해제">×</button>`;
+    if(!r)return `<span class="evLk gone">삭제된 이벤트${un}</span>`;
+    const op=evIdUrl(r.eid),dv=evDevUrl(r.devId),mm=evMismatch(r,p),nm=esc(r.name||'(이벤트명 없음)');
+    return `<span class="evLk${mm?' warn':''}"><span class="cvPill evp-${esc(r.status)}">${esc(r.status)}</span>${go?`<button type="button" class="hlink" data-evgo="${esc(id)}" title="이벤트 운영에서 보기">${nm}</button>`:`<b>${nm}</b>`}<span class="legend">${esc(evMonthLabel(r))}${r.eid?' · '+esc(r.eid):''}</span>${op?`<a class="btn ghost sm" href="${esc(op)}" target="_blank" rel="noopener" title="운영 페이지">운영 ↗</a>`:''}${dv?`<a class="btn ghost sm" href="${esc(dv)}" target="_blank" rel="noopener" title="DEV 확인 페이지">DEV ↗</a>`:''}${mm?`<b class="lateTag" title="게시물 진행 현황(${esc(statusOf(postStatus(p,kidsOf(p))).label)})과 이벤트 작업상태(${esc(r.status)})가 서로 달라요">⚠ 상태 확인</b>`:''}${un}</span>`;}).join('');
+  if(ro)return `<div class="evLks">${chips||'<span class="tfVal">—</span>'}</div>`;
+  const opts=evtRowsAll.filter(r=>r.kind==='event'&&r.name&&!ids.includes(r.id)).sort((a,b)=>(b.monthId||'').localeCompare(a.monthId||'')||(a.sortOrder-b.sortOrder)).map(r=>`<option value="${esc(evOptLabel(r))}">`).join('');
+  return `<div class="evLks">${chips}<input class="sel evLkIn" id="evLkIn" list="evLkList" placeholder="이벤트명 또는 이벤트ID로 찾아 연결" aria-label="연결할 이벤트 찾기" autocomplete="off"><datalist id="evLkList">${opts}</datalist></div>`;}
+async function evLinkSet(p,ids){const before={...p};
+  try{await db.collection('tasks').doc(p.id).update({evRowIds:ids,updatedAt:new Date().toISOString()});logChange('task','update',p.id,p.title,before,{...p,evRowIds:ids});}catch(err){handleWriteError(err,'#tErr');}}
+// 이벤트 운영 표의 '업무 ↗' 버튼(연결된 게시물마다)
+function evPostBtns(r){return evLinkedPosts(r.id).map(p=>{const mm=evMismatch(r,p);
+  return `<button type="button" class="btn ghost sm evPost${mm?' warn':''}" data-evpost="${esc(p.id)}" title="${esc('업무: '+p.title+(mm?` · 진행 현황(${statusOf(postStatus(p,kidsOf(p))).label})과 상태가 달라요`:''))}">${mm?'⚠ ':''}업무 ↗</button>`;}).join('');}
 function renderEventOps(){
   const area=$('#eventOpsArea');
   if(area.contains(document.activeElement)&&document.activeElement.matches('.evf,.bnf,.pmf,.pmSet,.bff')||document.activeElement?.id==='evSearch')return; // 칸 입력 중엔 다시 그리지 않음
@@ -3145,6 +3193,7 @@ onArea('#eventOpsArea','change',async e=>{
 // 칸에서 나가면(저장 뒤) 다시 그림
 onArea('#eventOpsArea','focusout',e=>{if(e.target.matches?.('.evf'))setTimeout(()=>{if(!document.activeElement?.matches?.('#eventOpsArea .evf'))render();},0);});
 onArea('#eventOpsArea','click',async e=>{
+  const ep=e.target.closest('[data-evpost]');if(ep){state.mode='tasks';openPost(ep.dataset.evpost);return;}
   const t=e.target.closest('[data-evtab]');if(t){evtTab=t.dataset.evtab;try{localStorage.setItem('wb-evtab',evtTab);}catch(er){}render();if($('#mnPanel')){mnPanel.sel=null;mnPanel();}return;}
   const id=e.target.closest('button')?.id;
   if(id==='evMissing'){est.missing=!est.missing;render();return;}
@@ -4235,7 +4284,7 @@ onArea('#menusArea','click',e=>{
 
 /* ---------- 일정 관리: 프로젝트 일정 · 정기 배포(events) ---------- */
 let events=[], lvDayItems={};
-const CF_DEF={event:true,leave:true,due:true};
+const CF_DEF={event:true,leave:true,due:true,evops:true};
 const calFilter=()=>({...CF_DEF,...(state.cf||{})});
 // 정기 배포: from~until 사이 지정 요일(0=일~6=토), skip 날짜 제외
 function deployDates(ev,a,b){const out=[],from=ev.from||a,until=ev.until||b,wd=new Set((ev.weekdays||[]).map(Number));
@@ -4332,7 +4381,7 @@ function openDayList(k){
     <header><h2>${fmtDate(k)} 일정</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr">${(lvDayItems[k]||[]).join('')}</div></div></div>`;
   $('#xClose').onclick=closeModal;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
-  $('#ov').addEventListener('click',e=>{const it=e.target.closest('[data-lid],[data-eid]');if(!it)return;closeModal();calItemOpen(it,k);});
+  $('#ov').addEventListener('click',e=>{const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}const it=e.target.closest('[data-lid],[data-eid]');if(!it)return;closeModal();calItemOpen(it,k);});
 }
 function calItemOpen(it,k){
   if(it.dataset.lid){openLeave(leaves.find(l=>l.id===it.dataset.lid));return true;}
@@ -5121,8 +5170,8 @@ render();
   db.collection('members').onSnapshot(s=>{members=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(a.name||'').localeCompare(b.name||'','ko'));applyExternal();if(!mr){mr=true;ready();}render();},onErr);
   db.collection('leaves').onSnapshot(s=>{leaves=s.docs.map(x=>({id:x.id,...x.data()}));if(!lr){lr=true;ready();}render();},onErr);
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
-  db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
-  db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='eventops')render();},onErr);
+  db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave'].includes(state.mode))render();},onErr);
+  db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave'].includes(state.mode))render();},onErr);
   db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');trashPurge('regress');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals'||state.mode==='regress')render();},onErr);
   db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);

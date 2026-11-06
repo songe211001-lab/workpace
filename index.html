@@ -1831,7 +1831,7 @@ const kidsOf=p=>tasks.filter(x=>x.id!==p.id&&!isPost(x)&&rootOf(x).id===p.id);
 function workItems(list=tasks){const ids=new Set(tasks.map(x=>x.id)),par=new Set(tasks.map(x=>x.parentId).filter(Boolean));
   return list.filter(t=>(t.parentId&&ids.has(t.parentId))||t.status==='done'||!par.has(t.id));}
 // 요청이 있는 게시물의 표시 상태: 게시물을 직접 끝냈으면 완료, 아니면 요청들로 판단
-function postStatus(p,k){if(!k.length||p.status==='done')return p.status;
+function postStatus(p,k){if(!k.length||p.status==='done'||p.statusManual)return p.status;
   if(k.every(x=>x.status==='done'))return 'done';if(k.some(x=>x.status==='doing'||x.status==='review'))return 'doing';
   if(k.every(x=>x.status==='done'||x.status==='hold'))return 'hold';return 'wait';}
 // 다시 그려도 입력 중인 값·포커스 유지
@@ -1893,6 +1893,12 @@ function postList(){
 // 아직 안 끝난 마감일(요청이 있으면 열린 요청 중 가장 이른 것). 완료·보류는 ''
 const postDue=(p,k)=>(k.length?k:[p]).filter(x=>x.status!=='done'&&x.status!=='hold'&&x.dueDate).map(x=>x.dueDate).sort()[0]||'';
 const soonTag=d=>{if(!d||d<todayStr())return '';const n=Math.round((new Date(d+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/864e5);return n<=3?`<b class="soonTag" title="마감이 ${n?n+'일':'오늘'} 남았어요">${dday(d)}</b>`:'';};
+// 게시물 진행 현황 고르기: 파트 항목이 있으면 '자동(파트 상태로)'도 고를 수 있음
+const pStSel=(p,k)=>{const cur=k.length&&!p.statusManual&&p.status!=='done'?'auto':(p.status||'wait'),shown=postStatus(p,k);
+  return `<select class="sel stSel pSt s-${esc(shown)}" data-pst="${esc(p.id)}" aria-label="진행 현황 바꾸기">${k.length?`<option value="auto" ${cur==='auto'?'selected':''}>자동: ${esc(statusOf(postStatus({status:''},k)).label)}</option>`:''}${optH(STATUSES.map(x=>[x.k,x.label]),cur==='auto'?'':cur)}</select>`;};
+async function setPostStatus(id,v){const p=tasks.find(x=>x.id===id);if(!p)return;const k=kidsOf(p);
+  const patch=v==='auto'?{statusManual:false,status:p.status==='done'?'wait':p.status}:{status:v,statusManual:k.length>0,doneDate:v==='done'?(p.doneDate||todayStr()):''};patch.updatedAt=new Date().toISOString();
+  try{await db.collection('tasks').doc(id).update(patch);logChange('task','update',id,p.title,p,{...p,...patch});toast(v==='auto'?'파트 상태로 자동 계산해요':`'${statusOf(v).label}'(으)로 바꿨어요`);}catch(err){handleWriteError(err);}}
 const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
 // 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
 const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
@@ -1913,7 +1919,7 @@ function postRow(p){
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
     <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
     <td>${p.requester?esc(p.requester):'<span class="legend">—</span>'}</td>
-    <td>${own?stSel(p):`<span class="pill s-${st.k}"${k.length?' title="요청 업무들의 상태로 정해져요"':''}>${st.label}</span>`}</td></tr>`;
+    <td>${canWrite?pStSel(p,k):`<span class="pill s-${st.k}">${st.label}</span>`}</td></tr>`;
 }
 // 목록: 회귀 검증과 같은 표. 요청일 최신순이면 연도 구분 줄(접기)
 function renderList(){
@@ -1978,7 +1984,7 @@ function renderPost(p){
     ${isReq?`<p class="legend" style="margin:0">게시물: ${esc(rootOf(p).title)}</p>`:''}
     <div class="tfRows">
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
-      ${row('진행 현황',!isReq&&k.length?`<span class="pill s-${st.k}" title="요청 업무들의 상태로 정해져요">${st.label}</span><span class="legend">요청 업무들의 상태로 정해져요</span>`:sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
+      ${row('진행 현황',!isReq&&k.length?(ro?`<span class="pill s-${st.k}">${st.label}</span>`:pStSel(p,k)+`<span class="legend">${p.statusManual||p.status==='done'?'직접 정한 값이에요':'파트 상태로 자동 계산 중'}</span>`):sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
       ${row('파트',sel('part',isReq?rqParts(p.part):PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
       ${row('담당자',(ro?`<span class="tfVal">${esc(asNames(p).join(', ')||'—')}</span>`:asPick('tfAs',asValsOf(p),orphan))+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
       ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
@@ -2392,6 +2398,7 @@ $('#main').addEventListener('change',e=>{
   const el=e.target;
   if(el.dataset.tf&&canWrite){const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,el.dataset.tf,el.value);if(el.tagName==='SELECT'||el.type==='date')el.blur();return;}
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
+  if(el.dataset.pst){setPostStatus(el.dataset.pst,el.value);el.blur();return;}
   if(el.id==='cpPart'){const st=$('#cpSt');st.disabled=!el.value;const p=tasks.find(x=>x.id===state.post),cur=p&&partItem(p,el.value);st.value=cur?cur.status:'wait';return;}
 });
 let dragId=null;

@@ -2360,7 +2360,12 @@ $('#fAssignee').addEventListener('change',e=>{if(e.target.value==='me'&&!myMembe
 let qT;$('#fSearch').addEventListener('input',e=>{clearTimeout(qT);qT=setTimeout(()=>{state.q=e.target.value;render();},150);});
 $('#lSort').addEventListener('change',e=>{state.lsort=e.target.value;persistUI();render();});
 $('#viewSeg').addEventListener('click',e=>{const b=e.target.closest('[data-view]');if(!b)return;state.view=b.dataset.view;persistUI();render();});
-$('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;const cm=customOf(b.dataset.mode);if(!cm?.to&&cm?.newTab&&safeUrl(cm.url)){window.open(safeUrl(cm.url),'_blank','noopener');return;}if(state.mode==='report')flushNotes();state.mode=cm?.to||b.dataset.mode;persistUI();render();});
+$('#modeTabs').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;const cm=customOf(b.dataset.mode);if(!cm?.to&&cm?.newTab&&safeUrl(cm.url)){window.open(safeUrl(cm.url),'_blank','noopener');return;}gnbReload(cm?.to||b.dataset.mode);});
+async function gnbReload(mode){
+  if(state.mode==='report'){flushNotes();await Promise.all([v3Flush(),noteBusy]).catch(()=>{});}
+  state.mode=mode;state.post=null;persistUI();
+  try{if(location.hash)history.replaceState(null,'',location.pathname+location.search+'#'+mode);}catch(e){} // 주소의 #메뉴가 저장한 메뉴보다 앞서므로 맞춰 둠
+  location.reload();}
 $('#btnNotify').addEventListener('click',openNotify);
 $('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
 $('#btnLeaveAdd').addEventListener('click',()=>openSched());
@@ -4784,9 +4789,9 @@ async function v3SaveDoc(patch){const id=v3Id(rstate.week3),doc=v3Doc(),at=new D
   return db.collection('reports').doc(id).set({kind:'v3',week:rstate.week3,sections:{},cats:v3Custom(null),confirmed:false,confirmedAt:'',...patch,updatedAt:at});}
 const v3Save=(cid,patch)=>{const me=myMember();return v3SaveDoc({sections:{[cid]:{...patch,updatedAt:new Date().toISOString(),updatedBy:actorId||'',updatedByName:me?.name||''}}});};
 const v3Timer={};
-function v3SaveLines(cid){const ed=document.querySelector(`#reportArea [data-cid="${CSS.escape(cid)}"] .rEditor`);if(!ed)return;v3Save(cid,{lines:readLines(ed)}).catch(err=>handleWriteError(err));}
+function v3SaveLines(cid){const ed=document.querySelector(`#reportArea [data-cid="${CSS.escape(cid)}"] .rEditor`);if(!ed)return;return v3Save(cid,{lines:readLines(ed)}).catch(err=>handleWriteError(err));}
 function v3Queue(cid){clearTimeout(v3Timer[cid]);v3Timer[cid]=setTimeout(()=>{delete v3Timer[cid];v3SaveLines(cid);},1000);}
-function v3Flush(){for(const cid of Object.keys(v3Timer)){clearTimeout(v3Timer[cid]);delete v3Timer[cid];v3SaveLines(cid);}}
+function v3Flush(){const w=[];for(const cid of Object.keys(v3Timer)){clearTimeout(v3Timer[cid]);delete v3Timer[cid];w.push(v3SaveLines(cid));}return Promise.all(w);}
 
 function renderReport(){
   const area=$('#reportArea');

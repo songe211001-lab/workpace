@@ -1210,185 +1210,6 @@ button.sfProf:hover{background:var(--sunk)}
 .card .num.late{color:var(--bad);font-weight:700}
 .bdAct{display:flex;justify-content:flex-end}
 .bdEmpty{border:1px dashed var(--line);border-radius:var(--r);padding:16px 8px;text-align:center;color:var(--muted);font-size:13px}
-/* 테스트 시나리오 관리 — 원본 'TC 생성' 도구의 상세 화면 CSS를 그대로 옮김(#tcscenArea 안에서만). 원본 토큰 이름을 대시보드 변수에 연결해 어두운 모드도 따름 */
-#tcscenArea{--panel:var(--surface);--ink:var(--fg);--grey-100:var(--sunk);--primary:var(--accent);--primary-dark:var(--accent-dark);--primary-soft:var(--accent-soft);--on-primary:var(--accent-fg);
-  --pass:var(--ok-strong);--pass-text:var(--ok);--pass-soft:var(--ok-soft);--minor:var(--warn-strong);--minor-text:var(--warn);--minor-soft:var(--warn-soft);--minor-border:var(--warn-border);
-  --fatal:var(--bad-strong);--fatal-text:var(--bad);--fatal-soft:var(--bad-soft);--radius-xs:4px;--radius-sm:6px;--radius-md:7px;--radius-lg:9px;--radius-xl:11px;
-  --result-pass:var(--pass);--result-minor:var(--minor-border);--result-na:var(--na);--result-major:var(--minor);--result-fatal:var(--fatal);--result-critical:var(--fatal-text);--result-block:var(--ink-soft)}
-#tcscenArea .ad-btn{font-family:inherit;font-size:13px;font-weight:600;line-height:1.4;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:8px 14px;border-radius:var(--radius-md);border:1px solid var(--line);background:var(--panel);color:var(--ink-soft);cursor:pointer;white-space:nowrap;transition:background .12s var(--ease),border-color .12s var(--ease),color .12s var(--ease)}
-#tcscenArea .ad-btn:hover{border-color:var(--primary);color:var(--primary-dark)}
-#tcscenArea .ad-btn:focus-visible{outline:2px solid var(--primary-dark);outline-offset:2px}
-#tcscenArea .ad-btn:disabled{opacity:.35;cursor:not-allowed}
-#tcscenArea .ad-btn--sm{height:32px}
-#tcscenArea .ad-btn--ghost{background:transparent;border-color:transparent;color:var(--muted);padding:6px 8px}
-#tcscenArea .ad-btn--ghost:hover{color:var(--primary-dark);border-color:transparent}
-#tcscenArea .ad-btn--icon{width:36px;padding:0}
-#tcscenArea .ad-btn--danger:hover{color:var(--fatal);border-color:var(--fatal)}
-#tcscenArea .ad-select,#tcscenArea .ad-input{font-family:inherit;font-size:13px;width:100%;height:36px;padding:9px 10px;border:1px solid var(--line);border-radius:var(--radius-md);background:var(--panel);color:var(--ink)}
-#tcscenArea .ad-select:focus,#tcscenArea .ad-input:focus{outline:none;border-color:var(--primary)}
-#tcscenArea .ad-badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:var(--radius-sm);font-size:11px;font-weight:700;line-height:1.4;white-space:nowrap}
-#tcscenArea .ad-badge--warning{background:var(--minor-soft);color:var(--minor-text)}
-#tcscenArea .ad-badge--danger{background:var(--fatal-soft);color:var(--fatal-text)}
-#tcscenArea .ad-empty{text-align:center;padding:48px 16px;color:var(--muted);font-size:13px;line-height:1.6}
-#tcscenArea .sub-txt{font-size:12px;color:var(--muted);margin:0;font-family:inherit}
-#tcscenArea .ad-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius-lg)}
-#tcscenArea .tc-summary,#tcscenArea .tcStatsCard,#tcscenArea .tc-list-card{margin:0 0 12px;padding:14px 16px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
-#tcscenArea .tcStatsCard.is-collapsed{display:none}
-.tcProjBar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
-/* 요약 줄 */
-.tc-summary{display:flex;flex-direction:column;gap:12px}
-.sum-spacer{flex:1}
-.tc-summary .stats-toggle{height:auto;padding:4px 8px;font-size:13px;font-weight:600;color:var(--ink-soft)}
-.sum-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
-.sum-title{max-width:100%;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:16px;font-weight:700;color:var(--ink)}
-.tc-summary .legend{font-size:12px;color:var(--muted)}
-.sum-stats{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.sum-badge{all:unset;box-sizing:border-box;display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;background:var(--panel);border:1px solid var(--line);border-radius:999px;font-size:12.5px;cursor:pointer}
-.sum-badge b{font-weight:700;color:var(--ink)}
-.sum-badge[aria-pressed="true"]{background:var(--primary-soft);border-color:var(--primary)}
-.sum-badge:focus-visible{outline:2px solid var(--primary)}
-.sum-progress{display:inline-flex;align-items:baseline;gap:6px;margin-left:auto}
-.sum-progress strong{font-size:18px;font-weight:700;color:var(--ink)}
-@media (max-width:600px){.sum-progress{margin-left:0}}
-.stats-toggle[aria-expanded="true"]{border-color:var(--primary)!important;color:var(--primary-dark)!important}
-/* 통계 표 */
-.stat-caption{margin:0 0 8px;font-size:12px;color:var(--muted)}
-.qc-stat-scroll{overflow-x:auto;overflow-y:hidden}
-.qc-stat-table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
-.qc-stat-table th,.qc-stat-table td{border:1px solid var(--line);height:32px;padding:4px 10px;text-align:center;white-space:nowrap;color:var(--ink)}
-.qc-stat-table thead th,.qc-stat-table tbody th{font-weight:700;background:var(--bg)}
-.qc-stat-table tr>:first-child,.qc-stat-table tr>:nth-child(2){width:104px;min-width:104px}
-.qc-stat-table .is-sum{font-weight:800}
-.qc-stat-table td.is-pass{color:var(--result-pass);font-weight:700}
-.qc-stat-table td.is-fail{color:var(--fatal-text);font-weight:700}
-.qc-stat-table tr.rate-progress td{background:color-mix(in srgb,var(--result-pass) 12%,var(--panel));color:var(--result-pass);font-weight:800}
-.qc-stat-table tr.rate-defect td{background:color-mix(in srgb,var(--fatal-text) 12%,var(--panel));color:var(--fatal-text);font-weight:800}
-.qc-stat-table.is-narrow{width:auto}
-.qc-stat-table .stat-help{width:18px;height:18px;margin-left:4px;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--panel);color:var(--muted);font:700 11px/16px inherit;cursor:pointer;vertical-align:1px}
-.qc-stat-table .stat-help:hover,.qc-stat-table .stat-help:focus-visible{border-color:var(--primary);color:var(--primary)}
-.stat-def-pop{width:min(440px,calc(100vw - 32px));max-height:min(560px,calc(100vh - 32px));overflow:auto;padding:16px 20px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--fg);box-shadow:0 8px 24px rgba(0,0,0,.16)}
-.stat-def-pop::backdrop{background:rgba(0,0,0,.2)}
-.stat-def-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}.stat-def-head h3{margin:0;font-size:15px}
-.stat-def-pop dl{display:grid;grid-template-columns:72px 1fr;gap:8px 12px;margin:0;font-size:13px;line-height:1.55}.stat-def-pop dt{font-weight:700}.stat-def-pop dd{margin:0}
-.stat-def-note{margin:12px 0 0;font-size:12px;color:var(--muted)}
-/* 목록 카드 머리 · 필터 줄 */
-.tc-section-head{display:flex;align-items:baseline;gap:8px;justify-content:flex-end;margin-bottom:10px}
-.tc-filter-bar{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.tester-tabs{display:flex;gap:6px;flex:0 1 auto;min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
-.tester-tabs::-webkit-scrollbar{display:none}.tester-tabs>*{flex-shrink:0}
-.tester-tab .count{color:var(--muted);font-weight:500;margin-left:6px}
-.tester-tab[aria-pressed="true"]{background:var(--primary-soft)!important;border-color:var(--primary)!important;color:var(--primary-dark)!important}
-.tester-tab[aria-pressed="true"] .count{color:var(--primary-dark)}
-.role-tag{display:inline-block;margin-left:4px;padding:0 6px;font-size:10.5px;font-weight:700;line-height:18px;border-radius:999px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line)}
-.tc-list-tools{display:flex;align-items:center;gap:8px 10px;margin-left:auto}
-.tc-type-seg{display:inline-flex;overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:7px}
-#tcscenArea .tc-type-seg .ad-btn{height:auto;min-height:0;padding:6px 12px;margin:0;border:0;border-radius:0;background:transparent;font-size:12.5px;font-weight:600;color:var(--ink-soft);box-shadow:none}
-#tcscenArea .tc-type-seg .ad-btn[aria-pressed="true"]{background:var(--primary-soft);color:var(--ink);font-weight:700}
-.tc-search-box{position:relative;display:block;width:280px;max-width:100%}
-.tc-search-box svg{position:absolute;left:10px;top:50%;width:16px;height:16px;transform:translateY(-50%);color:var(--muted);pointer-events:none}
-.tc-list-search{box-sizing:border-box;width:100%;height:32px;padding:6px 10px 6px 32px;font-size:13px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:7px}
-.tc-list-search:focus{border-color:var(--primary);outline:none}
-@media (max-width:640px){.tc-list-tools{width:100%;margin-left:0}.tc-search-box{flex:1 1 0;width:auto;min-width:0}}
-.select-all-row{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12.5px;color:var(--muted)}
-.select-all-row label{display:flex;align-items:center;gap:6px;cursor:pointer}
-/* 일괄 변경 바: 고르면 아래에 떠 있음 */
-.bulk-bar{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--primary-soft);border:1px solid var(--primary);border-radius:var(--radius-md);padding:10px 14px;margin-bottom:14px;font-size:12.5px}
-.bulk-bar.show{display:flex;position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:60;margin:0;width:min(980px,calc(100% - 32px));box-shadow:var(--shadow-3)}
-.bulk-bar .bulk-count{font-weight:700;color:var(--primary-dark);white-space:nowrap}
-#tcscenArea .bulk-bar .ad-select{width:auto;height:32px;padding:6px 28px 6px 10px;font-size:12.5px;cursor:pointer}
-@media (max-width:640px){.bulk-bar.show{flex-wrap:nowrap;overflow-x:auto}.bulk-bar>*{flex-shrink:0}}
-body.has-bulk .wrap{padding-bottom:88px}
-/* 셀렉트 화살표 */
-#tcscenArea select.ad-select,#tcscenArea .tc-card-head select{-webkit-appearance:none;appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-soft) 50%),linear-gradient(135deg,var(--ink-soft) 50%,transparent 50%);background-size:5px 5px,5px 5px;background-repeat:no-repeat;background-position:calc(100% - 15px) 52%,calc(100% - 10px) 52%;padding-left:10px;padding-right:28px}
-/* 표: 머리 줄 + 행(.tc-card = 한 줄, 누르면 아래에 상세) */
-#tcTableWrap{--tc-cols:20px 120px 54px minmax(60px,1fr) minmax(100px,1.8fr) 104px minmax(80px,1.2fr) 84px 88px 24px;overflow-x:auto;background:var(--panel);margin:0 -16px;border:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0}
-.tc-table-head,#tcCardList .tc-card-head{display:grid;grid-template-columns:var(--tc-cols);column-gap:10px;align-items:center;padding:0 14px;min-width:878px}
-.tc-table-head{--row-bg:var(--panel);min-height:44px;background:var(--panel);border-bottom:1px solid var(--line);font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--muted);white-space:nowrap}
-.tc-table-head .tc-c{min-width:0;overflow:hidden;text-overflow:ellipsis}
-#tcCardList .tc-card{--row-bg:var(--panel);min-width:878px;padding:0;margin:0;border:none;border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent);border-radius:0;background:var(--row-bg);transition:background-color .12s var(--ease);position:relative}
-#tcCardList .tc-card:last-child{border-bottom:0}
-#tcCardList .tc-card:hover{--row-bg:var(--bg)}
-#tcCardList .tc-card.selected{--row-bg:var(--primary-soft)}
-#tcCardList .tc-card[data-result="MAJOR"],#tcCardList .tc-card[data-result="CRITICAL"],#tcCardList .tc-card[data-result="FATAL"]{box-shadow:inset 3px 0 0 var(--fatal)}
-#tcCardList .tc-card-head{min-height:56px;padding-top:10px;padding-bottom:10px;font-size:14.5px;cursor:pointer}
-#tcCardList .tc-c{min-width:0}
-#tcCardList .c-id{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px}
-#tcCardList .tc-card-head button.tc-id-badge{border:1px solid transparent;background:none;padding:2px 4px;margin:0;border-radius:4px;cursor:text;font-family:inherit;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums;color:var(--primary-dark)}
-#tcCardList .tc-card-head button.tc-id-badge:hover{border-color:var(--line);background:var(--bg)}
-#tcCardList .tc-mini-badge{height:auto;padding:0 4px;font-size:10px;line-height:16px;white-space:nowrap}
-#tcCardList .tc-card-head .tc-inline-input,#tcCardList .tc-card-head .tc-id-input{width:100%;height:32px;padding:4px 8px;font-size:14.5px}
-#tcCardList .tc-card-head select.screentype-select{width:100%;min-height:0;height:30px;padding:0 16px 0 7px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:7px;background-color:transparent;background-position:calc(100% - 9px) 52%,calc(100% - 5px) 52%;font-size:13px;font-weight:700;color:var(--ink-soft)}
-#tcCardList .tc-ro-text{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px;color:var(--ink-soft)}
-#tcCardList .tc-card-head select:hover,#tcCardList .tester-pick:hover,#tcCardList .tc-note-cell:hover,#tcCardList .tc-note-multi:hover,#tcCardList .tc-card-head select:focus-visible,#tcCardList .tester-pick:focus-visible{border-color:var(--primary)}
-#tcCardList .tc-title{display:block;min-width:0;min-height:0;padding:0;border:0;background:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:400;color:var(--muted);cursor:pointer}
-#tcCardList .tc-item{all:unset;box-sizing:border-box;display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px;font-weight:600;color:var(--ink);cursor:pointer}
-#tcCardList .tc-item:hover,#tcCardList .tc-item:focus-visible{text-decoration:underline}
-#tcCardList .tc-item:focus-visible{outline:2px solid var(--primary-dark);outline-offset:2px}
-#tcCardList .c-detail{display:flex;align-items:center;gap:4px;min-width:0}
-#tcCardList .c-detail .tc-item{flex:1 1 auto;min-width:0}
-#tcCardList .tc-cat-edit{cursor:text}
-#tcCardList .row-toggle-btn{all:unset;flex:none;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;border-radius:6px;color:var(--muted);cursor:pointer;transition:transform .15s var(--ease)}
-#tcCardList .row-toggle-btn:hover{background:var(--bg);color:var(--ink)}
-#tcCardList .row-toggle-btn:focus-visible{outline:2px solid var(--primary-dark);outline-offset:1px}
-#tcCardList .row-toggle-btn[aria-expanded="true"]{transform:rotate(180deg)}
-#tcCardList .c-res{display:flex;align-items:center}
-#tcCardList .tc-card-head select.tester-result-select{width:auto;max-width:100%;min-height:0;height:26px;padding:0 24px 0 10px;border:1px solid transparent;border-radius:999px;font-size:12.5px;font-weight:700}
-#tcCardList .result-badge{display:inline-flex;align-items:center;min-width:0;width:auto;height:26px;padding:0 10px;border:0;border-radius:999px;font-size:12.5px;font-weight:700;line-height:1}
-.cvpill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap}
-#tcscenArea .rp-PASS{background:var(--pass-soft)!important;color:var(--pass-text)!important}
-#tcscenArea .rp-MINOR{background:var(--minor-soft)!important;color:var(--minor-text)!important}
-#tcscenArea .rp-MAJOR,#tcscenArea .rp-CRITICAL,#tcscenArea .rp-FATAL{background:var(--fatal-soft)!important;color:var(--fatal-text)!important}
-#tcscenArea .rp-NA{background:var(--grey-100)!important;color:var(--ink-soft)!important}
-#tcscenArea .rp-BLOCK{background:var(--grey-100)!important;color:var(--ink)!important}
-#tcscenArea .rp-NT{background:var(--grey-100)!important;color:var(--muted)!important}
-#tcCardList .tc-editable{border:1px solid transparent;border-radius:var(--radius-md);white-space:pre-wrap;min-height:22px;outline:none}
-#tcCardList .tc-note-cell{display:block;min-height:32px;max-height:32px;padding:5px 10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:14px;line-height:1.5;background:transparent;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:7px;cursor:text}
-#tcCardList .tc-note-cell:empty::before{content:attr(data-placeholder);color:var(--muted)}
-#tcCardList .tc-note-cell:focus{max-height:none;min-height:64px;overflow:visible;white-space:pre-wrap;border-color:var(--primary);outline:none;background:var(--panel)}
-#tcCardList .tc-note-multi{all:unset;box-sizing:border-box;display:block;width:100%;min-height:32px;padding:5px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;line-height:1.5;color:var(--ink-soft);background:transparent;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:7px;cursor:pointer}
-#tcCardList .tc-note-multi[aria-expanded="true"],#tcCardList .tc-note-multi:focus-visible{border-color:var(--primary)}
-#tcCardList .tc-note-pop{position:fixed;z-index:30;width:300px;max-width:calc(100vw - 32px);display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--panel);border:1px solid var(--line);border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.12);cursor:default}
-#tcCardList .tc-note-pop-row{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:start}
-#tcCardList .tc-note-pop-name{padding-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px;font-weight:700;color:var(--ink)}
-#tcCardList .tester-pick{min-width:0;max-width:none;width:100%;height:32px;padding:0 8px;border-radius:7px;border-color:color-mix(in srgb,var(--line) 60%,transparent);background-color:transparent;font-size:14px;font-weight:500;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;justify-content:flex-start}
-#tcCardList .tester-pick.is-none{color:var(--muted)}
-#tcCardList .tc-card-head select.tester-status-select{width:100%;min-height:0;height:30px;padding:0 22px 0 8px;border:1px solid color-mix(in srgb,var(--line) 60%,transparent);border-radius:7px;background-color:transparent;font-size:14px}
-#tcCardList .status-badge{display:inline-flex;align-items:center;min-width:0;width:auto;height:26px;padding:0 10px;border:0;border-radius:999px;background:var(--grey-100);color:var(--ink-soft);font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap}
-#tcCardList .c-del .icon-btn{width:24px;height:24px;color:var(--muted);opacity:.45;transition:opacity .12s var(--ease)}
-#tcCardList .tc-card:hover .c-del .icon-btn,#tcCardList .c-del .icon-btn:focus-visible{opacity:1}
-/* 펼친 상세: 연한 바탕 1열, 굵은 제목 + 본문 */
-#tcCardList .tc-card-body{position:sticky;left:0;box-sizing:border-box;width:var(--tc-wrap-w,100%);margin:0;padding:12px 16px 14px 164px;background:var(--bg);border-top:1px solid var(--line)}
-.tc-detail{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
-.tc-detail-col{display:flex;flex-direction:column;gap:12px;min-width:0}
-.tc-field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-#tcCardList .tc-field-block{display:block;margin:0;padding:0;border:0}
-#tcCardList .tc-field-label{display:block;margin:0;font-size:14.5px;font-weight:700;color:var(--ink)}
-#tcCardList .tc-field-label small{display:inline;margin-left:4px;font-weight:400;color:var(--muted)}
-#tcCardList .tc-card-body .tc-editable{margin-top:4px;padding:2px 4px;font-size:14.5px;line-height:1.6;color:var(--ink-soft);background:transparent}
-#tcCardList .tc-card-body .tc-editable[contenteditable="true"]:hover,#tcCardList .tc-card-body .tc-editable:focus{background:var(--panel);border-color:var(--line)}
-#tcCardList .tc-card-body .tc-editable:focus{border-color:var(--primary)}
-#tcCardList .tc-card-body .tc-editable:empty::before{content:"비어 있음";color:var(--muted)}
-/* 선택·ID 칸은 가로 스크롤 때 왼쪽에 고정 */
-.tc-table-head>.c-sel,.tc-table-head>.c-id,#tcCardList .tc-card-head>.c-sel,#tcCardList .tc-card-head>.c-id{position:sticky;z-index:2;align-self:stretch;display:flex;align-items:center;background:var(--row-bg)}
-.tc-table-head>.c-sel,#tcCardList .tc-card-head>.c-sel{left:0;box-shadow:-11px 0 0 var(--row-bg),10px 0 0 var(--row-bg)}
-.tc-table-head>.c-id,#tcCardList .tc-card-head>.c-id{left:30px;flex-wrap:wrap;box-shadow:10px 0 0 var(--row-bg)}
-@media (max-width:640px){#tcCardList .tc-card-body{padding-left:16px}.tc-field-row{grid-template-columns:1fr}}
-.table-footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;flex-wrap:wrap;gap:10px}
-/* 담당자 고르기 팝오버 · 테스터 칩 */
-.tester-popover{position:fixed;z-index:90;min-width:200px;max-width:min(280px,calc(100vw - 16px));max-height:280px;overflow:auto;padding:10px 12px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow-3)}
-.tester-option{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:13px;color:var(--fg);cursor:pointer}
-.tester-input-row{display:flex;gap:6px;align-items:center}.tester-input-row input{flex:1;min-width:120px}
-.tester-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.tester-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 6px 4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-size:13px;font-weight:600}
-.tester-chip select{padding:2px 4px;font-size:11.5px;font-weight:700;border:1px solid var(--line);border-radius:4px;background:var(--surface);color:var(--fg);width:auto;height:auto}
-.tester-chip button{all:unset;cursor:pointer;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;border-radius:50%;color:var(--muted)}.tester-chip button:hover{background:var(--sunk);color:var(--bad)}
-/* 프로젝트 목록 */
-.tcCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
-.tcCard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px 16px;color:var(--fg);cursor:pointer;min-width:0}
-.tcCard:hover,.tcCard:focus-visible{border-color:var(--accent)}
-.tcCardT{display:flex;align-items:baseline;gap:8px;min-width:0}.tcCardT b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tcBar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--sunk)}.tcBar span{min-width:3px}
-.tcBar .rp-PASS{background:var(--ok-strong)!important}.tcBar .rp-MINOR{background:var(--warn-border)!important}.tcBar .rp-MAJOR,.tcBar .rp-CRITICAL,.tcBar .rp-FATAL{background:var(--bad-strong)!important}.tcBar .rp-BLOCK,.tcBar .rp-NA{background:var(--grey-400)!important}.tcBar .rp-NT{background:transparent!important}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1446,7 +1267,6 @@ body.has-bulk .wrap{padding-bottom:88px}
   <div class="area" id="eventOpsArea" hidden></div>
   <div class="area" id="manualsArea" hidden></div>
   <div class="area" id="regressArea" hidden></div>
-  <div class="area" id="tcscenArea" hidden></div>
   <div class="area" id="annualArea" hidden></div>
   <div class="area" id="menusArea" hidden></div>
 </div>
@@ -1483,7 +1303,7 @@ let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 �
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 {let sm=null;try{sm=sessionStorage.getItem('wb-mode');}catch(e){}state.mode=sm||'home';modeFromUser=!!sm;if(!sm)state.view='board';} // 새로 접속하면 홈, 같은 탭 새로고침은 보던 화면
 // 링크 끝의 #report 같은 이름은 같은 탭 새로고침에서만 씀. 처음 접속은 무조건 홈
-{const h=location.hash.slice(1);if(modeFromUser&&['home','notice','tcscen','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
+{const h=location.hash.slice(1);if(modeFromUser&&['home','notice','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{sessionStorage.setItem('wb-mode',state.mode);}catch(e){}try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
@@ -1494,7 +1314,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const BASE_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
 let MENU_GRPS=BASE_GRPS;
-const BASE_ITEMS=[['home','home','홈'],['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['tcscen','work','테스트 시나리오 관리'],['leave','people','일정·연차 관리'],['notice','people','공지'],
+const BASE_ITEMS=[['home','home','홈'],['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['leave','people','일정·연차 관리'],['notice','people','공지'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
@@ -1524,7 +1344,6 @@ function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x
 function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
 const firstMenu=()=>'home';
 NAV_ICO.notice='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>';
-NAV_ICO.tcscen='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg>';
 NAV_ICO.home='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>';
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),myLevel(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access,menuCfg.accessLv]);if(key===navKey)return;navKey=key;
@@ -1656,7 +1475,7 @@ function applyMode(){
   if(menuCfg.home==='annual')menuCfg.home='leave';
   renderNav();
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  const AREAS={home:'homeArea',notice:'noticeArea',tcscen:'tcscenArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
+  const AREAS={home:'homeArea',notice:'noticeArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='home';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
@@ -1694,7 +1513,6 @@ function renderBody(){
   if(state.mode==='regress'){if(!document.activeElement?.matches?.('#cvQ,#regressArea .cvMemo'))renderRegress();return;}
   if(state.mode==='home'){renderHome();return;}
   if(state.mode==='notice'){renderNotice();return;}
-  if(state.mode==='tcscen'){renderTcs();return;}
   if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
@@ -2140,282 +1958,6 @@ document.addEventListener('keydown',e=>{
   if(!open)return;
   if(rtPop.contains(document.activeElement)){rtBack();return;} // 편집칸으로 돌아감
   getSelection().collapseToEnd();rtPop.hidden=true;
-});
-
-/* ---------- 테스트 시나리오 관리: 'TC 생성 파이프라인' 아티팩트의 관리 화면을 그대로 옮겨 옴(시나리오 생성은 원본에서, JSON으로 가져옴)
-   tcs_projects = 프로젝트(title·category·testers·testerRoles), tcs_rows = 시나리오 한 건(projectId + 원본과 같은 칸 + 테스터별 'tr:이름' 결과·'ts:이름' 작성 상태·'tn:이름' 테스트 내역) ---------- */
-let tcsProjects=[],tcsRows=[];
-const TC_COLS=[['tcId','시나리오 ID'],['screenType','화면유형(FO/BO)'],['screen','화면 구분'],['category','시험항목(대분류)'],['subCategory','시험(중분류)'],['precondition','전제조건 (BO 설정 포함)'],['procedure','테스트 절차'],['testDetail','시험 내역'],['expected','기대결과'],['constraintTag','제약 태그'],['integrationTag','연동시스템'],['tester','테스터'],['testNote','테스트 내역'],['result','결과'],['status','진행상태']];
-const TC_RES=['PASS','MINOR','N/A','MAJOR','FATAL','CRITICAL','BLOCK'],TC_SEV=['N/A','PASS','BLOCK','MINOR','MAJOR','CRITICAL','FATAL'],TC_FAIL=['MINOR','MAJOR','CRITICAL','FATAL'];
-const TC_ST=['완료','테스트불가','작성중','개발 검토'],TC_PROG=['작성중','개발 검토','테스트불가','완료'],TC_KEY_RE=/^t[rns]:/,TC_BASE={tr:'result',ts:'status',tn:'testNote'};
-const TC_ROLES=['기획','개발','디자이너','퍼블리셔','QA','사업'];
-const TC_STAT_ROWS=['총 건수',...TC_RES,'미실행','진행률','결함률'],TC_SUM=['PASS','MINOR','MAJOR','CRITICAL','FATAL','BLOCK','N/A','미실행'];
-const TC_DEFS={'총 건수':'테스터에게 배정된 시나리오 수예요. 합계 칸은 테스터 열의 평균이에요.',PASS:'기대결과대로 동작했어요.',MINOR:'사용에 큰 지장이 없는 가벼운 결함이에요. 예: 문구 오타, 정렬·간격 어긋남.','N/A':'이번 테스트 대상이 아니거나 이 환경에서 확인할 수 없는 항목이에요.',MAJOR:'기능이 기대와 다르게 동작하지만 다른 방법으로 쓸 수는 있는 결함이에요.',FATAL:'서비스를 쓸 수 없게 만드는 가장 심각한 결함이에요. 예: 앱 강제 종료, 데이터 손실, 결제 오류.',CRITICAL:'핵심 기능이 동작하지 않고 다른 방법도 없는 결함이에요.',BLOCK:'선행 조건이나 환경 문제로 테스트를 진행할 수 없었어요.','미실행':'아직 결과를 입력하지 않았어요.','진행률':'결과를 입력한 비율이에요. (PASS + Fail + N/A + BLOCK) / 총 건수. 합계 칸은 테스터별 진행률의 평균이에요.','결함률':'PASS와 Fail 중 Fail의 비율이에요. Fail / (PASS + Fail), Fail = MINOR + MAJOR + CRITICAL + FATAL. N/A·BLOCK은 넣지 않아요. 합계 칸은 테스터별 결함률의 평균이에요.'};
-const tcst={proj:null,cat:'all',tester:'ALL',type:'ALL',res:'ALL',q:'',open:new Set(),sel:new Set()};
-let tcStatsOpen=(()=>{try{return localStorage.getItem('wb-tc-stats')==='1';}catch(e){return false;}})();
-const tcAs=r=>{const o=[];String(r?.tester||'').split(',').map(s=>s.trim()).filter(Boolean).forEach(n=>{if(!o.includes(n))o.push(n);});return o;};
-const tcJoin=L=>tcAs({tester:(L||[]).join(',')}).join(', ');
-// 테스터 n의 값. 담당자가 1명이고 그 칸이 아직 없으면 행의 값(예전 데이터). 비운 칸('')은 비운 그대로
-const tcTV=(r,n,k)=>{const v=r[k+':'+n];if(v!=null)return v;return tcAs(r).length===1?(r[TC_BASE[k]]||''):'';};
-const tcEff=r=>{const ns=tcAs(r);if(!ns.length)return r.result||'';const rs=ns.map(n=>tcTV(r,n,'tr')).filter(x=>TC_SEV.includes(x));return rs.length?rs.reduce((w,x)=>TC_SEV.indexOf(x)>TC_SEV.indexOf(w)?x:w):'';};
-const tcEffSt=r=>{const ns=tcAs(r);if(!ns.length)return r.status;return ns.map(n=>tcTV(r,n,'ts')).map(s=>TC_PROG.includes(s)?s:'작성중').reduce((w,s)=>TC_PROG.indexOf(s)<TC_PROG.indexOf(w)?s:w);};
-const tcRowsOf=pid=>tcsRows.filter(r=>r.projectId===pid).sort((a,b)=>(a.seq??0)-(b.seq??0)||String(a.tcId||'').localeCompare(String(b.tcId||'')));
-const tcTone=v=>'rp-'+(v?String(v).replace('/',''):'NT');
-const tcPill=v=>`<span class="cvpill ${tcTone(v)}">${esc(v||'미실행')}</span>`;
-const tcRoleTag=(P,n)=>{const r=(P?.testerRoles||{})[n];return r?`<span class="role-tag">${esc(r)}</span>`:'';};
-// 원본과 같은 줄바꿈 표시: 절차는 1. 2., 전제조건·기대결과는 ①②, 시험 내역은 문장마다
-const tcSteps=t=>t?String(t).replace(/\s*(\d+)\)\s*/g,'\n$1. ').replace(/^\n/,'').trim():'';
-const tcSent=t=>t?String(t).replace(/\s*([①-⑳])\s*/g,'\n$1 ').replace(/([.!?])\s+/g,'$1\n').trim():'';
-const tcCirc=t=>{if(!t)return '';const s=String(t);if(/[①-⑳]/.test(s))return s.replace(/\s*([①-⑳])\s*/g,'\n$1 ').trim();const p=tcSent(s).split('\n').map(x=>x.trim()).filter(Boolean);return p.length>1?p.map((x,i)=>`${'①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳'[i]||'-'} ${x}`).join('\n'):s.trim();};
-// 통계 표: 열 = 합계(배정이 있는 테스터 열의 평균) + 테스터마다. 테스터가 없으면 행의 결과로 셈 (원본 qcStatTable)
-function tcStatTable(rows,testers){
-  const nums=results=>{const rs=results.map(r=>r||''),n=k=>rs.filter(v=>v===k).length,total=rs.length,none=n(''),fail=rs.filter(v=>TC_FAIL.includes(v)).length,judged=n('PASS')+fail;
-    return [total,...TC_RES.map(n),none,total?(total-none)/total*100:0,judged?fail/judged*100:0];};
-  const per=testers.map(n=>({label:n,nums:nums(rows.filter(r=>tcAs(r).includes(n)).map(r=>tcTV(r,n,'tr')))})),used=per.filter(c=>c.nums[0]>0);
-  const avg=used.length?TC_STAT_ROWS.map((_,i)=>used.reduce((s,c)=>s+c.nums[i],0)/used.length):nums(rows.map(r=>r.result));
-  const fmt=(v,i)=>i>=TC_STAT_ROWS.length-2?`${v.toFixed(1)}%`:Math.round(v*10)/10;
-  return {total:rows.length,fo:rows.filter(r=>r.screenType!=='BO').length,bo:rows.filter(r=>r.screenType==='BO').length,unassigned:rows.filter(r=>!tcAs(r).length).length,
-    cols:[{label:'합계',nums:avg},...per].map(c=>({label:c.label,values:c.nums.map(fmt)}))};
-}
-function tcNextId(pid,type){let n=0;tcRowsOf(pid).filter(r=>(r.screenType||'FO')===type).forEach(r=>{const m=String(r.tcId||'').match(/(\d+)\s*$/);if(m)n=Math.max(n,+m[1]);});return `${type}-${String(n+1).padStart(3,'0')}`;}
-function renderTcs(){
-  const area=$('#tcscenArea');
-  if(area.contains(document.activeElement)&&document.activeElement.matches('input:not([type=checkbox]),textarea,[contenteditable="true"]'))return; // 입력 중엔 다시 그리지 않음
-  if(!storeReady){area.innerHTML='<div class="empty"><h2>불러오는 중입니다</h2></div>';return;}
-  const P=tcsProjects.find(p=>p.id===tcst.proj);if(!P)tcst.proj=null;
-  area.innerHTML=P?tcProjHtml(P):tcListHtml();
-  document.body.classList.toggle('has-bulk',!!P&&canWrite&&tcst.sel.size>0);
-  const w=$('#tcTableWrap');if(w&&w.clientWidth)w.style.setProperty('--tc-wrap-w',w.clientWidth+'px');
-  const all=$('#tcSelAll');if(all){const ids=[...area.querySelectorAll('#tcCardList .tc-card')].map(c=>c.dataset.tc),n=ids.filter(id=>tcst.sel.has(id)).length;all.checked=!!ids.length&&n===ids.length;all.indeterminate=n>0&&n<ids.length;}
-}
-function tcListHtml(){
-  const w=canWrite,cats=[...new Set(tcsProjects.map(p=>p.category||'미분류'))].sort((a,b)=>a.localeCompare(b,'ko'));
-  if(tcst.cat!=='all'&&!cats.includes(tcst.cat))tcst.cat='all';
-  const L=tcsProjects.filter(p=>tcst.cat==='all'||(p.category||'미분류')===tcst.cat).sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
-  const tools=`<div class="rtool">${cats.length?`<div class="seg" role="group" aria-label="분류">${[['all','전체'],...cats.map(c=>[c,c])].map(([k,l])=>`<button type="button" data-tccat="${esc(k)}" aria-pressed="${tcst.cat===k}">${esc(l)}</button>`).join('')}</div>`:''}<span class="spacer"></span>${w?'<button class="btn" type="button" id="tcImport">JSON 가져오기</button><input type="file" id="tcFile" accept=".json,application/json" hidden><button class="btn primary" type="button" id="tcNewProj">+ 프로젝트</button>':''}</div>`;
-  if(!tcsProjects.length)return `${tools}<div class="empty"><h2>아직 테스트 시나리오 프로젝트가 없어요</h2><p>'TC 생성' 아티팩트에서 시나리오를 만든 뒤 <b>내보내기 → JSON</b>으로 받은 파일을 'JSON 가져오기'로 올리거나, '+ 프로젝트'로 직접 시작하세요.</p></div>`;
-  const cards=L.map(p=>{const R=tcRowsOf(p.id),t=tcStatTable(R,[...new Set([...(p.testers||[]),...R.flatMap(tcAs)])]),v=l=>t.cols[0].values[TC_STAT_ROWS.indexOf(l)],c={};R.forEach(r=>{const x=tcEff(r)||'';c[x]=(c[x]||0)+1;});
-    const bar=[...TC_SUM.slice(0,-1),''].filter(k=>c[k]).map(k=>`<span class="${tcTone(k)}" style="flex:${c[k]}" title="${esc((k||'미실행')+' '+c[k]+'건')}"></span>`).join('');
-    return `<button type="button" class="panel tcCard" data-tcproj="${esc(p.id)}"><span class="tcCardT"><b>${esc(p.title||'(이름 없음)')}</b><span class="legend">${esc(p.category||'미분류')}</span></span><span class="legend">시나리오 ${R.length}건 · 진행률 ${R.length?v('진행률'):'0.0%'} · 결함률 ${R.length?v('결함률'):'0.0%'}${(p.testers||[]).length?` · 테스터 ${p.testers.length}명`:''}</span>${R.length?`<span class="tcBar" aria-hidden="true">${bar}</span>`:''}</button>`;}).join('');
-  return `${tools}<div class="tcCards">${cards||'<div class="panel hmEmpty">이 분류에 프로젝트가 없어요.</div>'}</div>`;
-}
-function tcProjHtml(P){
-  const w=canWrite,R=tcRowsOf(P.id),used=[...new Set(R.flatMap(tcAs))],T=[...new Set([...(P.testers||[]),...used])];
-  if(tcst.tester!=='ALL'&&!T.includes(tcst.tester))tcst.tester='ALL';
-  const tv=tcst.tester,q=tcst.q.trim().toLowerCase();
-  // 유사(화면명+대분류 같음) · 배정 충돌(같은 테스터에게 일일1회제한/단독실행필요가 2건 이상)
-  const dup={};R.forEach(r=>{const k=`${(r.screen||'').trim().toLowerCase()}|${(r.category||'').trim().toLowerCase()}`;if(k!=='|')dup[k]=(dup[k]||0)+1;});
-  const cc={};R.forEach(r=>{if(r.constraintTag==='일일1회제한'||r.constraintTag==='단독실행필요')tcAs(r).forEach(t=>cc[t]=(cc[t]||0)+1);});const conflict=Object.keys(cc).filter(t=>cc[t]>1);
-  const L=R.filter(r=>(tcst.type==='ALL'||r.screenType===tcst.type)&&(tcst.res==='ALL'||(tcEff(r)||'')===tcst.res)&&(tv==='ALL'||tcAs(r).includes(tv))
-    &&(!q||[r.screen,r.category,r.subCategory,r.precondition,r.procedure,r.testDetail,r.expected].join(' ').toLowerCase().includes(q)));
-  for(const id of [...tcst.sel])if(!R.some(r=>r.id===id))tcst.sel.delete(id);
-  // 요약 줄 · 통계 표
-  const t=tcStatTable(R,T),v=l=>t.cols[0].values[TC_STAT_ROWS.indexOf(l)],done=R.filter(r=>{const ns=tcAs(r);return ns.length?ns.every(n=>tcTV(r,n,'tr')):!!r.result;}).length;
-  const tone=l=>l==='PASS'||l==='진행률'?'is-pass':TC_FAIL.includes(l)||l==='결함률'?'is-fail':'';
-  const summary=R.length?`<div class="tc-summary"><div class="sum-head"><h3 class="sum-title">${esc(P.title||'(이름 없음)')}</h3><span class="legend">${used.length?`담당 ${esc(used.join(', '))}`:'담당 미지정'}</span><span class="sum-spacer"></span><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm stats-toggle" id="tcStatsToggle" aria-expanded="${tcStatsOpen}">담당자별 통계</button></div>
-    <div class="sum-stats">${TC_SUM.map(l=>{const k=l==='미실행'?'':l;return `<button type="button" class="sum-badge" data-sumres="${k||'NT'}" aria-pressed="${tcst.res===k}" title="이 결과만 보기">${tcPill(k)}<b class="num">${v(l)}</b></button>`;}).join('')}
-      <span class="sum-progress"><span class="legend">진행률</span><strong class="num">${Math.round(parseFloat(v('진행률')))}%</strong><span class="legend">${done}/${R.length}</span></span></div></div>
-    <div class="tcStatsCard${tcStatsOpen?'':' is-collapsed'}"><p class="stat-caption">시나리오 ${t.total}건 · FO ${t.fo} · BO ${t.bo}</p><p class="stat-caption">합계는 테스터 열의 평균이에요.${t.unassigned&&t.cols.length>1?` 담당자가 없는 시나리오 ${t.unassigned}건은 통계에 들어가지 않아요.`:''}</p>
-      <div class="qc-stat-scroll"><table class="qc-stat-table${t.cols.length>1?'':' is-narrow'}"><thead><tr><th scope="col">구분 <button type="button" class="stat-help" popovertarget="tcStatDef" aria-label="구분 설명 보기">?</button></th>${t.cols.map((c,i)=>`<th scope="col"${i===0?' class="is-sum"':''}>${esc(c.label)}</th>`).join('')}</tr></thead>
-      <tbody>${TC_STAT_ROWS.map((label,r)=>`<tr${label==='진행률'?' class="rate-progress"':label==='결함률'?' class="rate-defect"':''}><th scope="row">${label}</th>${t.cols.map((c,i)=>`<td class="${c.values[r]&&c.values[r]!=='0.0%'?tone(label):''}${i===0?' is-sum':''}">${c.values[r]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>
-      <div id="tcStatDef" class="stat-def-pop" popover role="dialog" aria-labelledby="tcStatDefT"><div class="stat-def-head"><h3 id="tcStatDefT">구분 설명</h3><button type="button" class="ad-btn ad-btn--ghost ad-btn--sm" popovertarget="tcStatDef" popovertargetaction="hide">닫기</button></div><dl>${TC_STAT_ROWS.map(l=>`<dt>${esc(l)}</dt><dd>${esc(TC_DEFS[l]||'')}</dd>`).join('')}</dl><p class="stat-def-note">합계 칸은 배정이 있는 테스터 열의 평균이에요.</p></div></div>`:'';
-  // 담당자 탭: 건수 · 완료 n
-  const tabs=[['ALL','전체',R,r=>tcEffSt(r)==='완료'],...T.map(n=>[n,n,R.filter(r=>tcAs(r).includes(n)),r=>tcTV(r,n,'ts')==='완료'])]
-    .map(([k,l,rows,dn])=>`<button type="button" class="ad-btn ad-btn--sm tester-tab" data-tctester="${esc(k)}" aria-pressed="${k===tv}">${esc(l)}${k==='ALL'?'':tcRoleTag(P,k)}<span class="count">${rows.length} · 완료 ${rows.filter(dn).length}</span></button>`).join('');
-  const opts=L2=>L2.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
-  const bulk=w?`<div class="bulk-bar${tcst.sel.size?' show':''}" role="region" aria-label="선택한 시나리오 한꺼번에 바꾸기"><span class="bulk-count">${tcst.sel.size}개 선택됨</span>
-    <select class="ad-select" data-tcbulk="add" aria-label="선택한 시나리오에 담당 추가"><option value="">담당 추가…</option>${opts(T)}</select>
-    <select class="ad-select" data-tcbulk="remove" aria-label="선택한 시나리오에서 담당 빼기"><option value="">담당 빼기…</option>${opts(used)}</select>
-    <select class="ad-select" data-tcbulk="tr" aria-label="선택한 시나리오 결과 일괄 변경"><option value="">결과값 일괄 변경…</option>${opts(TC_RES)}</select>
-    <select class="ad-select" data-tcbulk="ts" aria-label="선택한 시나리오 진행상태 일괄 변경"><option value="">진행상태 일괄 변경…</option>${opts(TC_ST)}</select>
-    <button class="ad-btn ad-btn--sm" type="button" id="tcBulkClear">선택 해제</button><button class="ad-btn ad-btn--sm ad-btn--danger" type="button" id="tcBulkDel">선택 삭제</button></div>`:'';
-  const ce=w?'true':'false';
-  const cards=L.map(r=>{
-    const as=tcAs(r),res=tcEff(r),st=TC_ST.includes(tcEffSt(r))?tcEffSt(r):'작성중',tab=tv!=='ALL'&&as.includes(tv)?tv:null,own=tab?tcTV(r,tab,'tr'):'',ownSt=tab?tcTV(r,tab,'ts'):'',shown=tab?own:res,open=tcst.open.has(r.id);
-    const k=`${(r.screen||'').trim().toLowerCase()}|${(r.category||'').trim().toLowerCase()}`,isDup=dup[k]>1,cons=['일일1회제한','단독실행필요'].includes(r.constraintTag),cn=as.filter(x=>conflict.includes(x));
-    const who=tab?`<span class="tc-ro-text" title="담당자는 전체 탭에서 바꿔요">${esc(tab)}</span>`:!w?`<span class="tc-ro-text">${esc(as.join(', ')||'—')}</span>`
-      :`<button type="button" class="ad-btn ad-btn--sm tester-pick${as.length?'':' is-none'}" data-pick aria-haspopup="true" aria-expanded="false" title="${esc(as.join(', ')||'담당자를 고르세요')}">${esc(!as.length?'담당자 지정':as.length===1?as[0]:`${as[0]} 외 ${as.length-1}명`)}</button>`;
-    const noteKey=tab?`tn:${tab}`:!as.length?'testNote':as.length===1?`tn:${as[0]}`:null;
-    const noteText=as.length===1?tcTV(r,as[0],'tn'):as.length?as.map(n=>{const x=tcTV(r,n,'tn');return x?`${n}: ${x}`:'';}).filter(Boolean).join(' / '):(r.testNote||'');
-    const note=noteKey?`<div class="tc-editable tc-note-cell" contenteditable="${ce}" data-tcf="${esc(noteKey)}" data-placeholder="비고" role="textbox" aria-label="${esc(r.tcId)} 비고">${esc(noteKey==='testNote'?(r.testNote||''):tcTV(r,noteKey.slice(3),'tn'))}</div>`
-      :`<button type="button" class="tc-note-multi" data-note aria-expanded="false" title="${esc(noteText||'눌러서 담당자별 비고 입력')}">${esc(noteText.replace(/\s*\n\s*/g,' '))||'<span class="sub-txt">담당자별 비고</span>'}</button><div class="tc-note-pop" role="group" aria-label="${esc(r.tcId)} 담당자별 비고" hidden>${as.map(n=>`<label class="tc-note-pop-row"><span class="tc-note-pop-name" title="${esc(n)}">${esc(n)}</span><div class="tc-editable tc-note-cell" contenteditable="${ce}" data-tcf="tn:${esc(n)}" data-placeholder="${esc(n)} 비고" role="textbox">${esc(tcTV(r,n,'tn'))}</div></label>`).join('')}</div>`;
-    const fld=(key,lab,val,one)=>`<div class="tc-field-block"><label class="tc-field-label">${lab}</label><div class="tc-editable${one?' tc-oneline':''}" contenteditable="${ce}" data-tcf="${key}" role="textbox" aria-label="${esc(r.tcId)} ${esc(lab.replace(/<[^>]+>/g,''))}" ${one?'':'aria-multiline="true"'}>${esc(val)}</div></div>`;
-    return `<div class="tc-card${tcst.sel.has(r.id)?' selected':''}" data-tc="${esc(r.id)}" role="row"${shown&&shown!=='N/A'?` data-result="${esc(shown)}"`:''}>
-      <div class="tc-card-head">
-        <div class="tc-c c-sel">${w?`<input type="checkbox" class="tc-select-checkbox" ${tcst.sel.has(r.id)?'checked':''} aria-label="${esc(r.tcId)} 선택">`:''}</div>
-        <div class="tc-c c-id">${w?`<button type="button" class="tc-id-badge" data-edit-tcid title="${esc(r.tcId)} (눌러서 고칠 수 있어요)">${esc(r.tcId||'(ID 없음)')}</button>`:`<span class="tc-id-badge">${esc(r.tcId||'')}</span>`}${isDup?'<span class="ad-badge ad-badge--warning tc-mini-badge" title="유사 시나리오: 화면명·대분류가 같은 테스트 시나리오가 더 있습니다">유사</span>':''}${cn.length&&cons?`<span class="ad-badge ad-badge--danger tc-mini-badge" title="${esc(cn.join(', '))} 님에게 제약 테스트 시나리오가 2건 이상 배정됨(배정 충돌)">충돌</span>`:''}</div>
-        <div class="tc-c c-type">${w?`<select class="screentype-select" data-tcf="screenType" aria-label="${esc(r.tcId)} 화면유형">${['FO','BO'].map(o=>`<option ${o===r.screenType?'selected':''}>${o}</option>`).join('')}</select>`:`<span class="tc-ro-text">${esc(r.screenType||'')}</span>`}</div>
-        <div class="tc-c c-cat"><div class="tc-screen-input tc-title${w?' tc-cat-edit':''}" ${w?'data-catedit="category" role="button" tabindex="0"':''} title="${esc(r.category||'')}${w?' (누르면 고쳐요)':''}">${esc(r.category||'')||'<span class="sub-txt">-</span>'}</div></div>
-        <div class="tc-c c-detail"><span class="tc-item${w?' tc-cat-edit':''}" ${w?'data-catedit="subCategory" role="button" tabindex="0"':''} title="${esc(r.subCategory||'')}${w?' (누르면 고쳐요)':''}">${esc(r.subCategory||'')||'(중분류 없음)'}</span><button type="button" class="row-toggle-btn" data-tcopen aria-label="${esc(r.tcId)} 상세 ${open?'접기':'펼치기'}" title="상세 펼치기/접기" aria-expanded="${open}">▾</button></div>
-        <div class="tc-c c-res">${tab&&w?`<select class="tester-result-select ${tcTone(own)}" data-tcf="tr:${esc(tab)}" aria-label="${esc(r.tcId)} ${esc(tab)} 결과"><option value="">미실행</option>${TC_RES.map(o=>`<option ${o===own?'selected':''}>${o}</option>`).join('')}</select>`
-          :`<span class="result-badge ${tcTone(shown)}" title="전체 탭에서는 결과를 보기만 해요. 담당자 탭에서 입력해요">${esc(shown||'미실행')}</span>`}</div>
-        <div class="tc-c c-note">${note}</div>
-        <div class="tc-c c-who">${who}</div>
-        <div class="tc-c c-st">${tab&&w?`<select class="tester-status-select" data-tcf="ts:${esc(tab)}" aria-label="${esc(r.tcId)} ${esc(tab)} 작성 상태"><option value="">작성 상태</option>${TC_ST.map(o=>`<option ${o===ownSt?'selected':''}>${o}</option>`).join('')}</select>`
-          :`<span class="status-badge" title="${as.length?'담당 테스터의 작성 상태 중 가장 덜 진행된 상태예요':'담당자를 지정하면 그 테스터 탭에서 작성 상태를 골라요'}">${esc(st)}</span>`}</div>
-        <div class="tc-c c-del">${w?`<button type="button" class="icon-btn ad-btn ad-btn--ghost ad-btn--icon" data-tcdel title="삭제" aria-label="${esc(r.tcId)} 삭제">✕</button>`:''}</div>
-      </div>
-      <div class="tc-card-body"${open?'':' hidden'}><div class="tc-detail"><div class="tc-detail-col">
-        <div class="tc-field-row">${fld('category','대분류',r.category||'',1)}${fld('subCategory','중분류',r.subCategory||'',1)}</div>
-        ${fld('precondition','전제조건<small>BO 설정 포함</small>',tcCirc(r.precondition))}${fld('procedure','테스트 절차',tcSteps(r.procedure))}${fld('testDetail','시험 내역',tcSent(r.testDetail))}</div>
-        <div class="tc-detail-col">${fld('expected','기대결과',tcCirc(r.expected))}</div></div></div></div>`;}).join('');
-  const allOpen=L.length&&L.every(r=>tcst.open.has(r.id));
-  return `<div class="rtool tcProjBar"><button class="hlink" type="button" id="tcBack">← 프로젝트 목록</button><span class="legend">${esc(P.category||'미분류')} · ${esc(P.title||'')}</span><span class="spacer"></span>
-      ${downloads&&R.length?exportMenu([['tcXlsx','EXCEL'],['tcJson','JSON']]):''}${w?'<button class="btn ghost" type="button" id="tcProjEdit">프로젝트 정보</button><button class="btn ghost" type="button" id="tcProjDel">삭제</button>':''}</div>
-    ${summary}
-    <div class="tc-list-card">
-      <div class="tc-section-head"><button class="ad-btn ad-btn--sm" type="button" id="tcCollapseAll">${allOpen?'전체 접기':'전체 펼치기'}</button></div>
-      <div class="tc-filter-bar"><div class="tester-tabs" role="group" aria-label="담당자별 보기">${tabs}</div>${w?'<button class="ad-btn ad-btn--sm" type="button" id="tcTesterAdd" aria-haspopup="dialog">+ 테스터 추가</button>':''}
-        <div class="tc-list-tools"><div class="tc-type-seg" role="group" aria-label="화면유형 보기">${['ALL','FO','BO'].map(k=>`<button type="button" class="ad-btn ad-btn--sm" data-tctype="${k}" aria-pressed="${tcst.type===k}">${k==='ALL'?'전체':k}</button>`).join('')}</div>
-        <label class="tc-search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" class="tc-list-search" id="tcQ" value="${esc(tcst.q)}" placeholder="화면명 · 분류 · 내용 검색" aria-label="테스트 시나리오 검색" autocomplete="off"></label></div></div>
-      ${w?`<div class="select-all-row"><label><input type="checkbox" id="tcSelAll"> 전체 선택</label><span class="sub-txt">${conflict.length?`${esc(conflict.join(', '))} 님에게 일일제한/단독실행 테스트 시나리오가 2건 이상 배정되어 실행 충돌 가능성이 있습니다.`:''}</span></div>`:''}
-      ${bulk}
-      <div class="tc-table-wrap" id="tcTableWrap"><div class="tc-table-head" role="row"${L.length?'':' hidden'}><span class="tc-c c-sel"></span><span class="tc-c c-id">ID</span><span class="tc-c c-type">유형</span><span class="tc-c c-cat">대분류</span><span class="tc-c c-detail">중분류</span><span class="tc-c c-res">결과</span><span class="tc-c c-note">비고</span><span class="tc-c c-who">담당자</span><span class="tc-c c-st">상태</span><span class="tc-c c-del"></span></div><div id="tcCardList" class="tc-table" role="rowgroup">${cards}</div></div>
-      ${L.length?'':`<div class="ad-empty">${R.length?'검색/필터 조건에 맞는 테스트 케이스가 없습니다.':"아직 테스트 시나리오가 없어요. '+ 행 추가'로 만들거나, 원본 도구에서 만든 JSON을 프로젝트 목록의 'JSON 가져오기'로 올려 주세요."}</div>`}
-      ${w?'<div class="table-footer"><button class="ad-btn ad-btn--sm" type="button" id="tcAdd">+ 행 추가</button></div>':''}
-    </div>`;
-}
-async function tcSave(r,patch){patch.updatedAt=new Date().toISOString();Object.assign(r,patch);
-  try{await db.collection('tcs_rows').doc(r.id).update(patch);}catch(err){handleWriteError(err);}}
-// 결과·작성 상태: 테스터 칸에 쓰고, 행의 대표 값(result·status)도 맞춤(원본과 같음)
-async function tcSaveTester(r,k,v){const patch={[k]:v};const x={...r,...patch};patch.result=tcEff(x);patch.status=tcEffSt(x)||x.status||'작성중';await tcSave(r,patch);}
-async function tcSaveProj(P,patch){patch.updatedAt=new Date().toISOString();Object.assign(P,patch);try{await db.collection('tcs_projects').doc(P.id).update(patch);}catch(err){handleWriteError(err);}}
-function tcProjModal(P){
-  const cats=[...new Set(tcsProjects.map(p=>p.category||'미분류'))];
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="tcPForm" novalidate style="max-width:440px"><header><h2>${P?'프로젝트 정보':'프로젝트 추가'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><div class="f"><label for="tcPTitle">프로젝트명 <b class="req">*</b></label><input id="tcPTitle" maxlength="80" value="${esc(P?.title||'')}" autocomplete="off"></div>
-      <div class="f"><label for="tcPCat">분류</label><input id="tcPCat" maxlength="40" list="tcCats" value="${esc(P?.category||'')}" placeholder="예: 기업, 알닷, 로밍 · 비우면 미분류"><datalist id="tcCats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
-      ${P?'':'<span class="hint">테스터는 프로젝트 화면의 \'+ 테스터 추가\'에서 등록해요.</span>'}</div>
-    <footer><span class="err" id="tcPErr"></span><div class="r"><button class="btn" type="button" id="tcPCancel">취소</button><button class="btn primary" type="submit" id="tcPSave">저장</button></div></footer></form></div>`;
-  $('#xClose').onclick=$('#tcPCancel').onclick=askClose;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});$('#tcPForm').addEventListener('input',()=>{modalDirty=true;});setTimeout(()=>$('#tcPTitle')?.focus(),0);
-  $('#tcPForm').addEventListener('submit',async e=>{e.preventDefault();const title=$('#tcPTitle').value.trim();if(!title){$('#tcPErr').textContent='프로젝트명을 입력해 주세요.';return;}
-    const data={title,category:$('#tcPCat').value.trim()||'미분류'};$('#tcPSave').disabled=true;
-    try{if(P){await tcSaveProj(P,data);logChange('tcs','update',P.id,title);}
-      else{const now=new Date().toISOString(),full={...data,testers:[],testerRoles:{},createdAt:now,updatedAt:now};const ref=await db.collection('tcs_projects').add(full);tcsProjects=[...tcsProjects.filter(x=>x.id!==ref.id),{id:ref.id,...full}];tcst.proj=ref.id;tcst.tester='ALL';logChange('tcs','create',ref.id,title);}
-      closeModal();render();}catch(err){$('#tcPSave').disabled=false;handleWriteError(err,'#tcPErr');}});
-}
-// 테스터 추가 창(원본 '테스터 추가'): 이름 + 역할로 추가, 칩에서 역할 바꾸기·✕ 삭제(그 사람이 적은 결과는 남김)
-function tcTesterModal(P){
-  const draw=()=>{const box=$('#tcChips');if(box)box.innerHTML=(P.testers||[]).map(n=>`<span class="tester-chip">${esc(n)}<select data-trole="${esc(n)}" aria-label="${esc(n)} 역할"><option value="">역할</option>${TC_ROLES.map(x=>`<option ${(P.testerRoles||{})[n]===x?'selected':''}>${x}</option>`).join('')}</select><button type="button" data-tdel="${esc(n)}" aria-label="${esc(n)} 삭제" title="삭제">✕</button></span>`).join('')||'<span class="legend">아직 테스터가 없어요.</span>';};
-  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>테스터 추가</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
-    <div class="body" style="grid-template-columns:1fr"><div class="f"><label for="tcTName">테스터 이름</label><div class="tester-input-row"><input id="tcTName" class="sel" autocomplete="off" maxlength="20" placeholder="이름 입력 후 Enter…"><select id="tcTRole" class="sel" aria-label="추가할 테스터 역할" style="width:auto"><option value="">역할</option>${TC_ROLES.map(x=>`<option>${x}</option>`).join('')}</select><button class="btn primary" type="button" id="tcTAdd">+ 추가</button></div>
-      <span class="hint">추가한 테스터는 담당자 탭과 담당자 고르기에 역할과 함께 보여요. 칩의 역할은 언제든 바꿀 수 있고, ✕를 누르면 삭제돼요.</span><div class="tester-chips" id="tcChips"></div></div></div>
-    <footer><span class="err" id="tcTErr"></span><div class="r"><button class="btn" type="button" id="tcTDone">완료</button></div></footer></div></div>`;
-  draw();const close=()=>{closeModal();render();};$('#xClose').onclick=$('#tcTDone').onclick=close;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')close();});setTimeout(()=>$('#tcTName')?.focus(),0);
-  const add=async()=>{const n=$('#tcTName').value.trim();if(!n)return;if((P.testers||[]).includes(n)){$('#tcTErr').textContent='이미 있는 이름이에요.';return;}$('#tcTErr').textContent='';
-    const role=$('#tcTRole').value,roles={...(P.testerRoles||{})};if(role)roles[n]=role;await tcSaveProj(P,{testers:[...(P.testers||[]),n],testerRoles:roles});$('#tcTName').value='';$('#tcTRole').value='';draw();$('#tcTName').focus();};
-  $('#tcTAdd').onclick=add;$('#tcTName').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();add();}});
-  $('#tcChips').addEventListener('change',async e=>{const n=e.target.dataset.trole;if(n==null)return;const roles={...(P.testerRoles||{})};if(e.target.value)roles[n]=e.target.value;else delete roles[n];await tcSaveProj(P,{testerRoles:roles});});
-  $('#tcChips').addEventListener('click',async e=>{const n=e.target.closest('[data-tdel]')?.dataset.tdel;if(!n)return;const roles={...(P.testerRoles||{})};delete roles[n];await tcSaveProj(P,{testers:(P.testers||[]).filter(x=>x!==n),testerRoles:roles});draw();});
-}
-// 담당자 고르기 팝오버(원본과 같음): 체크하는 즉시 저장, Esc·바깥 누르기·스크롤이면 닫힘
-let tcPickId=null;
-function tcPickClose(){$('#tcTesterPop')?.remove();tcPickId=null;}
-function tcPickOpen(r,anchor){const was=tcPickId===r.id;tcPickClose();if(was)return;const P=tcsProjects.find(p=>p.id===r.projectId);tcPickId=r.id;
-  const opts=[...new Set([...(P?.testers||[]),...tcAs(r)])],pop=document.createElement('div');pop.id='tcTesterPop';pop.className='tester-popover';pop.setAttribute('role','dialog');pop.setAttribute('aria-label',`${r.tcId} 담당자 고르기`);
-  pop.innerHTML=`<p class="legend" style="margin:0 0 6px">${esc(r.tcId)} 담당자(여러 명 가능)</p>`+(opts.length?opts.map(n=>`<label class="tester-option"><input type="checkbox" value="${esc(n)}" ${tcAs(r).includes(n)?'checked':''}> ${esc(n)}${tcRoleTag(P,n)}</label>`).join(''):`<p class="legend" style="margin:0">'+ 테스터 추가'로 테스터를 먼저 등록해 주세요.</p>`);
-  document.body.appendChild(pop);const b=anchor.getBoundingClientRect();pop.style.top=`${Math.min(b.bottom+6,innerHeight-pop.offsetHeight-8)}px`;pop.style.left=`${Math.max(8,Math.min(b.left,innerWidth-pop.offsetWidth-8))}px`;anchor.setAttribute('aria-expanded','true');
-  pop.addEventListener('change',async()=>{const on=[...pop.querySelectorAll('input:checked')].map(c=>c.value);const x={...r,tester:tcJoin(on)};await tcSave(r,{tester:x.tester,result:tcEff(x),status:tcEffSt(x)||r.status||'작성중'});render();});
-  pop.querySelector('input')?.focus();}
-document.addEventListener('mousedown',e=>{if(tcPickId&&!e.target.closest('#tcTesterPop,[data-pick]'))tcPickClose();if(!e.target.closest('.tc-note-pop,[data-note]'))tcNoteClose();});
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(tcPickId)tcPickClose();if(document.querySelector('#tcscenArea .tc-note-pop:not([hidden])'))tcNoteClose();});
-addEventListener('scroll',()=>{if(tcPickId)tcPickClose();if(!document.activeElement?.closest?.('.tc-note-pop'))tcNoteClose();},{passive:true});
-function tcNoteClose(){const open=[...document.querySelectorAll('#tcscenArea .tc-note-pop:not([hidden])')];if(!open.length)return;open.forEach(p=>{p.hidden=true;p.previousElementSibling?.setAttribute('aria-expanded','false');});if(!document.activeElement?.closest?.('#tcscenArea'))render();}
-// 원본 도구의 'JSON 내보내기'(schema 1) 파일: 파일이 가리키는 프로젝트 1건과 그 시나리오를 새 프로젝트로 가져옴
-async function tcImportJson(file){
-  let d;try{d=JSON.parse(await file.text());}catch(e){toast('JSON 파일을 읽지 못했어요');return;}
-  if(!d||d.schema!==1||!Array.isArray(d.tcData)||!Array.isArray(d.historyList)){toast("TC 생성 도구의 '내보내기 → JSON' 파일이 아니에요");return;}
-  const h=Number.isInteger(d.currentProject)&&d.historyList[d.currentProject]?d.historyList[d.currentProject]:d.historyList.length===1?d.historyList[0]:{};
-  const rows=d.tcData.length?d.tcData:Array.isArray(h.snapshot)?h.snapshot:[];if(!rows.length){toast('가져올 시나리오가 없어요');return;}
-  let title=String(h.title||h.fileName||file.name.replace(/\.json$/i,'')||'가져온 프로젝트').trim();if(tcsProjects.some(p=>p.title===title))title+=` (가져옴 ${todayStr().slice(5).replace('-','.')})`;
-  const testers=[...new Set([...(Array.isArray(h.testers)?h.testers:[]),...(Array.isArray(d.testerList)?d.testerList:[]),...rows.flatMap(tcAs)].map(s=>String(s).trim()).filter(Boolean))];
-  evConfirm(`'${title}' 프로젝트로 시나리오 ${rows.length}건을 가져올까요?\n분류: ${h.category||'미분류'} · 테스터 ${testers.length}명`,async()=>{
-    const now=new Date().toISOString(),pd={title,category:String(h.category||'미분류'),testers,testerRoles:h.testerRoles&&typeof h.testerRoles==='object'?h.testerRoles:{},figmaUrl:String(h.figmaUrl||''),createdAt:now,updatedAt:now};
-    const pref=await db.collection('tcs_projects').add(pd);tcsProjects=[...tcsProjects.filter(x=>x.id!==pref.id),{id:pref.id,...pd}];
-    let i=0;for(const r of rows){const x={};for(const k of Object.keys(r))if(TC_COLS.some(c=>c[0]===k)||TC_KEY_RE.test(k))x[k]=r[k]??'';
-      const data={...x,projectId:pref.id,seq:typeof r.seq==='number'?r.seq:i,createdAt:now,updatedAt:now};const ref=await db.collection('tcs_rows').add(data);if(!tcsRows.some(y=>y.id===ref.id))tcsRows.push({id:ref.id,...data});i++;}
-    logChange('tcs','create',pref.id,title,null,null,`JSON에서 시나리오 ${rows.length}건 가져옴`);tcst.proj=pref.id;tcst.tester='ALL';render();toast(`시나리오 ${rows.length}건을 가져왔어요`);},'가져오기');
-}
-// 원본 도구에서도 다시 가져올 수 있는 같은 형식(schema 1)
-function tcBackup(P){const R=tcRowsOf(P.id).map(r=>{const o={};TC_COLS.forEach(([k])=>o[k]=r[k]??'');Object.keys(r).filter(k=>TC_KEY_RE.test(k)).forEach(k=>o[k]=r[k]);if(typeof r.seq==='number')o.seq=r.seq;return o;});
-  return {schema:1,exportedAt:new Date().toISOString(),tcData:R,historyList:[{title:P.title,category:P.category||'',testers:P.testers||[],testerRoles:P.testerRoles||{},figmaUrl:P.figmaUrl||'',snapshot:R,count:R.length,date:todayStr()}],currentProject:0,testerList:P.testers||[]};}
-async function tcXlsx(X,P){const wb=new X.Workbook();wb.creator='업무 관리 대시보드';const ws=wb.addWorksheet('테스트 시나리오 리스트'),T=[...new Set([...(P.testers||[]),...tcRowsOf(P.id).flatMap(tcAs)])];
-  const cols=[...TC_COLS.filter(([k])=>!['tester','testNote','result','status'].includes(k)).map(([k,l])=>({k,l})),{k:'tester',l:'테스터'},{k:'_res',l:'대표 결과'},{k:'_st',l:'진행상태'},...T.flatMap(n=>[{k:'tr:'+n,l:`결과(${n})`},{k:'ts:'+n,l:`진행상태(${n})`},{k:'tn:'+n,l:`테스트 내역(${n})`}])];
-  ws.columns=cols.map(c=>({header:c.l,key:c.k,width:/precondition|procedure|testDetail|expected|^tn:/.test(c.k)?40:14}));
-  tcRowsOf(P.id).forEach(r=>ws.addRow(Object.fromEntries(cols.map(c=>[c.k,c.k==='_res'?tcEff(r):c.k==='_st'?tcEffSt(r):TC_KEY_RE.test(c.k)?tcTV(r,c.k.slice(3),c.k.slice(0,2)):r[c.k]??'']))));
-  const h=ws.getRow(1);h.font={bold:true};h.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFD9EAF7'}};ws.views=[{state:'frozen',ySplit:1}];ws.eachRow(row=>{row.alignment={vertical:'top',wrapText:true};});
-  return wb.xlsx.writeBuffer();}
-const tcFileName=(P,ext)=>`테스트시나리오_${String(P.title||'').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,30)}_${todayStr().replace(/-/g,'')}.${ext}`;
-// 칸 안에서 바로 고치기(ID·대분류·중분류): 누르면 입력칸, Enter·바깥이면 저장, Esc면 취소
-function tcInline(el,r,key){const inp=document.createElement('input');inp.className='ad-input '+(key==='tcId'?'tc-id-input':'tc-inline-input');inp.value=r[key]||'';inp.maxLength=key==='tcId'?40:80;inp.setAttribute('aria-label',`${r.tcId} ${key==='tcId'?'시나리오 ID':key==='category'?'대분류':'중분류'} 고치기`);
-  el.replaceWith(inp);inp.focus();inp.select();let done=false;
-  const fin=async save=>{if(done)return;done=true;const v=inp.value.trim();
-    if(save&&v!==(r[key]||'')){if(key==='tcId'&&(!v||tcRowsOf(r.projectId).some(x=>x.id!==r.id&&x.tcId===v)))toast(v?`'${v}'는 이미 있는 시나리오 ID예요`:'시나리오 ID를 비울 수 없어요');else await tcSave(r,{[key]:v});}
-    inp.blur();render();};
-  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();fin(true);}else if(e.key==='Escape'){e.preventDefault();fin(false);}});inp.addEventListener('blur',()=>fin(true));inp.addEventListener('click',e=>e.stopPropagation());}
-onArea('#tcscenArea','change',async e=>{const el=e.target;
-  if(el.id==='tcFile'){const f=el.files[0];el.value='';if(f)tcImportJson(f);return;}
-  if(el.id==='tcSelAll'){document.querySelectorAll('#tcCardList .tc-card').forEach(c=>el.checked?tcst.sel.add(c.dataset.tc):tcst.sel.delete(c.dataset.tc));render();return;}
-  if(el.dataset.tcbulk){const k=el.dataset.tcbulk,v=el.value;el.value='';if(!v)return;const L=tcsRows.filter(r=>tcst.sel.has(r.id));
-    for(const r of L){let patch;if(k==='add')patch={tester:tcJoin([...tcAs(r),v])};else if(k==='remove')patch={tester:tcJoin(tcAs(r).filter(x=>x!==v))};
-      else{patch={[TC_BASE[k]]:v};tcAs(r).forEach(n=>patch[k+':'+n]=v);}
-      const x={...r,...patch};if(k!=='ts')patch.result=tcEff(x);if(k!=='tr')patch.status=tcEffSt(x)||x.status||'작성중';await tcSave(r,patch);}
-    toast(`${L.length}개 시나리오를 바꿨어요`);render();return;}
-  const card=el.closest('.tc-card'),r=card&&tcsRows.find(x=>x.id===card.dataset.tc);if(!r)return;
-  if(el.classList.contains('tc-select-checkbox')){el.checked?tcst.sel.add(r.id):tcst.sel.delete(r.id);render();return;}
-  if(!canWrite)return;const k=el.dataset.tcf;if(!k)return;
-  if(/^t[rs]:/.test(k))await tcSaveTester(r,k,el.value);else if(k==='screenType'){await tcSave(r,{screenType:el.value});}
-  el.blur();render();
-});
-// 글 칸(contenteditable): 칸에서 나갈 때 저장. 한 줄 칸은 Enter로 끝냄
-onArea('#tcscenArea','focusout',async e=>{const el=e.target;if(!el.matches?.('[contenteditable="true"][data-tcf]'))return;const card=el.closest('.tc-card'),r=card&&tcsRows.find(x=>x.id===card.dataset.tc);if(!r||!canWrite)return;
-  const k=el.dataset.tcf,v=el.innerText.replace(/\n$/,''),cur=TC_KEY_RE.test(k)?tcTV(r,k.slice(3),k.slice(0,2)):(r[k]??''),fmt={precondition:tcCirc,expected:tcCirc,procedure:tcSteps,testDetail:tcSent}[k];
-  const same=fmt?v===fmt(cur):v===cur;if(!same)await tcSave(r,{[k]:el.classList.contains('tc-oneline')?v.trim():v});
-  setTimeout(()=>{if(!document.activeElement?.closest?.('#tcscenArea .tc-note-pop')&&!document.activeElement?.matches?.('#tcscenArea [contenteditable="true"],#tcscenArea input:not([type=checkbox])'))render();},0);});
-onArea('#tcscenArea','keydown',e=>{const el=e.target;
-  if(e.key==='Enter'&&el.matches?.('.tc-oneline,.tc-note-cell')&&!e.shiftKey&&el.classList.contains('tc-oneline')){e.preventDefault();el.blur();return;}
-  if((e.key==='Enter'||e.key===' ')&&el.matches?.('[data-catedit]')){e.preventDefault();el.click();}});
-let tcqT;onArea('#tcscenArea','input',e=>{if(e.target.id!=='tcQ')return;clearTimeout(tcqT);tcqT=setTimeout(()=>{tcst.q=e.target.value;e.target.blur();renderTcs();const i=$('#tcQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},250);});
-onArea('#tcscenArea','click',e=>{
-  const sb=e.target.closest('[data-sumres]');if(sb){const v=sb.dataset.sumres==='NT'?'':sb.dataset.sumres;tcst.res=tcst.res===v?'ALL':v;render();return;}
-  const b=e.target.closest('button,[data-catedit]');
-  const card=e.target.closest('.tc-card'),r=card&&tcsRows.find(x=>x.id===card.dataset.tc);
-  if(!b){if(r&&e.target.closest('.tc-card-head')&&!e.target.closest('input,select,a,label,[contenteditable="true"],.tc-note-pop')){tcst.open.has(r.id)?tcst.open.delete(r.id):tcst.open.add(r.id);render();}return;} // 줄을 누르면 상세 펼치기
-  if(b.dataset.tccat){tcst.cat=b.dataset.tccat;render();return;}
-  if(b.dataset.tcproj){Object.assign(tcst,{proj:b.dataset.tcproj,tester:'ALL',type:'ALL',res:'ALL',q:''});tcst.open.clear();tcst.sel.clear();render();window.scrollTo(0,0);return;}
-  if(b.id==='tcNewProj'){tcProjModal(null);return;}
-  if(b.id==='tcImport'){$('#tcFile').click();return;}
-  const P=tcsProjects.find(p=>p.id===tcst.proj);
-  if(b.id==='tcBack'){tcst.proj=null;tcst.sel.clear();render();return;}
-  if(!P)return;
-  if(b.dataset.tctester!=null){tcst.tester=b.dataset.tctester;render();return;}
-  if(b.dataset.tctype){tcst.type=b.dataset.tctype;render();return;}
-  if(b.id==='tcStatsToggle'){tcStatsOpen=!tcStatsOpen;try{localStorage.setItem('wb-tc-stats',tcStatsOpen?'1':'0');}catch(er){}render();return;}
-  if(b.id==='tcCollapseAll'){const ids=[...document.querySelectorAll('#tcCardList .tc-card')].map(c=>c.dataset.tc),all=ids.every(id=>tcst.open.has(id));ids.forEach(id=>all?tcst.open.delete(id):tcst.open.add(id));render();return;}
-  if(b.id==='tcProjEdit'){tcProjModal(P);return;}
-  if(b.id==='tcTesterAdd'){tcTesterModal(P);return;}
-  if(b.id==='tcProjDel'){const R=tcRowsOf(P.id);evConfirm(`'${P.title}' 프로젝트를 삭제할까요?${R.length?`\n시나리오 ${R.length}건도 함께 지워져요.`:''}\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{
-    await wbDrop('tasks','tcproj',`테스트 시나리오 · ${P.title}${R.length?` (시나리오 ${R.length}건)`:''}`,[wbDocOf('tcs_projects',P),...R.map(x=>wbDocOf('tcs_rows',x))]);
-    tcsProjects=tcsProjects.filter(x=>x.id!==P.id);tcsRows=tcsRows.filter(x=>x.projectId!==P.id);tcst.proj=null;logChange('tcs','delete',P.id,P.title,null,null,'휴지통으로 옮김');render();toast('휴지통으로 옮겼어요');});return;}
-  if(b.id==='tcAdd'){(async()=>{const type=tcst.type==='BO'?'BO':'FO',now=new Date().toISOString(),R=tcRowsOf(P.id);
-    const data={projectId:P.id,tcId:tcNextId(P.id,type),screenType:type,screen:'',category:'',subCategory:'',precondition:'',procedure:'',testDetail:'',expected:'',constraintTag:'없음',integrationTag:'없음',tester:tcst.tester!=='ALL'?tcst.tester:'',testNote:'',result:'',status:'작성중',seq:R.reduce((m,x)=>Math.max(m,x.seq??0),-1)+1,createdAt:now,updatedAt:now};
-    try{const ref=await db.collection('tcs_rows').add(data);if(!tcsRows.some(x=>x.id===ref.id))tcsRows.push({id:ref.id,...data});tcst.open.add(ref.id);tcst.res='ALL';tcst.q='';render();}catch(err){handleWriteError(err);}})();return;}
-  if(b.id==='tcXlsx'||b.id==='tcJson'){const label=b.textContent;b.disabled=true;
-    (async()=>{try{if(b.id==='tcJson')await downloads.save({filename:tcFileName(P,'json'),data:new Blob([JSON.stringify(tcBackup(P),null,2)],{type:'application/json'})});
-      else{const X=await loadExcel();await downloads.save({filename:tcFileName(P,'xlsx'),data:new Blob([await tcXlsx(X,P)])});}}
-      catch(err){if(err?.code!=='declined')toast(err?.message==='load'?'엑셀 변환 도구를 불러오지 못했어요. 잠시 후 다시 눌러 주세요':'파일을 만들지 못했어요');}
-      finally{b.disabled=false;b.textContent=label;}})();return;}
-  if(b.id==='tcBulkClear'){tcst.sel.clear();render();return;}
-  if(b.id==='tcBulkDel'){const L=tcsRows.filter(x=>tcst.sel.has(x.id));if(!L.length)return;evConfirm(`선택한 시나리오 ${L.length}개를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{
-    await wbDrop('tasks','tcrow',`시나리오 ${L.length}건 · ${P.title}`,L.map(x=>wbDocOf('tcs_rows',x)));const ids=new Set(L.map(x=>x.id));tcsRows=tcsRows.filter(x=>!ids.has(x.id));tcst.sel.clear();logChange('tcs','delete',P.id,P.title,null,null,`시나리오 ${L.length}건 휴지통으로`);render();toast('휴지통으로 옮겼어요');});return;}
-  if(!r)return;
-  if(b.dataset.tcopen!=null){tcst.open.has(r.id)?tcst.open.delete(r.id):tcst.open.add(r.id);render();return;}
-  if(b.dataset.editTcid!=null&&canWrite){e.stopPropagation();tcInline(b,r,'tcId');return;}
-  if(b.dataset.catedit&&canWrite){e.stopPropagation();tcInline(b,r,b.dataset.catedit);return;}
-  if(b.dataset.pick!=null){tcPickOpen(r,b);return;}
-  if(b.dataset.note!=null){const pop=b.nextElementSibling,open=pop.hidden;tcNoteClose();if(!open)return;const q=b.getBoundingClientRect();pop.hidden=false;const pw=pop.offsetWidth,ph=pop.offsetHeight;
-    pop.style.left=`${Math.max(16,Math.min(q.left,innerWidth-pw-16))}px`;pop.style.top=`${q.bottom+4+ph>innerHeight?Math.max(16,q.top-4-ph):q.bottom+4}px`;b.setAttribute('aria-expanded','true');pop.querySelector('.tc-note-cell')?.focus();return;}
-  if(b.dataset.tcdel!=null&&canWrite){(async()=>{await wbDrop('tasks','tcrow',`시나리오 · ${r.tcId||''} · ${P.title}`,[wbDocOf('tcs_rows',r)]);tcsRows=tcsRows.filter(x=>x.id!==r.id);tcst.open.delete(r.id);tcst.sel.delete(r.id);logChange('tcs','delete',r.id,r.tcId,null,null,'휴지통으로 옮김');render();toast(`'${r.tcId}' 시나리오를 휴지통으로 옮겼어요`);})();}
 });
 
 /* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
@@ -3929,9 +3471,9 @@ let evPurged=false;
 /* ----- 휴지통(업무 관리 · 주간 보고): trash 컬렉션 문서 하나 = 지운 묶음 하나 {at, area, type, label, payload, by}
    payload.docs = 지운 문서 그대로 [{coll, id, data}] → 복구하면 같은 id로 다시 씀. 보고서 카테고리는 payload {docId, cat, idx} ----- */
 let wbTrash=[],wbPurged=false;
-const WB_TRASH_TYPE={tcproj:'테스트 시나리오 프로젝트',tcrow:'테스트 시나리오',notice:'공지',cvcase:'회귀 검증 케이스',cvrun:'회귀 검증 회차',manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
+const WB_TRASH_TYPE={notice:'공지',cvcase:'회귀 검증 케이스',cvrun:'회귀 검증 회차',manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
 const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
-const wbLocal=c=>({notices,tcs_projects:tcsProjects,tcs_rows:tcsRows,tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns,cvt_cases:cvtCases,cvt_runs:cvtRuns})[c]||[];
+const wbLocal=c=>({notices,tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns,cvt_cases:cvtCases,cvt_runs:cvtRuns})[c]||[];
 // 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
 async function wbDrop(area,type,label,docs,extra={}){
   await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});
@@ -5314,7 +4856,7 @@ const HFIELDS={manual:[['title','제목'],['category','분류'],['version','버�
   site:[['title','제목'],['subtitle','설명'],['rmsTemplate','RMS 주소 규칙']],
   report:[]
 };
-const HENT={tcs:'테스트 시나리오',notice:'공지',regress:'회귀 검증',manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
+const HENT={notice:'공지',regress:'회귀 검증',manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
 const HACT={create:['등록','s-done'],update:['수정','s-doing'],delete:['삭제','h-del'],confirm:['확정','s-review'],unconfirm:['확정 해제','s-wait'],restore:['복원','s-review']};
 function hval(f,v){
   if(v===''||v==null)return '';
@@ -5478,8 +5020,6 @@ render();
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave','home'].includes(state.mode))render();},onErr);
   db.collection('checklists').onSnapshot(s=>{checklists=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='home')render();},onErr);
   db.collection('notices').onSnapshot(s=>{notices=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='home'||state.mode==='notice')render();},onErr);
-  db.collection('tcs_projects').onSnapshot(s=>{tcsProjects=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='tcscen')render();},onErr);
-  db.collection('tcs_rows').onSnapshot(s=>{tcsRows=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='tcscen')render();},onErr);
   db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');trashPurge('regress');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals'||state.mode==='regress')render();},onErr);
   db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);

@@ -1226,6 +1226,8 @@ button.sfProf:hover{background:var(--sunk)}
 .ntBy{display:flex;align-items:center;gap:6px}
 .ntPin{flex:none;font-size:12px;font-weight:700;padding:0 8px;border-radius:999px;background:var(--accent-soft);color:var(--bad)}
 .ntBody{overflow-wrap:anywhere;line-height:1.7}
+/* 공지 작성: 내용 칸(서식 편집) — 댓글 칸과 같은 상자, 더 높게 */
+.ntEd{width:100%;box-sizing:border-box;min-height:220px;max-height:55vh;overflow:auto;border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;font-size:14px;font-weight:400;line-height:1.7;color:var(--fg);background:var(--surface);outline:none}.ntEd:focus{border-color:var(--accent)}
 /* 홈 주간 일정: 사람별 표 */
 .hmWk{width:100%;min-width:720px;border-collapse:collapse;table-layout:fixed}
 .hmWk th,.hmWk td{border-bottom:1px solid var(--line);border-left:1px solid var(--line);padding:6px;vertical-align:top;text-align:left}
@@ -2229,7 +2231,7 @@ function rtSelEd(){const s=getSelection();if(!canWrite||!s.rangeCount||s.isColla
   const n=s.anchorNode,ed=(n.nodeType===1?n:n.parentElement)?.closest?.('[data-rt]');return ed&&ed.getAttribute('contenteditable')==='true'&&ed.contains(s.focusNode)?ed:null;}
 function rtPlace(){
   const pop=rtPopEl(),ed=rtSelEd();
-  if(!ed){if(!pop.querySelector('details[open]')&&!pop.contains(document.activeElement))pop.hidden=true;return;}
+  if(!ed){if(!rtEdCur?.isConnected||(!pop.querySelector('details[open]')&&!pop.contains(document.activeElement)))pop.hidden=true;return;}
   rtEdCur=ed;rtRange=getSelection().getRangeAt(0).cloneRange();pop.hidden=false;
   const r=rtRange.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight,touch=matchMedia('(pointer:coarse)').matches;
   const top=touch||r.top-ph-8<4?Math.min(r.bottom+8,innerHeight-ph-4):r.top-ph-8; // 터치는 기본 복사 메뉴와 겹치지 않게 아래
@@ -2672,7 +2674,7 @@ function openNotify(){
 }
 
 /* ---------- task modal ---------- */
-function closeModal(){$('#modalRoot').innerHTML='';modalDirty=false;closeWarned=false;wlRefresh=null;}
+function closeModal(){$('#modalRoot').innerHTML='';if(rtPop)rtPop.hidden=true;modalDirty=false;closeWarned=false;wlRefresh=null;}
 // 입력한 내용이 있으면 바깥 클릭·Esc·취소로 바로 닫지 않고 한 번 알려 줌. 한 번 더 하면 닫힘
 let modalDirty=false, closeWarned=false;
 $('#modalRoot').addEventListener('input',()=>{modalDirty=true;closeWarned=false;});
@@ -3189,7 +3191,7 @@ function openNotice(n,edit){
   if(!ntCan(n))return;
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="ntForm" novalidate style="max-width:640px"><header><h2>${n?'공지 수정':'공지 작성'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
     <div class="body" style="grid-template-columns:1fr"><div class="f"><label for="ntTitle">제목 <b class="req">*</b></label><input id="ntTitle" maxlength="100" value="${esc(n?.title||'')}" autocomplete="off"></div>
-      <div class="f"><label>내용</label>${rtEditor('ntEd','id="ntEd" aria-label="공지 내용"',n?(n.html?rtClean(n.html):rtFromText(n.text)):'','공지 내용을 입력해 주세요')}</div>
+      <div class="f"><label id="ntEdL" for="ntEd">내용</label>${rtEditor('ntEd','id="ntEd" aria-labelledby="ntEdL"',n?(n.html?rtClean(n.html):rtFromText(n.text)):'','공지 내용을 입력해 주세요')}</div>
       <label class="cfItem"><input type="checkbox" id="ntPinned" ${n?.pinned?'checked':''}>목록 맨 위에 고정</label></div>
     <footer><span class="err" id="ntErr"></span><div class="r"><button class="btn" type="button" id="ntCancel">취소</button><button class="btn primary" type="submit" id="ntSave">${n?'저장':'등록'}</button></div></footer></form></div>`;
   $('#xClose').onclick=$('#ntCancel').onclick=askClose;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});

@@ -1144,6 +1144,82 @@ div.tfNote{height:auto;overflow:auto}
 .evPost.warn{color:var(--bad-strong)}
 .ev.evops{background:#e3edff;color:#1c5fbf;display:flex;align-items:center;gap:4px}
 tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
+/* 홈(마이페이지) */
+#homeArea{max-width:960px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.hmHello{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hmHello h2{margin:0;font-size:22px;line-height:1.35;font-weight:800}
+.hmHello h2 em{font-style:normal;color:var(--ok-strong)}
+.hmHello p{margin:4px 0 0}
+.hmBtns{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.hmCards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:760px){.hmCards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.hmCard{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:14px 16px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);color:var(--fg);min-width:0}
+.hmCard:hover,.hmCard:focus-visible{border-color:var(--accent)}
+.hmCard.pri{background:var(--ok-soft);border-color:var(--ok-border)}
+.hmCard.pri .hmCardL,.hmCard.pri b{color:var(--ok)}
+.hmCard b{font-size:26px;font-weight:800;line-height:1.2}.hmCard b small{font-size:14px;margin-left:2px}
+.hmCard .legend{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hmCardL{font-size:13px;font-weight:700;color:var(--ink-soft)}
+.hmCard .bad{color:var(--bad);font-weight:700}
+.hmSec h3{margin:0 0 8px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+.hmList{display:flex;flex-direction:column;padding:4px}
+.hmItem{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;background:none;text-align:left;border-radius:var(--r);width:100%;color:inherit}
+.hmItem:hover{background:var(--sunk)}
+.hmItem .t{flex:1;min-width:0;display:flex;flex-direction:column}
+.hmItem .t b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hmIco{flex:none;width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:800;background:var(--warn-soft);color:var(--warn)}
+.hmIco.bad{background:var(--bad-soft);color:var(--bad)}.hmIco.lv{background:var(--ok-soft);color:var(--ok)}
+.hmEmpty{padding:12px 14px;color:var(--muted)}
+.ckRow{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line)}
+.ckRow label{flex:1;display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
+.ckRow label span{overflow-wrap:anywhere}
+.ckRow.done label span{text-decoration:line-through;color:var(--muted)}
+.ckAdd{display:flex;gap:6px;padding:8px}.ckAdd input{flex:1;min-width:0}
+.hmTeam{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.hmMate{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);min-width:0}
+.hmMateH{display:flex;align-items:center;gap:8px;min-width:0}.hmMateH b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hmMate.me{border-color:var(--accent)}
+.hmWeekBar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}.hmWeekBar h3{margin:0}
+.hmWeek{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;background:var(--surface)}
+.hmDay{min-height:110px;padding:6px;border-left:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}
+.hmDay:first-child{border-left:0}
+.hmDay.we{background:var(--sunk)}.hmDay.today{background:var(--ok-soft)}
+.hmDayH{font-size:12px;font-weight:700;color:var(--ink-soft)}
+@media (max-width:700px){.hmWeek{grid-template-columns:1fr}.hmDay{border-left:0;border-top:1px solid var(--line);min-height:0}.hmDay:first-child{border-top:0}}
+/* GNB 아래: 어두운 모드 스위치 + 내 프로필 */
+.gnbHome{padding-bottom:4px}
+.sideFoot{margin-top:auto;position:sticky;bottom:0;background:inherit;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.sfRow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 6px;font-size:13px;color:var(--ink-soft)}
+.swt{flex:none;width:38px;height:22px;border-radius:999px;border:0;background:var(--grey-400);position:relative;padding:0;transition:background .2s}
+.swt span{position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s}
+.swt[aria-checked="true"]{background:var(--ok-strong)}.swt[aria-checked="true"] span{transform:translateX(16px)}
+.sfMe{display:flex;align-items:center;gap:4px;padding:6px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.sfProf{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;padding:2px;text-align:left;color:inherit;border-radius:var(--r-sm)}
+.sfProf:hover{background:var(--sunk)}
+.sfProf .lbl{min-width:0;display:flex;flex-direction:column;line-height:1.3}
+.sfProf .lbl b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfProf .lbl .legend{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sfAct{justify-content:flex-start;gap:4px}.sfAct .btn{padding:3px 8px;font-size:12px}
+.shell.fold .sideFoot .lbl{display:none}
+.shell.fold .sfRow{justify-content:center;padding:0}.shell.fold .sfMe{justify-content:center;padding:2px;border:0;background:none}
+/* 어두운 모드: 같은 변수 이름에 어두운 값. 버튼 바탕(accent-dark)은 밝게, 그 위 글자(accent-fg)는 어둡게 */
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f1419; --surface:#171d24; --sunk:#1f2731; --line:#2e3946;
+  --fg:#e6eaef; --ink-soft:#b6bfc9; --muted:rgba(230,236,245,.64); --grey-400:#5d6875; --na:#8d97a3;
+  --accent:#fc6969; --accent-dark:#ff8f8a; --accent-soft:#3a2326; --accent-fg:#1d0b0b;
+  --ok:#86e3a6; --ok-strong:#4cc47a; --ok-soft:#163626; --ok-border:#2f6b45;
+  --warn:#ffb877; --warn-strong:#ff9a2e; --warn-soft:#3b2915; --warn-border:#7a4f20;
+  --bad:#ff9499; --bad-strong:#ff5f6b; --bad-soft:#3d1d22; --bad-border:#7a3038;
+  --overlay:rgba(0,0,0,.6);
+  --shadow-3:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
+  --shadow-toast:0 8px 24px rgba(0,0,0,.5);
+}
+:root[data-theme="dark"] .evp-진행,:root[data-theme="dark"] .evTable .evf.evSt.evp-진행,:root[data-theme="dark"] .ev.evops{background:#1d2c45;color:#a6c8ff}
+:root[data-theme="dark"] .evp-연장,:root[data-theme="dark"] .evTable .evf.evSt.evp-연장{background:#3a2d12;color:#ffd27d}
+:root[data-theme="dark"] .evSt.st-연장{color:#ffd27d}
+:root[data-theme="dark"] .rtBgI{background:#5a4a12}
+:root[data-theme="dark"] .menuPick{background:var(--bg)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 /* 로그인 카드: 화면 가운데의 작은 흰 카드 */
 #authGate{align-items:center}
@@ -1169,11 +1245,13 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 
 
 <!-- 화면 틀: 왼쪽 세로 메뉴(섹션 아코디언·접기, 좁은 화면에서는 서랍) + 위 헤더 + 본문 카드 -->
+<script>try{if(localStorage.getItem('wb-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
 <div class="shell" id="shell">
   <aside class="side" id="side" aria-label="메뉴">
     <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button><button type="button" class="sideFold sidePick" id="sidePick" aria-label="메뉴 선택 화면 열기" title="메뉴 선택 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button></div>
     <nav class="sideNav" id="modeTabs" role="tablist" aria-orientation="vertical" aria-label="화면">
     </nav>
+    <div class="sideFoot" id="sideFoot"></div>
   </aside>
   <div class="sideBackdrop" id="sideBackdrop" aria-hidden="true"></div>
   <div class="main">
@@ -1184,12 +1262,11 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
     <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
-      <span class="meChip" id="btnProfile" hidden></span><button class="btn ghost" type="button" id="btnNotify" hidden>알림 설정</button>
-      <button class="btn ghost" type="button" id="btnLogout" hidden>로그아웃</button>
     </div>
   </header>
 <div class="wrap">
   <div class="banner" id="banner" hidden></div>
+  <div class="area" id="homeArea" hidden></div>
 
   <div class="area" id="taskArea">
 
@@ -1503,7 +1580,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
       box.innerHTML=`<span class="syncDot"></span><span class="syncText" id="syncText"></span>
         <button class="btn ghost" type="button" id="syncNow" title="서버에서 전부 다시 받아 와요">지금 동기화</button>
         <div class="onlineWrap"><button class="btn ghost" type="button" id="onlineBtn" aria-expanded="false" aria-controls="onlineList"></button><div class="onlineList" id="onlineList" hidden></div></div>`;
-      row.insertBefore(box,document.getElementById('btnProfile'));
+      row.appendChild(box);
       box.querySelector('#syncNow').onclick=()=>Promise.all(Object.keys(loading).map(c=>load(c,true))).catch(()=>{});
       const btn=box.querySelector('#onlineBtn'),list=box.querySelector('#onlineList');
       btn.onclick=()=>{list.hidden=!list.hidden;btn.setAttribute('aria-expanded',String(!list.hidden));};
@@ -1558,11 +1635,12 @@ let projects=[], tasks=[], wlogs=[], comments=[], templates=[], wlRefresh=null;
 const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',project:'all',part:'all',status:'all',assignee:'all',q:'',late:false,sort:{key:'dueDate',dir:1}};
 let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 화면(settings/menus.home)을 쓰지 않음
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
+{let sm=null;try{sm=sessionStorage.getItem('wb-mode');}catch(e){}state.mode=sm||'home';modeFromUser=!!sm;} // 새로 접속하면 홈, 같은 탭 새로고침은 보던 화면
 // 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
+{const h=location.hash.slice(1);if(['home','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
-function persistUI(){modeFromUser=true;try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
+function persistUI(){modeFromUser=true;try{sessionStorage.setItem('wb-mode',state.mode);}catch(e){}try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1570,7 +1648,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const BASE_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
 let MENU_GRPS=BASE_GRPS;
-const BASE_ITEMS=[['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['leave','people','일정·연차 관리'],
+const BASE_ITEMS=[['home','home','홈'],['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['leave','people','일정·연차 관리'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
@@ -1598,10 +1676,11 @@ const menuName=k=>String(menuCfg.names?.[k]||'').trim()||defName(k)||k;
 function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
 // 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
 function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
-const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:MENU_GRPS.flatMap(([g])=>menuOrder(g)).find(menuOpen)||'tasks';
+const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:'home';
+NAV_ICO.home='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>';
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),myLevel(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access,menuCfg.accessLv]);if(key===navKey)return;navKey=key;
-  $('#modeTabs').innerHTML=MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
+  $('#modeTabs').innerHTML=(menuOpen('home')?`<div class="gnbHome"><button type="button" role="tab" class="navItem" title="${esc(menuName('home'))}" data-mode="home">${NAV_ICO.home}<span class="lbl">${esc(menuName('home'))}</span></button></div>`:'')+MENU_GRPS.map(([g])=>{const items=menuOrder(g).filter(menuOpen);if(!items.length)return '';const gn=menuName('grp:'+g);
     return `<section class="gnbGroup" data-grp="${g}"><button type="button" class="gnbHead" aria-expanded="true" aria-controls="grp-${g}"><span class="lbl">${esc(gn)}</span><span class="chev" aria-hidden="true"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></span></button>
       <div class="gnbBody" id="grp-${g}">${items.map(k=>`<button type="button" role="tab" class="navItem" title="${esc(menuName(k))}" data-mode="${k}">${NAV_ICO[k]||NAV_ICO[customOf(k)?.to]||NAV_ICO.link}<span class="lbl">${esc(menuName(k))}</span></button>`).join('')}</div></section>`;}).join('');
   sideDraw();
@@ -1730,14 +1809,14 @@ function applyMode(){
   renderNav();
   if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  const AREAS={tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
+  const AREAS={home:'homeArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
-  if(!AREAS[state.mode])state.mode='tasks';
+  if(!AREAS[state.mode])state.mode='home';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
   $('#linkArea').hidden=!customOf(state.mode);
   $('#taskActions').hidden=state.mode!=='tasks';$('#leaveActions').hidden=state.mode!=='leave';
   $('#btnLeaveAdd').disabled=!canWrite;
-  $('#btnProfile').hidden=$('#btnLogout').hidden=!window.wbAuth||!storeReady;$('#btnNotify').hidden=$('#btnProfile').hidden;$('#btnProfile').innerHTML=myMember()?`${avatarHtml(myMember(),40)}<span class="meName">${esc(myMember().name)}</span>${roleBadge()}`:roleBadge();
+  drawSideFoot();
   const navMode=state.mode==='hours'?'staff':state.mode; // 업무 시간은 인력 관리 안의 탭
   document.querySelectorAll('#modeTabs [data-mode]').forEach(b=>b.setAttribute('aria-selected',b.dataset.mode===navMode));
   $('#pageTitle').textContent=menuName(navMode);
@@ -1766,6 +1845,7 @@ function renderBody(){
   if(state.mode!=='eventops')$('#mnPanel')?.remove();
   if(state.mode==='manuals'){renderManuals();return;}
   if(state.mode==='regress'){if(!document.activeElement?.matches?.('#cvQ,#regressArea .cvMemo'))renderRegress();return;}
+  if(state.mode==='home'){renderHome();return;}
   if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
@@ -2366,8 +2446,6 @@ async function gnbReload(mode){
   state.mode=mode;state.post=null;persistUI();
   try{if(location.hash)history.replaceState(null,'',location.pathname+location.search+'#'+mode);}catch(e){} // 주소의 #메뉴가 저장한 메뉴보다 앞서므로 맞춰 둠
   location.reload();}
-$('#btnNotify').addEventListener('click',openNotify);
-$('#btnLogout').addEventListener('click',()=>window.wbAuth?.signOut());
 $('#btnLeaveAdd').addEventListener('click',()=>openSched());
 $('#main').addEventListener('click',async e=>{
   if(e.target.closest('a,select'))return;
@@ -2908,11 +2986,8 @@ onArea('#leaveArea','click',async e=>{if(e.target.closest('#lAddLeave')){openLea
   try{await Promise.all(ch.map(([m,o])=>db.collection('members').doc(m.id).update({order:o})));logChange('member','update','order','연차 현황 순서',null,null,L.map(m=>m.name).join(' → '));}catch(err){handleWriteError(err);}});
 $('#leaveArea').addEventListener('toggle',e=>{if(e.target.classList?.contains('lvSum'))lvSumOpen=e.target.open;},true);
 // 월 달력 하나: 일정 관리(lstate, 보기 필터 state.cf)와 연차 관리(astate, 연차만)가 같이 씀
-function calPanel(st,cf,withFilters,leaveRo){
-  const T=todayStr(), [cy,cm]=st.month.split('-').map(Number);
-  const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
-  const last=new Date(cy,cm,0), end=new Date(last);end.setDate(last.getDate()+(7-((last.getDay()+6)%7)-1));
-  const a0=ymd(start), b0=ymd(end);
+// 달력 칸별 항목(일정·배포·연차·업무 마감·이벤트 운영): 월 달력과 홈 주간 일정이 같이 씀
+function calDayMap(a0,b0,cf,withFilters,leaveRo){
   const byDay={};const push=(k,html)=>(byDay[k]=byDay[k]||[]).push(html);
   if(cf.leave)for(const l of [...leaves].filter(l=>isShown(memOf(l.memberId))).sort((a,b)=>memOf(a.memberId).name.localeCompare(memOf(b.memberId).name,'ko')))for(const d of leaveDates(l))
     push(d,`<div class="lv ${ltype(l.type).cls}${leaveRo?' lvRo':''}" ${leaveRo?'':`data-lid="${esc(l.id)}" tabindex="0"`} title="${esc(memOf(l.memberId).name+' · '+leaveLabel(l)+(l.note?' · '+l.note:''))}">${avatarHtml(memOf(l.memberId),14)}${esc(memOf(l.memberId).name)} ${esc(ltype(l.type).label)}</div>`);
@@ -2929,6 +3004,14 @@ function calPanel(st,cf,withFilters,leaveRo){
       if(s0&&s0>=a0&&s0<=b0)push(s0,chip('시작'));if(e0&&e0!==s0&&e0>=a0&&e0<=b0)push(e0,chip('종료'));}}
   if(cf.due)for(const t of workItems().filter(t=>t.status!=='done'&&t.dueDate&&t.dueDate>=a0&&t.dueDate<=b0))
     push(t.dueDate,`<div class="ev evdue" title="${esc('마감 · '+t.title+' · '+(asNames(t).join(', ')||'미지정'))}">마감 · ${esc(t.title)}</div>`);
+  return byDay;
+}
+function calPanel(st,cf,withFilters,leaveRo){
+  const T=todayStr(), [cy,cm]=st.month.split('-').map(Number);
+  const first=new Date(cy,cm-1,1), start=new Date(first);start.setDate(1-((first.getDay()+6)%7));
+  const last=new Date(cy,cm,0), end=new Date(last);end.setDate(last.getDate()+(7-((last.getDay()+6)%7)-1));
+  const a0=ymd(start), b0=ymd(end);
+  const byDay=calDayMap(a0,b0,cf,withFilters,leaveRo);
   let cells='';
   for(const d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
     const k=ymd(d), items=byDay[k]||[];
@@ -2994,6 +3077,83 @@ function renderLink(c){
     <p class="legend" style="margin:0">화면이 비어 보이면 그 사이트가 다른 페이지 안에 열리는 것을 막아 둔 거예요. '새 창에서 열기'를 쓰세요.</p>`
     :`<div class="empty"><h2>연결할 주소가 없어요</h2><p>메뉴 관리에서 이 메뉴의 URL을 입력해 주세요.</p></div>`;
 }
+
+/* ---------- 홈(마이페이지): 내 할 일 · 요약 · 확인할 것 · 체크리스트 · 오늘 팀 · 주간 일정 ---------- */
+const hmst={week:null};
+let checklists=[];
+const homeMonday=d=>{const x=new Date(d+'T00:00:00');x.setDate(x.getDate()-((x.getDay()+6)%7));return ymd(x);};
+const ofMem=(t,x)=>t.assigneeId===x.id||(t.coIds||[]).includes(x.id)||(!t.assigneeId&&t.assignee===x.name);
+function renderHome(){
+  const area=$('#homeArea');
+  if(area.contains(document.activeElement)&&document.activeElement.id==='ckIn')return; // 체크리스트 입력 중엔 다시 그리지 않음
+  if(!storeReady){area.innerHTML=`<div class="empty"><h2>불러오는 중입니다</h2></div>`;return;}
+  const m=myMember(),T=todayStr(),M=T.slice(0,7),Y=+T.slice(0,4),soon=addDays(T,3),W=workItems();
+  const mine=m?W.filter(isMine):[];
+  const done=mine.filter(t=>t.status==='done'&&(t.doneDate||'').startsWith(M)).length;
+  const review=m?tasks.filter(t=>isMyReq(t)&&t.status==='review').length:0;
+  const doing=mine.filter(t=>t.status==='doing'||t.status==='review').length,late=mine.filter(isLate).length;
+  const st=m?memberStats(m,Y):null,rate=st&&st.quota?Math.round(st.used/st.quota*100):null;
+  const due=mine.filter(t=>t.status!=='done'&&t.status!=='hold'&&t.dueDate&&t.dueDate<=soon).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
+  const myLv=m?leaves.filter(l=>l.memberId===m.id&&(l.endDate||l.date||'')>=T&&(l.date||'')<=addDays(T,14)).sort((a,b)=>a.date.localeCompare(b.date)):[];
+  const N=due.length+myLv.length,dd=new Date(T+'T00:00:00');
+  const card=(id,lab,val,unit,sub,pri)=>`<button type="button" class="hmCard${pri?' pri':''}" data-hcard="${id}"><span class="hmCardL">${lab}</span><b class="num">${val}<small>${unit}</small></b><span class="legend">${sub}</span></button>`;
+  const ttl=t=>{const r=rootOf(t);return r.id===t.id?t.title:`${r.title} · ${partOf(t.part).label}`;};
+  const checks=[...due.map(t=>`<button type="button" class="hmItem" data-hpost="${esc(rootOf(t).id)}"><span class="hmIco${isLate(t)?' bad':''}" aria-hidden="true">!</span><span class="t"><b>${esc(ttl(t))}</b><span class="legend">${esc(statusOf(t.status).label)} · 마감 ${fmtDate(t.dueDate)} ${dday(t.dueDate)}</span></span>${isLate(t)?'<b class="lateTag">지연</b>':''}</button>`),
+    ...myLv.map(l=>`<button type="button" class="hmItem" data-hlv="${esc(l.id)}"><span class="hmIco lv" aria-hidden="true">휴</span><span class="t"><b>${esc(leaveLabel(l))}</b><span class="legend">${fmtDate(l.date)}${l.endDate&&l.endDate!==l.date?' ~ '+fmtDate(l.endDate):''} · ${dday(l.date)}</span></span></button>`)].join('');
+  const ck=m?checklists.find(c=>c.id===m.id):null,items=Array.isArray(ck?.items)?ck.items:[];
+  const team=lvOrdered().map(x=>{const lv=leaveOn(x.id,T),L=W.filter(t=>ofMem(t,x)),d=L.filter(t=>t.status==='doing'||t.status==='review').length,l=L.filter(isLate).length;
+    return `<div class="hmMate${x.id===m?.id?' me':''}"><div class="hmMateH">${avatarHtml(x,28)}<b>${esc(x.name)}${x.id===m?.id?' <span class="legend">나</span>':''}</b><span class="pill ${lv?'s-hold':'s-done'}">${lv?esc(ltype(lv.type).label):'근무'}</span></div><span class="legend">진행 ${d}건${l?` · <b class="lateTag">지연 ${l}</b>`:''}</span></div>`;}).join('');
+  const ws=hmst.week||homeMonday(T),we=addDays(ws,6),byDay=calDayMap(ws,we,calFilter(),true,false);lvDayItems=byDay;
+  const days=[...Array(7)].map((_,i)=>{const d=addDays(ws,i),L=byDay[d]||[];return `<div class="hmDay${d===T?' today':''}${isWeekend(d)?' we':''}" data-date="${d}"><div class="hmDayH">${'월화수목금토일'[i]} <span class="num">${md(d)}</span></div>${L.slice(0,5).join('')}${L.length>5?`<button type="button" class="more" data-more="${d}">+${L.length-5}건</button>`:''}</div>`;}).join('');
+  area.innerHTML=`<div class="hmHello">${m?avatarHtml(m,56):''}<div><h2>${m?esc(m.name)+'님,':'안녕하세요,'}<br>오늘 확인할 일이 <em>${N}건</em> 있어요</h2><p class="legend">${dd.getMonth()+1}월 ${dd.getDate()}일 ${'일월화수목금토'[dd.getDay()]}요일${m?'':' · 구성원 목록에서 나를 고르면 내 업무가 보여요'}</p></div>
+      <div class="hmBtns">${m?'':'<button class="btn" type="button" id="hmWho">내 이름 선택</button>'}${canWrite?'<button class="btn" type="button" id="hmLeave">+ 휴가</button><button class="btn primary" type="button" id="hmTask">+ 업무</button>':''}</div></div>
+    <div class="hmCards">${card('done','이번 달 완료',done,'건',`${dd.getMonth()+1}월에 끝낸 내 업무`,true)}${card('review','확인 대기',review,'건','내가 요청한 업무 중 검토중')}${card('doing','진행 중 업무',doing,'건',late?`<span class="bad">지연 ${late}건</span>`:'지연 없음')}${card('leave','연차 사용',rate==null?'—':rate,rate==null?'':'%',st?`${fmtDays(st.used)}일 사용 · 예정 ${fmtDays(st.planned)}일`:'연차 일수 미설정')}</div>
+    <section class="hmSec"><h3>확인할 것 <span class="legend">${N}건</span></h3><div class="panel hmList">${checks||'<div class="hmEmpty">마감이 3일 안에 다가온 업무와 2주 안의 내 휴가가 없어요.</div>'}</div></section>
+    ${m?`<section class="hmSec"><h3>내 체크리스트 <span class="legend">${items.filter(x=>!x.done).length}개 남음</span></h3><div class="panel">${items.map(x=>`<div class="ckRow${x.done?' done':''}"><label><input type="checkbox" data-ck="${esc(x.id)}" ${x.done?'checked':''}><span>${esc(x.text)}</span></label><button type="button" class="btn ghost sm" data-ckdel="${esc(x.id)}">지우기</button></div>`).join('')}
+      <form class="ckAdd" id="ckForm"><input class="sel" id="ckIn" maxlength="200" placeholder="할 일을 쓰고 Enter" aria-label="체크리스트 할 일" autocomplete="off"><button class="btn" type="submit">추가</button></form></div><p class="legend" style="margin:6px 0 0">체크리스트는 나만 쓰는 메모예요. 업무 목록·변경 이력에는 남지 않아요.</p></section>`:''}
+    <section class="hmSec"><h3>오늘 우리 팀 <span class="legend">${team?`근무 ${lvOrdered().filter(x=>!leaveOn(x.id,T)).length}명`:''}</span></h3>${team?`<div class="hmTeam">${team}</div>`:'<div class="panel hmEmpty">구성원이 없어요.</div>'}</section>
+    <section class="hmSec"><div class="hmWeekBar"><h3>주간 일정 <span class="legend">${md(ws)} ~ ${md(we)}</span></h3><span class="spacer"></span><button class="btn ghost sm" type="button" id="hmPrev">← 지난주</button><button class="btn ghost sm" type="button" id="hmThis">이번 주</button><button class="btn ghost sm" type="button" id="hmNext">다음 주 →</button></div><div class="hmWeek">${days}</div></section>`;
+}
+async function ckSave(items){const m=myMember();if(!m)return;const prev=checklists.find(c=>c.id===m.id),doc={memberId:m.id,items,updatedAt:new Date().toISOString()};
+  checklists=[...checklists.filter(c=>c.id!==m.id),{id:m.id,...doc}];render();
+  try{await db.collection('checklists').doc(m.id).set(doc);}catch(err){checklists=[...checklists.filter(c=>c.id!==m.id),...(prev?[prev]:[])];render();handleWriteError(err);}}
+const ckItems=()=>{const m=myMember(),c=m&&checklists.find(x=>x.id===m.id);return Array.isArray(c?.items)?c.items:[];};
+onArea('#homeArea','submit',e=>{if(e.target.id!=='ckForm')return;e.preventDefault();const v=$('#ckIn').value.trim();if(!v)return;$('#ckIn').value='';ckSave([...ckItems(),{id:evUid(),text:v,done:false,at:new Date().toISOString()}]).then(()=>$('#ckIn')?.focus());});
+onArea('#homeArea','change',e=>{const id=e.target.dataset.ck;if(id)ckSave(ckItems().map(x=>x.id===id?{...x,done:e.target.checked}:x));});
+onArea('#homeArea','click',e=>{
+  const b=e.target.closest('button,[data-lid],[data-eid],[data-evrow]');if(!b)return;
+  if(b.id==='hmTask'){state.mode='tasks';state.post=null;pnOpen=true;persistUI();render();window.scrollTo(0,0);setTimeout(()=>$('#pnForm input:not([type=hidden]):not([type=checkbox])')?.focus(),0);return;}
+  if(b.id==='hmLeave'){openLeave(null,undefined,undefined,true);return;}
+  if(b.id==='hmWho'){openWhoAmI();return;}
+  if(b.id==='hmPrev'||b.id==='hmNext'){hmst.week=addDays(hmst.week||homeMonday(todayStr()),b.id==='hmNext'?7:-7);render();return;}
+  if(b.id==='hmThis'){hmst.week=null;render();return;}
+  const c=b.dataset.hcard;if(c){if(c==='leave'){state.mode='leave';persistUI();render();return;}
+    Object.assign(state,{mode:'tasks',post:null,project:'all',late:false,rpart:'',assignee:c==='review'?'myreq':'me',status:c});persistUI();render();window.scrollTo(0,0);return;}
+  if(b.dataset.hpost){state.mode='tasks';openPost(b.dataset.hpost);return;}
+  if(b.dataset.hlv){const l=leaves.find(x=>x.id===b.dataset.hlv);if(l)openLeave(l);return;}
+  if(b.dataset.ckdel){ckSave(ckItems().filter(x=>x.id!==b.dataset.ckdel));return;}
+  if(b.dataset.more){openDayList(b.dataset.more);return;}
+  if(b.dataset.evrow){evGoRow(b.dataset.evrow);return;}
+  if(b.dataset.lid||b.dataset.eid)calItemOpen(b,b.closest('[data-date]')?.dataset.date);
+});
+onArea('#homeArea','keydown',e=>{if(e.key==='Enter'&&e.target.matches?.('[data-lid],[data-eid],[data-evrow]'))e.target.click();});
+
+/* ---------- GNB 아래: 어두운 모드 스위치 + 내 프로필(알림 설정 · 로그아웃) ---------- */
+function setTheme(dark){if(dark)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;try{localStorage.setItem('wb-theme',dark?'dark':'light');}catch(e){}drawSideFoot();}
+function drawSideFoot(){
+  const box=$('#sideFoot');if(!box)return;
+  const m=myMember(),dark=document.documentElement.dataset.theme==='dark',auth=!!window.wbAuth&&storeReady,adm=isAdminUser();
+  const sub=[m?.part?partOf(m.part).label:'',adm?'관리자':''].filter(Boolean).join(' · ')||'구성원';
+  const key=JSON.stringify([m?.id,m?.name,(m?.avatar||'').length,sub,dark,auth]);if(box.dataset.key===key)return;box.dataset.key=key;
+  box.innerHTML=`<div class="sfRow"><span class="lbl">어두운 모드</span><button type="button" class="swt" id="themeSw" role="switch" aria-checked="${dark}" aria-label="어두운 모드" title="어두운 모드"><span></span></button></div>
+    <div class="sfMe"><button type="button" class="sfProf" id="sfProf" title="${m?esc(m.name)+(adm?' · 프로필 편집':' · 내 이름 바꾸기'):'내 이름 선택'}">${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span></button></div>
+    ${auth?`<div class="sfRow sfAct lbl">${typeof openNotify==='function'?'<button class="btn ghost" type="button" id="sfNotify">알림 설정</button>':''}<button class="btn ghost" type="button" id="sfLogout">로그아웃</button></div>`:''}`;
+}
+$('#sideFoot').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.id==='themeSw'){setTheme(document.documentElement.dataset.theme!=='dark');$('#themeSw')?.focus();return;}
+  if(b.id==='sfProf'){const m=myMember();if(m&&isAdminUser())openAccount(m);else openWhoAmI();return;}
+  if(b.id==='sfNotify'){openNotify();return;}
+  if(b.id==='sfLogout')window.wbAuth?.signOut();});
 
 /* ---------- 이벤트 운영: 알닷 이벤트 운영 관리대장의 기능을 옮겨 옴(1단계: 이벤트 관리 탭) ----------
    저장(wb_docs): evt_months = 월·블록·설정 문서(id 'event_YYYY-MM' / 'settings'), evt_rows = 행 문서(id = 원본 _uid)
@@ -5176,7 +5336,8 @@ render();
   db.collection('leaves').onSnapshot(s=>{leaves=s.docs.map(x=>({id:x.id,...x.data()}));if(!lr){lr=true;ready();}render();},onErr);
   db.collection('events').onSnapshot(s=>{events=s.docs.map(x=>({id:x.id,...x.data()}));render();},onErr);
   db.collection('evt_months').onSnapshot(s=>{evtMonths=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave'].includes(state.mode))render();},onErr);
-  db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave'].includes(state.mode))render();},onErr);
+  db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave','home'].includes(state.mode))render();},onErr);
+  db.collection('checklists').onSnapshot(s=>{checklists=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='home')render();},onErr);
   db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');trashPurge('regress');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals'||state.mode==='regress')render();},onErr);
   db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);

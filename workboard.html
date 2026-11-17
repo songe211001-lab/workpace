@@ -1060,9 +1060,6 @@ div.tfNote{height:auto;overflow:auto}
 .lvSum{margin-top:12px;padding:12px 16px}.lvSum>summary{cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:8px}.lvSum:not([open])>summary{margin-bottom:0}
 .lvSum .tablebox{border:0;border-radius:0} /* 패널 안 표는 패널 테두리 하나만 */
 .hideTag{margin-left:6px;font-size:11px;font-weight:700;color:var(--muted);background:var(--sunk);border-radius:4px;padding:1px 6px}
-.avIllus{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.avGrp{width:100%;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px}
-.avOpt{all:unset;box-sizing:border-box;cursor:pointer;width:44px;height:44px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}.avOpt img{width:100%;height:100%;border-radius:50%;display:block}
-.avOpt[aria-pressed="true"]{box-shadow:0 0 0 3px var(--accent)}.avOpt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .roleBadge.ext{background:var(--warn-soft);color:var(--warn)}
 .tkRms{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
 .rmsGo{min-width:28px;justify-content:center;text-decoration:none}.tkRms .rmsGo{min-width:0;height:24px;padding:0 6px}.rmsGo[aria-disabled]{opacity:.4;cursor:not-allowed}
@@ -1139,7 +1136,7 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 .swt[aria-checked="true"]{background:var(--ok-strong)}.swt[aria-checked="true"] span{transform:translateX(16px)}
 .sfMe{display:flex;align-items:center;gap:4px;padding:6px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
 .sfProf{flex:1;min-width:0;display:flex;align-items:center;gap:8px;border:0;background:none;padding:2px;text-align:left;color:inherit;border-radius:var(--r-sm)}
-.sfProf:hover{background:var(--sunk)}
+button.sfProf:hover{background:var(--sunk)}
 .sfProf .lbl{min-width:0;display:flex;flex-direction:column;line-height:1.3}
 .sfProf .lbl b{font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sfProf .lbl .legend{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1628,8 +1625,6 @@ const AV_ILLUS=(()=>{
 const AV_OLD=['#dbeafe','#dcfce7','#fef3c7','#e5e7eb','#fce7f3','#ede9fe','#ffedd5','#e0f2fe'],avNewOf=new Map();
 function avShow(u){if(!u||!u.startsWith('data:image/svg+xml;base64,'))return u;if(avNewOf.has(u))return avNewOf.get(u);let v=u;
   try{const x=atob(u.slice(26));if(x.includes('#3a2a20')){const i=AV_OLD.findIndex(c=>x.includes('fill="'+c+'"'));if(i>=0)v=AV_ILLUS[i].uri;}}catch(e){}avNewOf.set(u,v);return v;}
-const avIllusHtml=cur=>`<div class="f full"><label>일러스트에서 고르기</label><div class="avIllus" id="acIllus" role="group" aria-label="프로필 일러스트">${['남자','여자','동물'].map(g=>`<span class="avGrp">${g}</span>${AV_ILLUS.map((a,i)=>a.g!==g?'':`<button type="button" class="avOpt" data-av="${i}" aria-label="${a.label}" aria-pressed="${avShow(cur)===a.uri}"><img src="${a.uri}" alt=""></button>`).join('')}`).join('')}</div></div>`;
-const avIllusBind=(set)=>$('#acIllus')?.addEventListener('click',e=>{const b=e.target.closest('[data-av]');if(!b)return;set(AV_ILLUS[+b.dataset.av].uri);document.querySelectorAll('#acIllus [data-av]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));});
 // 권한: 관리자(wb_admins) / 일반 관리자(기본) / 외부(access 'external', 보기만)
 const accessOf=m=>hasAdminApi()&&m?.userId&&acctAdmins?.has(m.userId)?'admin':m?.access==='external'?'external':'staff';
 const accessBadge=m=>{const a=accessOf(m);return `<span class="roleBadge${a==='admin'?' adm':a==='external'?' ext':''}">${a==='admin'?'관리자':a==='external'?'외부':'일반 관리자'}</span>`;};
@@ -2789,15 +2784,15 @@ function setTheme(dark){if(dark)document.documentElement.dataset.theme='dark';el
 function drawSideFoot(){
   const box=$('#sideFoot');if(!box)return;
   const m=myMember(),dark=document.documentElement.dataset.theme==='dark',auth=!!window.wbAuth&&storeReady,adm=isAdminUser();
-  const sub=[m?.part?partOf(m.part).label:'',adm?'관리자':''].filter(Boolean).join(' · ')||'구성원';
+  const sub=[m?.org||'',m?.part?partOf(m.part).label:'',adm?'관리자':''].filter(Boolean).join(' · ')||'구성원';
   const key=JSON.stringify([m?.id,m?.name,(m?.avatar||'').length,sub,dark,auth]);if(box.dataset.key===key)return;box.dataset.key=key;
   box.innerHTML=`<div class="sfRow"><span class="lbl">어두운 모드</span><button type="button" class="swt" id="themeSw" role="switch" aria-checked="${dark}" aria-label="어두운 모드" title="어두운 모드"><span></span></button></div>
-    <div class="sfMe"><button type="button" class="sfProf" id="sfProf" title="${m?esc(m.name)+(adm?' · 프로필 편집':' · 내 이름 바꾸기'):'내 이름 선택'}">${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span></button></div>
+    <div class="sfMe">${m?'<div class="sfProf">':'<button type="button" class="sfProf" id="sfProf" title="내 이름 선택">'}${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span>${m?'</div>':'</button>'}</div>
     ${auth?`<div class="sfRow sfAct lbl">${typeof openNotify==='function'?'<button class="btn ghost" type="button" id="sfNotify">알림 설정</button>':''}<button class="btn ghost" type="button" id="sfLogout">로그아웃</button></div>`:''}`;
 }
 $('#sideFoot').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.id==='themeSw'){setTheme(document.documentElement.dataset.theme!=='dark');$('#themeSw')?.focus();return;}
-  if(b.id==='sfProf'){const m=myMember();if(m&&isAdminUser())openAccount(m);else openWhoAmI();return;}
+  if(b.id==='sfProf'){openWhoAmI();return;}
   if(b.id==='sfNotify'){openNotify();return;}
   if(b.id==='sfLogout')window.wbAuth?.signOut();});
 
@@ -4277,13 +4272,13 @@ function renderAccounts(){
   if(hasAdminApi()&&acctAdmins===null){acctAdmins=new Set();loadAdmins();}
   const Y=+todayStr().slice(0,4), adm=hasAdminApi();
   const rows=[...members].sort((a,b)=>a.name.localeCompare(b.name,'ko')).map(m=>{const pt=memberPartOf(m.part),pj=projOf(m.projectId),q=quotaOf(m,Y);
-    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b>${m.hideInWork?'<span class="hideTag" title="업무·일정에 표시 안 함">숨김</span>':''}</td><td class="nowrap">${esc(m.email||'—')}</td>
+    return `<tr data-mid="${esc(m.id)}" tabindex="0" data-text="${esc([m.name,m.org,m.email,pt?.label,pj?.name].join(' ').toLowerCase())}"><td class="nowrap"><b>${who(m.name,m.id,28)}</b>${m.hideInWork?'<span class="hideTag" title="업무·일정에 표시 안 함">숨김</span>':''}</td><td class="nowrap">${esc(m.org||'—')}</td><td class="nowrap">${esc(m.email||'—')}</td>
       <td class="nowrap">${m.userId?'<span class="pill s-done">연결됨</span>':'<span class="pill s-wait">미연결</span>'}</td>
       <td class="nowrap">${pt?`<span class="part"><span class="sw" style="background:${pt.c}"></span>${esc(pt.label)}</span>`:'—'}</td><td class="nowrap">${esc(pj?.name||'—')}</td>
       <td>${accessBadge(m)}</td></tr>`;}).join('');
   area.innerHTML=`<div class="rtool"><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="acQ" type="search" placeholder="이름·메일·파트·프로젝트 검색" aria-label="계정 검색" value="${esc(acstate.q)}"></label><span class="spacer"></span><button class="btn primary" type="button" id="acAdd">+ 계정 추가</button></div>
-    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th>관리자 권한</th></tr></thead><tbody>${rows}
-      <tr class="mEmpty" ${members.length?'hidden':''}><td colspan="6">${members.length?'검색 결과가 없어요':'아직 계정이 없어요. 「+ 계정 추가」로 추가하세요.'}</td></tr></tbody></table></div>
+    <div class="tablebox"><table class="stable" id="acTable"><thead><tr><th>이름</th><th>소속</th><th>회사 메일</th><th>로그인</th><th>파트</th><th>주 프로젝트</th><th>관리자 권한</th></tr></thead><tbody>${rows}
+      <tr class="mEmpty" ${members.length?'hidden':''}><td colspan="7">${members.length?'검색 결과가 없어요':'아직 계정이 없어요. 「+ 계정 추가」로 추가하세요.'}</td></tr></tbody></table></div>
     <p class="legend" style="margin:0">회사 메일을 적어 두면 그 메일로 처음 로그인한 사람이 이 계정에 자동으로 연결돼요.${adm?' 관리자는 로그인이 연결된 계정만 지정할 수 있어요.':''}</p>`;
   acFilter();
 }
@@ -4300,6 +4295,7 @@ function openAccount(m){
     <div class="body">
       <div class="f full pfPhoto"><div id="acAvatar">${avatarHtml(m,72)}</div></div>
       <div class="f"><label for="acName">이름 <b>*</b></label><input id="acName" maxlength="20" value="${esc(m.name)}"></div>
+      <div class="f"><label for="acOrg">소속</label><input id="acOrg" maxlength="40" value="${esc(m.org||'')}" placeholder="예: 플랫폼운영팀"></div>
       <div class="f"><label for="acEmail">회사 메일</label><input id="acEmail" type="email" spellcheck="false" value="${esc(m.email||'')}" placeholder="${m.userId?'로그인 연결됨':'로그인 연결용 (선택)'}"></div>
       <div class="f"><label for="acPart">파트</label><select id="acPart"><option value="">파트 없음</option>${opt(memberParts().map(p=>[p.k,p.label]),m.part)}</select></div>
       <div class="f"><label for="acJob">직무 <span class="legend">(메뉴 공개용)</span></label><select id="acJob"><option value="">없음</option>${opt(ROLES.slice(1),m.role)}</select></div>
@@ -4307,14 +4303,12 @@ function openAccount(m){
       <div class="f"><label>업무·일정 표시</label><label class="cfItem"><input type="checkbox" id="acShow" ${m.hideInWork?'':'checked'} ${canWrite?'':'disabled'}>업무·일정에 표시</label><span class="hint">끄면 담당자 고르기·연차 달력·연차 현황 등에서 빠져요. 이미 배정된 업무의 이름은 그대로 보여요.</span></div>
       <div class="f"><label for="acOrder">표시 순서</label><input type="number" id="acOrder" min="1" step="1" inputmode="numeric" value="${m.order>0?+m.order:''}" placeholder="비우면 가나다순" ${canWrite?'':'disabled'}><span class="hint">연차 현황에서 작은 숫자부터 위에 보여요</span></div>
       <div class="f"><label>로그인</label><span>${m.userId?'연결됨':'아직 로그인하지 않음'}</span></div>
-      ${avIllusHtml(m.avatar)}
     </div>
     <footer><div id="acDelZone">${isNew?'':'<button class="btn danger" type="button" id="acDel">삭제</button>'}</div><span class="err" id="acErr"></span>
       <div class="r"><button class="btn" type="button" id="acCancel">취소</button><button class="btn primary" type="submit" id="acSave">${isNew?'추가':'저장'}</button></div></footer>
   </form></div>`;
   $('#xClose').onclick=$('#acCancel').onclick=askClose;
   let avatar=m.avatar||'';const showAv=()=>{$('#acAvatar').innerHTML=avatarHtml({...m,name:$('#acName').value||m.name,avatar},72);};
-  avIllusBind(u=>{avatar=u;modalDirty=true;showAv();});
   $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});
   $('#acDel')?.addEventListener('click',()=>{
     const id=m.id, nl=leaves.filter(l=>l.memberId===id).length, na=assigns.filter(a=>a.memberId===id).length, nw=wlogs.filter(w=>w.memberId===id).length;
@@ -4325,7 +4319,7 @@ function openAccount(m){
   });
   $('#acForm').addEventListener('submit',async e=>{
     e.preventDefault();
-    const roleSel=$('#acRole').value, name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, hide=!$('#acShow').checked, job=$('#acJob').value, order=Math.max(0,Math.round(+$('#acOrder').value||0))||'';
+    const roleSel=$('#acRole').value, org=$('#acOrg').value.trim(), name=$('#acName').value.trim(), email=$('#acEmail').value.trim().toLowerCase(), part=$('#acPart').value, hide=!$('#acShow').checked, job=$('#acJob').value, order=Math.max(0,Math.round(+$('#acOrder').value||0))||'';
     if(!name){$('#acErr').textContent='이름을 입력해 주세요.';$('#acName').focus();return;}
     if(members.some(x=>x.id!==m.id&&x.name===name)){$('#acErr').textContent='같은 이름이 있어요. 동명이인은 이름 뒤에 구분을 붙여 주세요.';return;}
     const staffOk=typeof isStaffEmail==='function'?isStaffEmail:()=>true;
@@ -4334,14 +4328,14 @@ function openAccount(m){
     $('#acSave').disabled=true;
     try{
       const access=roleSel==='external'?'external':'';
-      if(isNew){const ref=await db.collection('members').add({name,email,part,hideInWork:hide,order,role:job,access,...(avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{part});}
+      if(isNew){const ref=await db.collection('members').add({name,org,email,part,hideInWork:hide,order,role:job,access,...(avatar?{avatar}:{})});logChange('member','create',ref.id,name,null,{part});}
       else{
         // 관리자 지정·해제를 먼저(마지막 관리자 해제 오류면 아무것도 저장하지 않음). 주 프로젝트·연차 일수는 이 창에서 바꾸지 않음(저장값 유지)
         const on=roleSel==='admin';
         if(canAdm&&on!==wasAdm){await window.wbAuth.setAdmin(m.userId,on);acctAdmins[on?'add':'delete'](m.userId);navKey='';}
         const role=job;
-        const old={...m}, avCh=avatar!==(old.avatar||''), ch=avCh||(old.role||'')!==role||(old.access||'')!==access||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||!!old.hideInWork!==hide||(old.order||'')!==order;
-        if(ch){await db.collection('members').doc(m.id).update({name,email,part,hideInWork:hide,order,role,access,...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,part:old.part||''},{name,part});
+        const old={...m}, avCh=avatar!==(old.avatar||''), ch=avCh||(old.org||'')!==org||(old.role||'')!==role||(old.access||'')!==access||old.name!==name||(old.email||'')!==email||(old.part||'')!==part||!!old.hideInWork!==hide||(old.order||'')!==order;
+        if(ch){await db.collection('members').doc(m.id).update({name,org,email,part,hideInWork:hide,order,role,access,...(avCh?{avatar}:{})});logChange('member','update',m.id,name,{name:old.name,part:old.part||''},{name,part});
           // 이름을 바꾸면 이 사람이 담당한 업무의 담당자 이름도 함께 바꿈(집계·필터가 이름 기준이라)
           if(old.name!==name)for(const t of tasks.filter(t=>t.assigneeId===m.id||(!t.assigneeId&&t.assignee===old.name)))await db.collection('tasks').doc(t.id).update({assignee:name,assigneeId:m.id});}
       }

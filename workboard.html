@@ -11,6 +11,7 @@
   --warn:#993f00; --warn-strong:#ff8800; --warn-soft:#ffe8d1; --warn-border:#ffbd8d;
   --bad:#b00727; --bad-strong:#f03848; --bad-soft:#ffe1df; --bad-border:#febab6;
   --overlay:rgba(43,37,35,.4);
+  --pub:#1c5fbf; --pub-soft:#e3edff; --dev:#5b3a9a; --dev-soft:#efe7fb;
   --shadow-3:0 12px 32px rgba(1,10,37,.10),0 2px 6px rgba(1,10,37,.06);
   --shadow-toast:0 8px 24px rgba(1,10,37,.16);
   --font-ui:Pretendard,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
@@ -284,6 +285,7 @@ td.nowrap{white-space:nowrap}
 .s-wait{background:var(--sunk);color:var(--ink-soft)}
 .s-doing{background:var(--warn-soft);color:var(--warn)}
 .s-review{background:var(--accent-soft);color:var(--fg)}
+.s-plan{background:var(--warn-soft);color:var(--warn)}.s-pub{background:var(--pub-soft);color:var(--pub)}.s-dev{background:var(--dev-soft);color:var(--dev)}
 tbody tr.is-late td:first-child{box-shadow:inset 3px 0 0 var(--bad-strong)}
 .card.is-late{box-shadow:inset 3px 0 0 var(--bad-strong)}
 /* A3: 마감일에 담당자 휴가 */
@@ -1154,6 +1156,7 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
   --warn:#ffb877; --warn-strong:#ff9a2e; --warn-soft:#3b2915; --warn-border:#7a4f20;
   --bad:#ff9499; --bad-strong:#ff5f6b; --bad-soft:#3d1d22; --bad-border:#7a3038;
   --overlay:rgba(0,0,0,.6);
+  --pub:#a6c8ff; --pub-soft:#1d2c45; --dev:#cdb5ff; --dev-soft:#2c2140;
   --shadow-3:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
   --shadow-toast:0 8px 24px rgba(0,0,0,.5);
 }
@@ -1194,25 +1197,20 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 .stTabs button[aria-pressed="true"]{background:var(--accent-soft);color:var(--fg);font-weight:700}
 @media (max-width:600px){.stTabs{width:100%;overflow-x:auto}}
 #bdTop{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
-.bdQuick{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px}
-.bdQuick #bdQProj{flex:0 1 180px;min-width:0}.bdQuick #bdQIn{flex:1 1 220px;min-width:0}
-.bdQSt{display:inline-flex;align-items:center;gap:2px;font-size:13px;font-weight:700;color:var(--ink-soft)}
 .bdChips{display:flex;gap:6px;flex-wrap:wrap}
 .bdChip{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
 .bdChip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--surface)}
-.board{grid-template-columns:repeat(5,minmax(0,1fr))}
-@media (max-width:900px){.board{grid-template-columns:repeat(5,minmax(220px,1fr))}}
+.board{grid-template-columns:repeat(6,minmax(0,1fr))}
+@media (max-width:900px){.board{grid-template-columns:repeat(6,minmax(210px,1fr))}}
 .bdColH{display:inline-flex;align-items:center;gap:6px}
 .bdDot{width:8px;height:8px;border-radius:50%}
-.bd-wait{background:var(--grey-400)}.bd-doing{background:var(--accent)}.bd-review{background:var(--warn-strong)}.bd-hold{background:var(--na)}.bd-done{background:var(--ok-strong)}
+.bd-wait{background:var(--grey-400)}.bd-plan{background:var(--warn-strong)}.bd-pub{background:var(--pub)}.bd-dev{background:var(--dev)}.bd-hold{background:var(--na)}.bd-done{background:var(--ok-strong)}
 .bdT{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600}
 .bdCard .rqChips{margin-top:0}
 .bdWho{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card .num.late{color:var(--bad);font-weight:700}
 .bdAct{display:flex;justify-content:flex-end}
 .bdEmpty{border:1px dashed var(--line);border-radius:var(--r);padding:16px 8px;text-align:center;color:var(--muted);font-size:13px}
-.bdAdd{border:0;background:none;color:var(--ink-soft);text-align:left;padding:6px;border-radius:var(--r-sm);font-size:13px;font-weight:600}
-.bdAdd:hover{background:var(--surface);color:var(--fg)}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1291,8 +1289,11 @@ const DEFAULT_PARTS=[
 ];
 let PARTS=DEFAULT_PARTS.slice(), partsStored=false;
 const STATUSES=[
-  {k:'wait',label:'대기'},{k:'doing',label:'진행중'},{k:'review',label:'검토중'},{k:'hold',label:'보류'},{k:'done',label:'완료'}
+  {k:'wait',label:'대기'},{k:'plan',label:'기획 진행중'},{k:'pub',label:'퍼블리싱 진행중'},{k:'dev',label:'개발 진행중'},{k:'hold',label:'보류'},{k:'done',label:'완료'}
 ];
+// 예전 진행 현황 호환: 진행중 → 기획 진행중, 검토중 → 개발 진행중(불러올 때 바꿔 둠, 다시 저장하면 새 값으로)
+const OLD_ST={doing:'plan',review:'dev'},normSt=k=>OLD_ST[k]||k;
+const isDoing=t=>['plan','pub','dev'].includes(t.status); // 진행 중(기획·퍼블리싱·개발)
 const PRIS=['긴급','높음','보통','낮음'];
 const PCOLORS=['#1d5c84','#c2457a','#b57a12','#2f8a5b','#7a4fb0','#c4552f','#4b7f8c','#6b6f86'];
 
@@ -1354,7 +1355,7 @@ function renderNav(){
 }
 const todayStr=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
 const partOf=k=>PARTS.find(p=>p.k===k)||{k,label:'미지정',c:'var(--muted)'};
-const statusOf=k=>STATUSES.find(s=>s.k===k)||STATUSES[0];
+const statusOf=k=>STATUSES.find(s=>s.k===normSt(k))||STATUSES[0];
 const projOf=id=>projects.find(p=>p.id===id);
 // 수정 저장은 연 시점의 값(base)과 달라진 필드만 update로 보냄. 다른 사람이 동시에 고친 다른 필드를 지우지 않게
 const sameVal=(a,b)=>String(a??'')===String(b??'');
@@ -1567,8 +1568,7 @@ function renderFilters(){
 }
 
 // 보드: 게시물을 진행 현황(postStatus) 열로. 위에 빠른 등록 · 담당 필터 칩, 카드에 다음 단계 버튼
-const BD_NEXT={wait:['doing','시작'],doing:['review','검토 요청'],review:['done','완료 처리'],hold:['doing','다시 시작']};
-let bdQSt='wait';
+const BD_NEXT={wait:['plan','기획 시작'],plan:['pub','퍼블리싱으로'],pub:['dev','개발로'],dev:['done','완료 처리'],hold:['plan','다시 시작']};
 function renderBoard(){
   const main=$('#main'),posts=postList();
   const cols=STATUSES.map(s=>{const items=posts.filter(p=>postStatus(p,kidsOf(p))===s.k);
@@ -1576,28 +1576,15 @@ function renderBoard(){
       ${items.map(p=>{const k=kidsOf(p),pj=projOf(p.projectId),late=postLate(p),due=postDue(p,k),nx=BD_NEXT[s.k];
         return `<div class="card bdCard${late?' is-late':''}" draggable="${canWrite}" data-id="${esc(p.id)}" tabindex="0">
           ${pj?`<div class="proj"><span class="dot" style="background:${esc(pj.color)}"></span>${esc(pj.name)}</div>`:''}
-          <div class="t bdT">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</div>${rqChips(k)}
+          <div class="t bdT">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</div>
           <div class="meta"><span class="bdWho">${whoMany(p,18,'담당 미지정')}</span>${due?`<span class="num${late?' late':''}">${fmtDate(due)} ${dday(due)}</span>`:''}</div>
-          ${canWrite&&nx?`<div class="bdAct"><button type="button" class="btn sm${nx[0]==='done'?' primary':''}" data-next="${esc(p.id)}" data-to="${nx[0]}">${nx[1]}</button></div>`:''}</div>`;}).join('')||'<div class="bdEmpty">여기에 끌어 놓기</div>'}
-      ${canWrite?`<button type="button" class="bdAdd" data-bdadd="${s.k}">+ 업무 추가</button>`:''}</div>`;}).join('');
-  const top=$('#bdTop');
-  if(top&&main.contains(top)&&top.contains(document.activeElement)&&document.activeElement.matches('input,select')&&$('#bdCols')){$('#bdCols').innerHTML=cols;return;} // 빠른 등록 입력 중엔 열만 다시 그림
+          ${canWrite&&nx?`<div class="bdAct"><button type="button" class="btn sm${nx[0]==='done'?' primary':''}" data-next="${esc(p.id)}" data-to="${nx[0]}">${nx[1]}</button></div>`:''}</div>`;}).join('')||'<div class="bdEmpty">여기에 끌어 놓기</div>'}</div>`;}).join('');
   const chips=[['all','전체'],['me','내 담당'],['myreq','내가 요청한']].map(([k,l])=>`<button type="button" class="bdChip" data-asg="${k}" aria-pressed="${state.assignee===k}">${l}</button>`).join('');
-  main.innerHTML=`<div id="bdTop">${canWrite&&projects.length?`<form class="bdQuick panel" id="bdQForm" novalidate><select class="sel" id="bdQProj" aria-label="프로젝트">${optH(projects.map(p=>[p.id,p.name]),state.project!=='all'&&projOf(state.project)?state.project:projects[0].id)}</select><input class="sel" id="bdQIn" maxlength="200" placeholder="업무명을 쓰고 Enter (예: 메인 배너 교체)" aria-label="빠른 등록 업무명" autocomplete="off">${bdQSt!=='wait'?`<span class="bdQSt">${esc(statusOf(bdQSt).label)}(으)로 등록<button type="button" class="btn ghost sm" id="bdQStX" aria-label="대기로 되돌리기">×</button></span>`:''}<button class="btn primary" type="submit" id="bdQSave">빠른 등록</button></form>`:''}
+  main.innerHTML=`<div id="bdTop">
     <div class="bdChips" role="group" aria-label="담당 필터">${chips}</div></div>
     <div class="board" id="bdCols">${cols}</div>
     ${canWrite?'<p class="legend">카드를 다른 열로 끌어 놓거나 카드 아래 버튼으로 다음 단계로 보내요. 카드를 누르면 상세가 열려요.</p>':''}`;
 }
-$('#main').addEventListener('submit',async e=>{if(e.target.id!=='bdQForm')return;e.preventDefault();if(!canWrite)return;
-  const title=$('#bdQIn').value.trim();if(!title){$('#bdQIn').focus();return;}
-  const me=myMember(),now=new Date().toISOString(),st=bdQSt;
-  const data={projectId:$('#bdQProj').value,part:me?.part&&PARTS.some(p=>p.k===me.part)?me.part:PARTS[0].k,title,...asData(me?[me.id]:[]),parentId:'',requester:me?.name||'',requesterId:me?.id||'',
-    jiraKey:'',rmsNo:'',rmsUrl:'',status:st,priority:2,requestDate:todayStr(),dueDate:'',doneDate:st==='done'?todayStr():'',estHours:'',actHours:'',link:'',note:'',updatedAt:now,createdAt:now};
-  $('#bdQSave').disabled=true;
-  try{const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,title,null,data);$('#bdQIn').value='';bdQSt='wait';toast(`'${statusOf(st).label}'에 등록했어요`);}
-  catch(err){handleWriteError(err);}
-  finally{document.activeElement?.blur();render();$('#bdQIn')?.focus();}
-});
 
 
 
@@ -1681,12 +1668,10 @@ const isPost=t=>!t.parentId||!tasks.some(x=>x.id===t.parentId);
 function rootOf(t){for(let i=0;i<20&&t.parentId;i++){const p=tasks.find(x=>x.id===t.parentId);if(!p)break;t=p;}return t;}
 const kidsOf=p=>tasks.filter(x=>x.id!==p.id&&!isPost(x)&&rootOf(x).id===p.id);
 // 집계 단위: 요청은 모두 세고, 게시물은 요청이 없거나 게시물 자체를 끝낸 경우(넘기기 등)만 셈 → 이중 집계 없음
-function workItems(list=tasks){const ids=new Set(tasks.map(x=>x.id)),par=new Set(tasks.map(x=>x.parentId).filter(Boolean));
-  return list.filter(t=>(t.parentId&&ids.has(t.parentId))||t.status==='done'||!par.has(t.id));}
+function workItems(list=tasks){return list.filter(isPost);} // 집계 단위 = 게시물(파트별 하위 요청은 화면에서 숨김)
 // 요청이 있는 게시물의 표시 상태: 게시물을 직접 끝냈으면 완료, 아니면 요청들로 판단
-function postStatus(p,k){if(!k.length||p.status==='done'||p.statusManual)return p.status;
-  if(k.every(x=>x.status==='done'))return 'done';if(k.some(x=>x.status==='doing'||x.status==='review'))return 'doing';
-  if(k.every(x=>x.status==='done'||x.status==='hold'))return 'hold';return 'wait';}
+// 진행 현황 = 게시물에 직접 고른 값(파트별 요청 상태로 계산하지 않음)
+function postStatus(p){return p.status;}
 // 다시 그려도 입력 중인 값·포커스 유지
 function keepVals(box,html){
   const v={};box.querySelectorAll('input[id],select[id],textarea[id]').forEach(e=>v[e.id]=e.type==='checkbox'?e.checked:e.value);
@@ -1735,8 +1720,8 @@ $('#postNew').addEventListener('submit',async e=>{
 // 목록: 기간·프로젝트·필터에 걸리는 업무(게시물 또는 요청)가 있는 게시물을 연도별로
 function postList(){
   const r=periodRange(), byRoot=new Map(), st=state.status;state.status='all'; // 진행 현황은 게시물 상태(postStatus)로 거름 — 보드 열·상태 탭 건수와 같은 기준
-  try{for(const t of tasks){if(state.project!=='all'&&t.projectId!==state.project)continue;if(r&&!inPeriod(t,r))continue;if(!passF(t))continue;const p=rootOf(t);byRoot.set(p.id,p);}}finally{state.status=st;}
-  if(st!=='all')for(const [id,p] of byRoot){const ps=postStatus(p,kidsOf(p));if(st==='open'?ps==='done':ps!==st)byRoot.delete(id);}
+  try{for(const t of tasks){if(!isPost(t))continue;if(state.project!=='all'&&t.projectId!==state.project)continue;if(r&&!inPeriod(t,r))continue;if(!passF(t))continue;const p=rootOf(t);byRoot.set(p.id,p);}}finally{state.status=st;}
+  if(st!=='all')for(const [id,p] of byRoot){const ps=p.status;if(st==='open'?ps==='done':st==='prog'?!isDoing(p):ps!==st)byRoot.delete(id);}
   const key=p=>(p.requestDate||(p.createdAt||'').slice(0,10))+'|'+(p.createdAt||'');
   const L=[...byRoot.values()].filter(p=>!state.late||postLate(p)).sort((a,b)=>key(b).localeCompare(key(a)));
   if(state.lsort!=='due')return L;
@@ -1745,30 +1730,23 @@ function postList(){
   return L.sort((a,b)=>dk(a).localeCompare(dk(b)));
 }
 // 아직 안 끝난 마감일(요청이 있으면 열린 요청 중 가장 이른 것). 완료·보류는 ''
-const postDue=(p,k)=>(k.length?k:[p]).filter(x=>x.status!=='done'&&x.status!=='hold'&&x.dueDate).map(x=>x.dueDate).sort()[0]||'';
+const postDue=p=>p.status!=='done'&&p.status!=='hold'&&p.dueDate?p.dueDate:'';
 const soonTag=d=>{if(!d||d<todayStr())return '';const n=Math.round((new Date(d+'T00:00:00')-new Date(todayStr()+'T00:00:00'))/864e5);return n<=3?`<b class="soonTag" title="마감이 ${n?n+'일':'오늘'} 남았어요">${dday(d)}</b>`:'';};
-// 게시물 진행 현황 고르기: 파트 항목이 있으면 '자동(파트 상태로)'도 고를 수 있음
-const pStSel=(p,k)=>{const cur=k.length&&!p.statusManual&&p.status!=='done'?'auto':(p.status||'wait'),shown=postStatus(p,k);
-  return `<select class="sel stSel pSt s-${esc(shown)}" data-pst="${esc(p.id)}" aria-label="진행 현황 바꾸기">${k.length?`<option value="auto" ${cur==='auto'?'selected':''}>자동: ${esc(statusOf(postStatus({status:''},k)).label)}</option>`:''}${optH(STATUSES.map(x=>[x.k,x.label]),cur==='auto'?'':cur)}</select>`;};
-async function setPostStatus(id,v){const p=tasks.find(x=>x.id===id);if(!p)return;const k=kidsOf(p);
-  const patch=v==='auto'?{statusManual:false,status:p.status==='done'?'wait':p.status}:{status:v,statusManual:k.length>0,doneDate:v==='done'?(p.doneDate||todayStr()):''};patch.updatedAt=new Date().toISOString();
-  try{await db.collection('tasks').doc(id).update(patch);logChange('task','update',id,p.title,p,{...p,...patch});toast(v==='auto'?'파트 상태로 자동 계산해요':`'${statusOf(v).label}'(으)로 바꿨어요`);}catch(err){handleWriteError(err);}}
+const pStSel=p=>`<select class="sel stSel pSt s-${esc(p.status||'wait')}" data-pst="${esc(p.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),p.status||'wait')}</select>`;
+async function setPostStatus(id,v){const p=tasks.find(x=>x.id===id);if(!p||!STATUSES.some(x=>x.k===v))return;
+  const patch={status:v,doneDate:v==='done'?(p.doneDate||todayStr()):'',updatedAt:new Date().toISOString()};
+  try{await db.collection('tasks').doc(id).update(patch);logChange('task','update',id,p.title,p,{...p,...patch});toast(`'${statusOf(v).label}'(으)로 바꿨어요`);}catch(err){handleWriteError(err);}}
 const stSel=t=>`<select class="sel rqSt stSel s-${esc(t.status||'wait')}" data-rq="${esc(t.id)}" aria-label="진행 현황 바꾸기">${optH(STATUSES.map(x=>[x.k,x.label]),t.status||'wait')}</select>`;
 // 2026/10/21(수) 형식. 시작과 같은 해면 연도를 뺌
 const fmtSlash=(d,from)=>{if(!d)return '—';const w='일월화수목금토'[new Date(d+'T00:00:00').getDay()],md=`${+d.slice(5,7)}/${+d.slice(8,10)}(${w})`;return from&&from.slice(0,4)===d.slice(0,4)?md:`${d.slice(0,4)}/${md}`;};
 // 게시물이 지연인지(요청이 있으면 요청 중 하나라도 지연)
-// 게시물의 요청을 파트별로 묶은 칩: 파트 · 건수 · 상태(postStatus와 같은 규칙) · 지연
-function rqChips(k){if(!k.length)return '';const by=new Map();k.forEach(x=>{if(!by.has(x.part))by.set(x.part,[]);by.get(x.part).push(x);});
-  const ix=pk=>{const i=PARTS.findIndex(p=>p.k===pk);return i<0?99:i;};
-  return `<span class="rqChips">${[...by].sort((a,b)=>ix(a[0])-ix(b[0])).map(([pk,L])=>{const pt=partOf(pk),st=statusOf(postStatus({status:''},L)),late=L.filter(isLate).length,who=[...new Set(L.flatMap(asNames))].join(', ');
-    return `<span class="rqChip${late?' late':''}" style="--c:${pt.c}" title="${esc(`${pt.label} 요청 ${L.length}건 · ${st.label}${late?` · 지연 ${late}건`:''}${who?' · 담당 '+who:''}`)}">${esc(pt.label)}${L.length>1?' '+L.length:''}<span class="pill s-${st.k}">${st.label}</span>${late?'<span class="rqLate">지연</span>':''}</span>`;}).join('')}</span>`;}
-const postLate=p=>{const k=kidsOf(p);return k.length?k.some(isLate):isLate(p);};
+const postLate=p=>isLate(p);
 function postRow(p){
-  const pj=projOf(p.projectId), k=kidsOf(p), doing=k.filter(x=>x.status==='doing'||x.status==='review').length, st=statusOf(postStatus(p,k));
+  const pj=projOf(p.projectId), k=kidsOf(p), st=statusOf(postStatus(p,k));
   const late=postLate(p),own=!k.length&&canWrite;
   return `<tr class="tkRow${late?' is-late':''}" data-post="${esc(p.id)}" tabindex="0">
     <td>${pj?`<span class="pjTag" style="--c:${esc(pj.color)}"><span class="dot" aria-hidden="true"></span>${esc(pj.name)}</span>`:''}</td>
-    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${rqChips(k)}${evWarnOf(p)?'<b class="lateTag" title="연결된 이벤트 운영 행과 상태가 서로 달라요">⚠ 이벤트 상태</b>':''}</td>
+    <td class="tkTitle"><span class="pTitle">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</span>${evWarnOf(p)?'<b class="lateTag" title="연결된 이벤트 운영 행과 상태가 서로 달라요">⚠ 이벤트 상태</b>':''}</td>
     <td>${rmsCell(p)}</td>
     <td class="num prDate">${fmtSlash(p.requestDate)}~${fmtSlash(p.dueDate,p.requestDate)}${late?`<b class="lateTag" title="마감이 지났는데 끝나지 않았어요">지연${!k.length?' '+dday(p.dueDate):''}</b>`:soonTag(postDue(p,k))}</td>
     <td><span class="tkWho"><span class="tkPart" style="--c:${partOf(p.part).c}">${esc(partOf(p.part).label)}</span>${whoMany(p,22,'담당 미지정')}</span></td>
@@ -1797,7 +1775,7 @@ function renderPost(p){
   if(main.dataset.post===p.id&&($('#tfAs')?.open||$('#cpAs')?.open))return; // 담당자 고르는 중엔 다시 그리지 않음
   if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf],#cpText,#evLkIn'))return; // 칸 입력 중엔 다시 그리지 않음
   const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
-  const items=[...cms.map(c=>({at:c.at||'',c})),...k.map(t=>({at:t.createdAt||t.requestDate||'',t}))].sort((a,b)=>a.at.localeCompare(b.at));
+  const items=[...cms.map(c=>({at:c.at||'',c}))].sort((a,b)=>a.at.localeCompare(b.at));
   resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
   const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${rtShow(c.html,c.text)}</div></li>`
     :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">진행 상태</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span>${asNames(t).length?`<b>${whoMany(t,22,'')}</b>`:''}${t.dueDate?`<span class="legend num">마감 ${fmtDate(t.dueDate)}${t.status!=='done'?' '+dday(t.dueDate):''}</span>`:''}
@@ -1819,7 +1797,7 @@ function renderPost(p){
     ${isReq?`<p class="legend" style="margin:0">게시물: ${esc(rootOf(p).title)}</p>`:''}
     <div class="tfRows">
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
-      ${row('진행 현황',!isReq&&k.length?(ro?`<span class="pill s-${st.k}">${st.label}</span>`:pStSel(p,k)+`<span class="legend">${p.statusManual||p.status==='done'?'직접 정한 값이에요':'파트 상태로 자동 계산 중'}</span>`):sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
+      ${row('진행 현황',sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
       ${row('파트',sel('part',isReq?rqParts(p.part):PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
       ${row('담당자',(ro?`<span class="tfVal">${esc(asNames(p).join(', ')||'—')}</span>`:asPick('tfAs',asValsOf(p),orphan))+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
       ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
@@ -1843,12 +1821,10 @@ function renderPost(p){
       ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.filter(m=>isShown(m)||m.id===cm?.id).map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
       <span class="hint">기록이 있으면 실제 소요시간은 합계로 자동 계산되고, 업무 시간 화면은 기록한 날짜 기준으로 집계돼요.</span><span class="err" id="wlErr"></span></section>
     ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
-    <h3 class="tlTitle">${isReq?'댓글':'댓글 · 파트 진행'} <span class="legend">${items.length}</span></h3>
-    <ul class="cmList">${tl||`<li class="legend">아직 ${isReq?'댓글이':'댓글이나 파트 진행 기록이'} 없어요</li>`}</ul>
-    ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="댓글 내용"`,cpKeep,isReq?'진행 상황, 확인 요청 등을 남겨 주세요':'댓글을 남기거나, 파트와 상태를 골라 진행 상황을 기록해 주세요')}
-      <div class="cpRow">${isReq?'':`<select class="sel" id="cpPart" aria-label="파트"><option value="">파트 선택 안 함 (댓글만)</option>${optH(rqParts(),'')}</select>
-      <select class="sel" id="cpSt" aria-label="상태" disabled>${optH(STATUSES.map(x=>[x.k,x.label]),'wait')}</select>`}
-      <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
+    <h3 class="tlTitle">댓글 <span class="legend">${items.length}</span></h3>
+    <ul class="cmList">${tl||`<li class="legend">아직 댓글이 없어요</li>`}</ul>
+    ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="댓글 내용"`,cpKeep,'진행 상황, 확인 요청 등을 남겨 주세요')}
+      <div class="cpRow">      <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
   </div>`;
   if(main.dataset.post===p.id)keepVals(main,html);else main.innerHTML=html;
   main.dataset.post=p.id;
@@ -1887,25 +1863,14 @@ async function tfAddWl(p){
     logChange('task','update',p.id,p.title,null,null,`작업 시간 기록 ${md(d)} ${m.name} ${hrs(h)}h`);toast('작업 시간을 기록했어요');}
   catch(err){handleWriteError(err,'#wlErr');}finally{if($('#wlAddBtn'))$('#wlAddBtn').disabled=false;}
 }
-// 게시물의 파트 항목(그 파트의 가장 최근 하위 업무)
-const partItem=(p,part)=>part?kidsOf(p).filter(x=>x.part===part).sort((a,b)=>(b.createdAt||'').localeCompare(a.createdAt||''))[0]:null;
 async function sendPost(p,btn){
-  const rr=rtRead($('#cpText')),text=rr.text.trim(),part=$('#cpPart')?.value||'',st=$('#cpSt')?.value||'wait';
+  const rr=rtRead($('#cpText')),text=rr.text.trim();
+  if(!text){$('#cpErr').textContent='댓글 내용을 입력해 주세요.';return;}
   if(text.length>1000){$('#cpErr').textContent='1000자까지 쓸 수 있어요.';return;}
-  if(!text&&!part){$('#cpErr').textContent='댓글 내용을 입력하거나 파트를 골라 주세요.';return;}
-  if(text&&!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
+  if(!actorId){$('#cpErr').textContent='사용자 정보를 확인할 수 없어 댓글을 남길 수 없어요.';return;}
   btn.disabled=true;
-  try{
-    if(part){const cur=partItem(p,part),pl=partOf(part).label,sl=statusOf(st).label;
-      if(cur){if(cur.status!==st)await setReqStatus(cur.id,st);}
-      else{const now=new Date().toISOString();
-        const data={projectId:p.projectId,part,title:p.title,assignee:'',assigneeId:'',parentId:p.id,requester:myMember()?.name||nameCache[actorId]||'',requesterId:myMember()?.id||'',
-          jiraKey:'',rmsNo:'',rmsUrl:'',status:st,priority:p.priority??2,requestDate:todayStr(),dueDate:'',doneDate:st==='done'?todayStr():'',estHours:'',actHours:'',link:'',note:'',updatedAt:now,createdAt:now};
-        const ref=await db.collection('tasks').add(data);logChange('task','create',ref.id,`${p.title} · ${pl}`,null,data);}
-      if(text)await db.collection('comments').add({taskId:p.id,text:`[${pl} · ${sl}] ${text}`,...(rr.html?{html:`<b>[${esc(pl)} · ${esc(sl)}]</b> ${rr.html}`}:{}),by:actorId,at:new Date().toISOString()});
-      toast(`${pl} 상태를 '${sl}'(으)로 정했어요`);}
-    else await db.collection('comments').add({taskId:p.id,text,...(rr.html?{html:rr.html}:{}),by:actorId,at:new Date().toISOString()});
-    $('#cpText').innerHTML='';$('#cpText').blur();if($('#cpPart')){$('#cpPart').value='';$('#cpSt').value='wait';$('#cpSt').disabled=true;}$('#cpErr').textContent='';render();
+  try{await db.collection('comments').add({taskId:p.id,text,...(rr.html?{html:rr.html}:{}),by:actorId,at:new Date().toISOString()});
+    $('#cpText').innerHTML='';$('#cpText').blur();$('#cpErr').textContent='';render();
   }catch(err){handleWriteError(err,'#cpErr');}finally{btn.disabled=false;}
 }
 async function setReqStatus(id,st){
@@ -2198,8 +2163,6 @@ $('#main').addEventListener('click',async e=>{
   if(e.target.closest('a,select'))return;
   const nb=e.target.closest('[data-next]');if(nb){if(canWrite)setPostStatus(nb.dataset.next,nb.dataset.to);return;}
   const ac=e.target.closest('[data-asg]');if(ac){const k=ac.dataset.asg;if(k!=='all'&&!myMember()){openWhoAmI();return;}state.assignee=k;persistUI();render();return;}
-  const ad=e.target.closest('[data-bdadd]');if(ad){bdQSt=ad.dataset.bdadd;render();window.scrollTo({top:0,behavior:'smooth'});setTimeout(()=>$('#bdQIn')?.focus(),0);return;}
-  if(e.target.closest('#bdQStX')){bdQSt='wait';render();return;}
   if(e.target.closest('#bdTop'))return;
   const yh=e.target.closest('[data-year]');if(yh){const f=new Set(state.yfold||[]),y=yh.dataset.year;f.has(y)?f.delete(y):f.add(y);state.yfold=[...f];persistUI();render();return;}
   const pb=e.target.closest('#postBack');if(pb){openPost(pb.dataset.back||null);return;}
@@ -2249,7 +2212,6 @@ $('#main').addEventListener('change',e=>{
   if(el.id==='evLkIn'&&canWrite){const p=tasks.find(x=>x.id===state.post),v=el.value.trim();if(!p||!v)return;const ids=p.evRowIds||[];
     const r=evtRowsAll.find(x=>x.kind==='event'&&x.name&&!ids.includes(x.id)&&evOptLabel(x)===v);
     if(!r){$('#tErr').textContent='목록에서 이벤트를 골라 주세요.';return;}$('#tErr').textContent='';el.value='';el.blur();evLinkSet(p,[...ids,r.id]);return;}
-  if(el.id==='cpPart'){const st=$('#cpSt');st.disabled=!el.value;const p=tasks.find(x=>x.id===state.post),cur=p&&partItem(p,el.value);st.value=cur?cur.status:'wait';return;}
 });
 let dragId=null;
 $('#main').addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragId=c.dataset.id;e.dataTransfer.effectAllowed='move';});
@@ -2264,7 +2226,7 @@ $('#main').addEventListener('dragend',()=>{dragId=null;document.querySelectorAll
 
 /* ---------- 내 업무: 로그인 계정을 구성원 한 명과 연결(members.userId) ---------- */
 function myMember(){return actorId?members.find(m=>m.userId===actorId):null;}
-const isMyReq=t=>{const m=myMember();return !!m&&!isPost(t)&&(t.requesterId?t.requesterId===m.id:t.requester===m.name);}; // 내가 등록한 업무 요청
+const isMyReq=t=>{const m=myMember();return !!m&&(t.requesterId?t.requesterId===m.id:t.requester===m.name);}; // 내가 등록한 업무 요청
 function isMine(t){const m=myMember();return !!m&&(t.assigneeId===m.id||(t.coIds||[]).includes(m.id)||(!t.assigneeId&&t.assignee===m.name));}
 function openWhoAmI(){
   if(!actorId){toast('로그인 정보를 확인할 수 없어 내 업무를 쓸 수 없어요.');return;}
@@ -2718,8 +2680,8 @@ function renderHome(){
   const m=myMember(),T=todayStr(),M=T.slice(0,7),Y=+T.slice(0,4),soon=addDays(T,3),W=workItems();
   const mine=m?W.filter(isMine):[];
   const done=mine.filter(t=>t.status==='done'&&(t.doneDate||'').startsWith(M)).length;
-  const review=m?tasks.filter(t=>isMyReq(t)&&t.status==='review').length:0;
-  const doing=mine.filter(t=>t.status==='doing'||t.status==='review').length,late=mine.filter(isLate).length;
+  const review=m?tasks.filter(t=>isPost(t)&&isMyReq(t)&&t.status==='dev').length:0;
+  const doing=mine.filter(isDoing).length,late=mine.filter(isLate).length;
   const st=m?memberStats(m,Y):null,rate=st&&st.quota?Math.round(st.used/st.quota*100):null;
   const due=mine.filter(t=>t.status!=='done'&&t.status!=='hold'&&t.dueDate&&t.dueDate<=soon).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
   const myLv=m?leaves.filter(l=>l.memberId===m.id&&(l.endDate||l.date||'')>=T&&(l.date||'')<=addDays(T,14)).sort((a,b)=>a.date.localeCompare(b.date)):[];
@@ -2729,7 +2691,7 @@ function renderHome(){
   const checks=[...due.map(t=>`<button type="button" class="hmItem" data-hpost="${esc(rootOf(t).id)}"><span class="hmIco${isLate(t)?' bad':''}" aria-hidden="true">!</span><span class="t"><b>${esc(ttl(t))}</b><span class="legend">${esc(statusOf(t.status).label)} · 마감 ${fmtDate(t.dueDate)} ${dday(t.dueDate)}</span></span>${isLate(t)?'<b class="lateTag">지연</b>':''}</button>`),
     ...myLv.map(l=>`<button type="button" class="hmItem" data-hlv="${esc(l.id)}"><span class="hmIco lv" aria-hidden="true">휴</span><span class="t"><b>${esc(leaveLabel(l))}</b><span class="legend">${fmtDate(l.date)}${l.endDate&&l.endDate!==l.date?' ~ '+fmtDate(l.endDate):''} · ${dday(l.date)}</span></span></button>`)].join('');
   const ck=m?checklists.find(c=>c.id===m.id):null,items=Array.isArray(ck?.items)?ck.items:[];
-  const team=lvOrdered().map(x=>{const lv=leaveOn(x.id,T),L=W.filter(t=>ofMem(t,x)),d=L.filter(t=>t.status==='doing'||t.status==='review').length,l=L.filter(isLate).length;
+  const team=lvOrdered().map(x=>{const lv=leaveOn(x.id,T),L=W.filter(t=>ofMem(t,x)),d=L.filter(isDoing).length,l=L.filter(isLate).length;
     return `<div class="hmMate${x.id===m?.id?' me':''}"><div class="hmMateH">${avatarHtml(x,28)}<b>${esc(x.name)}${x.id===m?.id?' <span class="legend">나</span>':''}</b><span class="pill ${lv?'s-hold':'s-done'}">${lv?esc(ltype(lv.type).label):'근무'}</span></div><span class="legend">진행 ${d}건${l?` · <b class="lateTag">지연 ${l}</b>`:''}</span></div>`;}).join('');
   const ws=hmst.week||homeMonday(T),we=addDays(ws,6),D7=[...Array(7)].map((_,i)=>addDays(ws,i));lvDayItems=calDayMap(ws,we,calFilter(),true,false);
   // 주간 일정: 행 = 팀 전체 + 구성원, 열 = 월~일. 팀 전체 = 담당자 없는 일정·배포·이벤트 운영, 구성원 = 휴가·담당 일정·업무 마감
@@ -2747,7 +2709,7 @@ function renderHome(){
   const NT=ntList().slice(0,3);
   area.innerHTML=`<div class="hmHello">${m?avatarHtml(m,56):''}<div><h2>${m?esc(m.name)+'님,':'안녕하세요,'}<br>오늘 확인할 일이 <em>${N}건</em> 있어요</h2><p class="legend">${dd.getMonth()+1}월 ${dd.getDate()}일 ${'일월화수목금토'[dd.getDay()]}요일${m?'':' · 구성원 목록에서 나를 고르면 내 업무가 보여요'}</p></div>
       <div class="hmBtns">${m?'':'<button class="btn" type="button" id="hmWho">내 이름 선택</button>'}${canWrite?'<button class="btn" type="button" id="hmLeave">+ 휴가</button><button class="btn primary" type="button" id="hmTask">+ 업무</button>':''}</div></div>
-    <div class="hmCards">${card('done','이번 달 완료',done,'건',`${dd.getMonth()+1}월에 끝낸 내 업무`,true)}${card('review','확인 대기',review,'건','내가 요청한 업무 중 검토중')}${card('doing','진행 중 업무',doing,'건',late?`<span class="bad">지연 ${late}건</span>`:'지연 없음')}${card('leave','연차 사용',rate==null?'—':rate,rate==null?'':'%',st?`${fmtDays(st.used)}일 사용 · 예정 ${fmtDays(st.planned)}일`:'연차 일수 미설정')}</div>
+    <div class="hmCards">${card('done','이번 달 완료',done,'건',`${dd.getMonth()+1}월에 끝낸 내 업무`,true)}${card('dev','개발 진행중',review,'건','내가 요청한 업무')}${card('doing','진행 중 업무',doing,'건',late?`<span class="bad">지연 ${late}건</span>`:'지연 없음')}${card('leave','연차 사용',rate==null?'—':rate,rate==null?'':'%',st?`${fmtDays(st.used)}일 사용 · 예정 ${fmtDays(st.planned)}일`:'연차 일수 미설정')}</div>
     <section class="hmSec"><h3>확인할 것 <span class="legend">${N}건</span></h3><div class="panel hmList">${checks||'<div class="hmEmpty">마감이 3일 안에 다가온 업무와 2주 안의 내 휴가가 없어요.</div>'}</div></section>
     ${m?`<section class="hmSec"><h3>내 체크리스트 <span class="legend">${items.filter(x=>!x.done).length}개 남음</span></h3><div class="panel">${items.map(x=>`<div class="ckRow${x.done?' done':''}"><label><input type="checkbox" data-ck="${esc(x.id)}" ${x.done?'checked':''}><span>${esc(x.text)}</span></label><button type="button" class="btn ghost sm" data-ckdel="${esc(x.id)}">지우기</button></div>`).join('')}
       <form class="ckAdd" id="ckForm"><input class="sel" id="ckIn" maxlength="200" placeholder="할 일을 쓰고 Enter" aria-label="체크리스트 할 일" autocomplete="off"><button class="btn" type="submit">추가</button></form></div><p class="legend" style="margin:6px 0 0">체크리스트는 나만 쓰는 메모예요. 업무 목록·변경 이력에는 남지 않아요.</p></section>`:''}
@@ -2771,7 +2733,7 @@ onArea('#homeArea','click',e=>{
   if(b.id==='hmPrev'||b.id==='hmNext'){hmst.week=addDays(hmst.week||homeMonday(todayStr()),b.id==='hmNext'?7:-7);render();return;}
   if(b.id==='hmThis'){hmst.week=null;render();return;}
   const c=b.dataset.hcard;if(c){if(c==='leave'){state.mode='leave';persistUI();render();return;}
-    Object.assign(state,{mode:'tasks',post:null,project:'all',late:false,rpart:'',assignee:c==='review'?'myreq':'me',status:c});persistUI();render();window.scrollTo(0,0);return;}
+    Object.assign(state,{mode:'tasks',post:null,project:'all',late:false,rpart:'',assignee:c==='dev'?'myreq':'me',status:c==='doing'?'prog':c});persistUI();render();window.scrollTo(0,0);return;}
   if(b.dataset.hpost){state.mode='tasks';openPost(b.dataset.hpost);return;}
   if(b.dataset.hlv){const l=leaves.find(x=>x.id===b.dataset.hlv);if(l)openLeave(l);return;}
   if(b.dataset.ckdel){ckSave(ckItems().filter(x=>x.id!==b.dataset.ckdel));return;}
@@ -4410,7 +4372,7 @@ function buildReport(ws,pid){
   const who=t=>asNames(t).join(', ')||'담당 미지정';
   const rules={
     done:[t=>t.status==='done'&&inR(t.doneDate,ws,we),t=>`${key(t)}${t.title} — ${who(t)} · 완료 ${md(t.doneDate)}${t.actHours!==''&&t.actHours!=null?` · ${hrs(t.actHours)}h`:''}`],
-    doing:[t=>t.status==='doing'||t.status==='review',t=>`${key(t)}${t.title} — ${who(t)} · ${statusOf(t.status).label}${t.dueDate?` · 마감 ${md(t.dueDate)}`:''}`],
+    doing:[isDoing,t=>`${key(t)}${t.title} — ${who(t)} · ${statusOf(t.status).label}${t.dueDate?` · 마감 ${md(t.dueDate)}`:''}`],
     next:[t=>t.status!=='done'&&inR(t.dueDate,nws,nwe),t=>`${key(t)}${t.title} — ${who(t)} · 마감 ${md(t.dueDate)}(${DOW[new Date(t.dueDate+'T00:00:00').getDay()]})`],
     late:[t=>t.status==='hold'||(t.status!=='done'&&t.dueDate&&t.dueDate<=we&&t.dueDate<T0),t=>`${key(t)}${t.title} — ${who(t)} · ${t.status==='hold'?'보류':`마감 ${md(t.dueDate)} 경과`}${t.note?` · ${t.note.slice(0,40)}`:''}`],
     new:[t=>inR(t.requestDate,ws,we),t=>`${key(t)}${t.title} — ${t.requester||'요청자 미기재'} → ${who(t)} · 요청 ${md(t.requestDate)}`]
@@ -4558,7 +4520,7 @@ function v3Auto(c,thu){
   const wed=addDays(thu,6),inR=d=>!!d&&d>=thu&&d<=wed;
   if(!c.project)return {counts:{done:0,doing:0,recv:0},deploy:0,lists:{done:[],doing:[],recv:[]}};
   const T=workItems().filter(t=>t.projectId===c.id);
-  const lists={done:T.filter(t=>t.status==='done'&&inR(t.doneDate)),doing:T.filter(t=>t.status==='doing'||t.status==='review'),recv:T.filter(t=>t.status==='wait')};
+  const lists={done:T.filter(t=>t.status==='done'&&inR(t.doneDate)),doing:T.filter(isDoing),recv:T.filter(t=>t.status==='wait')};
   const deploy=events.filter(e=>e.kind==='deploy'&&e.projectId===c.id).reduce((n,e)=>n+deployDates(e,thu,wed).length,0);
   return {counts:{done:lists.done.length,doing:lists.doing.length,recv:lists.recv.length},deploy,lists};
 }
@@ -4806,7 +4768,7 @@ function peopleStats(a,b,pid,withItems){
     }
     const n=(t.assignee||'').trim();if(!n)continue;
     if(t.status==='done'&&t.doneDate){const f=periodShare(t,t.doneDate,a,b);if(!f)continue;const p=P0(n);if(projOf(t.projectId))p.pj.add(t.projectId);p.doneN++;const est=t.actHours===''||t.actHours==null;const h=(est?(+t.estHours||0):(+t.actHours||0))*f;p.doneH+=h;if(est)p.noAct++;if(withItems)p.items.push({t,h,est,kind:'done'});}
-    else if(t.status==='doing'||t.status==='review'){const f=periodShare(t,today,a,b);if(!f)continue;const p=P0(n);if(projOf(t.projectId))p.pj.add(t.projectId);p.doingN++;const h=(+t.actHours||0)*f;p.doingH+=h;if(withItems)p.items.push({t,h,est:false,kind:'doing'});}
+    else if(isDoing(t)){const f=periodShare(t,today,a,b);if(!f)continue;const p=P0(n);if(projOf(t.projectId))p.pj.add(t.projectId);p.doingN++;const h=(+t.actHours||0)*f;p.doingH+=h;if(withItems)p.items.push({t,h,est:false,kind:'doing'});}
   }
   for(const m of members.filter(m=>memberIn(m,pid))){
     const p=P0(m.name);for(const id of memberProjectIds(m))p.pj.add(id);
@@ -5074,7 +5036,7 @@ render();
     else{PARTS=DEFAULT_PARTS.slice();partsStored=false;}
     if(!ar){ar=true;ready();}render();},onErr);
   db.collection('projects').onSnapshot(s=>{projects=s.docs.map(x=>({id:x.id,...x.data()})).sort((a,b)=>(a.order??0)-(b.order??0));if(!pr){pr=true;ready();}render();},onErr);
-  db.collection('tasks').onSnapshot(s=>{tasks=s.docs.map(x=>({id:x.id,...x.data()}));if(!tr){tr=true;ready();}render();},onErr);
+  db.collection('tasks').onSnapshot(s=>{tasks=s.docs.map(x=>{const d={id:x.id,...x.data()};d.status=normSt(d.status);return d;});if(!tr){tr=true;ready();}render();},onErr);
   let wr=false;db.collection('worklogs').onSnapshot(s=>{wlogs=s.docs.map(x=>({id:x.id,...x.data()}));if(!wr){wr=true;ready();}wlRefresh?.();render();},onErr);
   // ponytail: 댓글·템플릿을 전부 구독. 수천 건이 넘으면 업무별 query로 나눌 것
   let cr=false;db.collection('comments').onSnapshot(s=>{comments=s.docs.map(x=>({id:x.id,...x.data()}));if(!cr){cr=true;ready();}wlRefresh?.();if(state.view==='list')render();},onErr);

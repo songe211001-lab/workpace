@@ -22,7 +22,7 @@
   --warn:#993f00; --warn-strong:#ff8800; --warn-soft:#ffe8d1; --warn-border:#ffbd8d;
   --bad:#b00727; --bad-strong:#f03848; --bad-soft:#ffe1df; --bad-border:#febab6;
   --overlay:rgba(43,37,35,.4);
-  --pub:#1c5fbf; --pub-soft:#e3edff; --dev:#5b3a9a; --dev-soft:#efe7fb;
+  --design:#a3306a; --design-soft:#fde8f2; --pub:#1c5fbf; --pub-soft:#e3edff; --dev:#5b3a9a; --dev-soft:#efe7fb;
   --shadow-3:0 12px 32px rgba(1,10,37,.10),0 2px 6px rgba(1,10,37,.06);
   --shadow-toast:0 8px 24px rgba(1,10,37,.16);
   --font-ui:Pretendard,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
@@ -300,7 +300,7 @@ td.nowrap{white-space:nowrap}
 .s-wait{background:var(--sunk);color:var(--ink-soft)}
 .s-doing{background:var(--warn-soft);color:var(--warn)}
 .s-review{background:var(--accent-soft);color:var(--fg)}
-.s-plan{background:var(--warn-soft);color:var(--warn)}.s-pub{background:var(--pub-soft);color:var(--pub)}.s-dev{background:var(--dev-soft);color:var(--dev)}
+.s-plan{background:var(--warn-soft);color:var(--warn)}.s-design{background:var(--design-soft);color:var(--design)}.s-pub{background:var(--pub-soft);color:var(--pub)}.s-dev{background:var(--dev-soft);color:var(--dev)}
 tbody tr.is-late td:first-child{box-shadow:inset 3px 0 0 var(--bad-strong)}
 .card.is-late{box-shadow:inset 3px 0 0 var(--bad-strong)}
 /* A3: 마감일에 담당자 휴가 */
@@ -1205,7 +1205,7 @@ button.sfProf:hover{background:var(--sunk)}
   --warn:#ffb877; --warn-strong:#ff9a2e; --warn-soft:#3b2915; --warn-border:#7a4f20;
   --bad:#ff9499; --bad-strong:#ff5f6b; --bad-soft:#3d1d22; --bad-border:#7a3038;
   --overlay:rgba(0,0,0,.6);
-  --pub:#a6c8ff; --pub-soft:#1d2c45; --dev:#cdb5ff; --dev-soft:#2c2140;
+  --design:#ffa8d2; --design-soft:#3a1f2d; --pub:#a6c8ff; --pub-soft:#1d2c45; --dev:#cdb5ff; --dev-soft:#2c2140;
   --shadow-3:0 12px 32px rgba(0,0,0,.45),0 2px 6px rgba(0,0,0,.3);
   --shadow-toast:0 8px 24px rgba(0,0,0,.5);
 }
@@ -1251,11 +1251,11 @@ button.sfProf:hover{background:var(--sunk)}
 .bdChips{display:flex;gap:6px;flex-wrap:wrap}
 .bdChip{border:1px solid var(--line);background:var(--surface);color:var(--ink-soft);border-radius:999px;padding:4px 12px;font-size:13px;font-weight:700}
 .bdChip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--surface)}
-.board{grid-template-columns:repeat(6,minmax(0,1fr))}
-@media (max-width:900px){.board{grid-template-columns:repeat(6,minmax(210px,1fr))}}
+.board{grid-template-columns:repeat(7,minmax(130px,1fr));gap:8px}
+@media (max-width:900px){.board{grid-template-columns:repeat(7,minmax(200px,1fr))}}
 .bdColH{display:inline-flex;align-items:center;gap:6px}
 .bdDot{width:8px;height:8px;border-radius:50%}
-.bd-wait{background:var(--grey-400)}.bd-plan{background:var(--warn-strong)}.bd-pub{background:var(--pub)}.bd-dev{background:var(--dev)}.bd-hold{background:var(--na)}.bd-done{background:var(--ok-strong)}
+.bd-wait{background:var(--grey-400)}.bd-plan{background:var(--warn-strong)}.bd-design{background:var(--design)}.bd-pub{background:var(--pub)}.bd-dev{background:var(--dev)}.bd-hold{background:var(--na)}.bd-done{background:var(--ok-strong)}
 .bdT{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-weight:600}
 .bdCard .rqChips{margin-top:0}
 .bdWho{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1668,11 +1668,11 @@ const DEFAULT_PARTS=[
 ];
 let PARTS=DEFAULT_PARTS.slice(), partsStored=false;
 const STATUSES=[
-  {k:'wait',label:'대기'},{k:'plan',label:'기획 진행중'},{k:'pub',label:'퍼블리싱 진행중'},{k:'dev',label:'개발 진행중'},{k:'hold',label:'보류'},{k:'done',label:'완료'}
+  {k:'wait',label:'대기'},{k:'plan',label:'기획 진행중'},{k:'design',label:'디자인 진행중'},{k:'pub',label:'퍼블리싱 진행중'},{k:'dev',label:'개발 진행중'},{k:'hold',label:'보류'},{k:'done',label:'완료'}
 ];
 // 예전 진행 현황 호환: 진행중 → 기획 진행중, 검토중 → 개발 진행중(불러올 때 바꿔 둠, 다시 저장하면 새 값으로)
 const OLD_ST={doing:'plan',review:'dev'},normSt=k=>OLD_ST[k]||k;
-const isDoing=t=>['plan','pub','dev'].includes(t.status); // 진행 중(기획·퍼블리싱·개발)
+const isDoing=t=>['plan','design','pub','dev'].includes(t.status); // 진행 중(기획·디자인·퍼블리싱·개발)
 const PRIS=['긴급','높음','보통','낮음'];
 const PCOLORS=['#1d5c84','#c2457a','#b57a12','#2f8a5b','#7a4fb0','#c4552f','#4b7f8c','#6b6f86'];
 
@@ -1947,7 +1947,7 @@ function renderFilters(){
 }
 
 // 보드: 게시물을 진행 현황(postStatus) 열로. 위에 빠른 등록 · 담당 필터 칩, 카드에 다음 단계 버튼
-const BD_NEXT={wait:['plan','기획 시작'],plan:['pub','퍼블리싱으로'],pub:['dev','개발로'],dev:['done','완료 처리'],hold:['plan','다시 시작']};
+const BD_NEXT={wait:['plan','기획 시작'],plan:['design','디자인으로'],design:['pub','퍼블리싱으로'],pub:['dev','개발로'],dev:['done','완료 처리'],hold:['plan','다시 시작']};
 function renderBoard(){
   const main=$('#main'),posts=postList();
   const cols=STATUSES.map(s=>{const items=posts.filter(p=>postStatus(p,kidsOf(p))===s.k);

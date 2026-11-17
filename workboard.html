@@ -930,7 +930,6 @@ a.rms:hover{text-decoration:underline}
 .mpItem:hover,.mpItem:focus-visible{border-color:var(--accent);outline:none;background:var(--accent-soft)}
 .mpOut{all:unset;align-self:center;margin-top:10px;font-size:14px;color:var(--ink-soft);cursor:pointer;padding:4px 8px;border-radius:6px}
 .mpOut:hover,.mpOut:focus-visible{color:var(--fg);outline:2px solid var(--line)}
-.sidePick{flex:none}
 @media (max-width:420px){.mpCard{padding:28px 20px}}
 /* ---------- 업무 상세(게시판형 수정) ---------- */
 .tfPage{gap:18px}
@@ -1175,7 +1174,7 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 <script>try{if(localStorage.getItem('wb-theme')==='dark')document.documentElement.dataset.theme='dark';}catch(e){}</script>
 <div class="shell" id="shell">
   <aside class="side" id="side" aria-label="메뉴">
-    <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button><button type="button" class="sideFold sidePick" id="sidePick" aria-label="메뉴 선택 화면 열기" title="메뉴 선택 화면"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg></button></div>
+    <div class="sideHead"><button type="button" class="sideFold" id="sideFold" aria-label="메뉴 접기" title="메뉴 접기" aria-controls="side"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg></button></div>
     <nav class="sideNav" id="modeTabs" role="tablist" aria-orientation="vertical" aria-label="화면">
     </nav>
     <div class="sideFoot" id="sideFoot"></div>
@@ -1256,8 +1255,8 @@ const state={mode:'tasks',period:'all',pBasis:'active',pAnchor:null,view:'list',
 let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 화면(settings/menus.home)을 쓰지 않음
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 {let sm=null;try{sm=sessionStorage.getItem('wb-mode');}catch(e){}state.mode=sm||'home';modeFromUser=!!sm;} // 새로 접속하면 홈, 같은 탭 새로고침은 보던 화면
-// 링크 끝의 #report 같은 이름으로 그 화면을 바로 열 수 있게 함 (tasks·staff·leave·report·hours·history)
-{const h=location.hash.slice(1);if(['home','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
+// 링크 끝의 #report 같은 이름은 같은 탭 새로고침에서만 씀. 처음 접속은 무조건 홈
+{const h=location.hash.slice(1);if(modeFromUser&&['home','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{sessionStorage.setItem('wb-mode',state.mode);}catch(e){}try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
@@ -1296,7 +1295,7 @@ const menuName=k=>String(menuCfg.names?.[k]||'').trim()||defName(k)||k;
 function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
 // 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
 function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
-const firstMenu=()=>menuCfg.home&&menuOpen(menuCfg.home)?menuCfg.home:'home';
+const firstMenu=()=>'home';
 NAV_ICO.home='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>';
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),myLevel(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access,menuCfg.accessLv]);if(key===navKey)return;navKey=key;
@@ -1427,7 +1426,6 @@ function applyMode(){
   if(customOf(state.mode)?.to)state.mode=customOf(state.mode).to; // 내부 링크 메뉴는 연결된 화면으로
   if(menuCfg.home==='annual')menuCfg.home='leave';
   renderNav();
-  if(storeReady&&!modeFromUser&&menuCfg.home&&menuOpen(menuCfg.home)){state.mode=menuCfg.home;modeFromUser=true;}
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
   const AREAS={home:'homeArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
@@ -3912,7 +3910,6 @@ function openMenuPick(){
 }
 function closeMenuPick(k){try{sessionStorage.setItem('wb-picked','1');}catch(e){}$('#menuPick')?.remove();if(k&&k!==state.mode){state.mode=k;state.post=null;persistUI();}render();window.scrollTo(0,0);}
 document.addEventListener('click',e=>{
-  if(e.target.closest('#sidePick')){openMenuPick();return;}
   const box=e.target.closest('#menuPick');if(!box)return;
   const it=e.target.closest('[data-pick]');if(it){closeMenuPick(it.dataset.pick);return;}
   if(e.target.closest('#mpOut'))window.wbAuth?.signOut();
@@ -3955,8 +3952,6 @@ function renderMenus(){
     +'<div class="mnSep"></div>'
     +row('메뉴 정렬',mv('top','맨위',i<=0)+mv('up','위',i<=0)+mv('down','아래',i>=o.length-1)+mv('bottom','맨아래',i>=o.length-1))
     +row('묶음 이동',BASE_ITEMS.some(x=>x[0]===k&&x[1]==='admin')?'<span class="legend">관리자 메뉴는 관리자 묶음에서 옮길 수 없어요.</span>':`<select class="sel" id="mnGrp" aria-label="옮길 묶음">${MENU_GRPS.map(([gg])=>`<option value="${gg}" ${gg===g?'selected':''}>${esc(mLabel(d,'grp:'+gg))}</option>`).join('')}</select><span class="legend">고르면 그 묶음 맨 아래로 옮겨요.${lock?'':' 관리자 묶음으로 옮기면 관리자에게만 보여요.'}</span>`)
-    +'<div class="mnSep"></div>'
-    +`<label class="cfItem"><input type="checkbox" id="mnHome" ${d.home===k?'checked':''}>로그인하면 이 메뉴를 먼저 보여줍니다.</label>`
     +(customOf(k)?'<div class="mnSep"></div><div><button class="btn danger sm" type="button" id="mnDel">이 메뉴 삭제</button></div>':'');
   area.innerHTML=`<div class="mnWrap">
       <div class="mnLeft"><div class="mnTools"><button class="btn sm" type="button" id="mnAdd">+ 메뉴 추가</button><button class="btn sm" type="button" id="mnGadd">+ 묶음(대메뉴) 추가</button></div><div class="mnTree" role="tree" aria-label="메뉴 전체보기"><div class="mnAll">메뉴 전체보기 <span class="legend">(${MENU_ITEMS.length})</span></div>${nodes.map(node).join('')}</div>
@@ -3981,7 +3976,6 @@ onArea('#menusArea','change',e=>{
   if(e.target.id==='mnAll'){mDraft.access[k]=e.target.checked?[]:['admin'];render();return;}
   if(e.target.name==='mnRole'){const on=[...document.querySelectorAll('#menusArea [name="mnRole"]:checked:not(:disabled)')].map(x=>x.value);mDraft.access[k]=on.length===ROLES.length-1?[]:on.length?on:['admin'];render();return;}
   if(e.target.name==='mnLv'){const on=[...document.querySelectorAll('#menusArea [name="mnLv"]:checked')].map(x=>x.value);mDraft.accessLv[k]=on.length===LEVELS.length?[]:on.length?on:['none'];render();return;} // 모두 끄면 관리자만
-  if(e.target.id==='mnHome'){mDraft.home=e.target.checked?k:'';render();return;}
   if(e.target.name==='mnKind'){const c=mDraft.custom.find(x=>x.id===k);if(c){if(e.target.value==='in')c.to=c.to||'tasks';else delete c.to;}render();return;}
   if(e.target.id==='mnTo'){const c=mDraft.custom.find(x=>x.id===k);if(c)c.to=e.target.value;render();return;}
   if(e.target.name==='mnTab'){const c=mDraft.custom.find(x=>x.id===k);if(c)c.newTab=e.target.value==='1';render();return;}

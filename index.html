@@ -1272,7 +1272,7 @@ button.sfProf:hover{background:var(--sunk)}
 .gateForm input,.gateForm select{height:36px;padding:0 12px;font-size:14px}
 .gateForm .btn{height:38px;margin-top:10px}
 .gateCard>p:last-child,.gateCard .err{text-align:center}
-.gateTabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
+.gateTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg)}
 .gateTab{all:unset;box-sizing:border-box;text-align:center;padding:8px 0;border-radius:calc(var(--r) - 2px);font-size:14px;font-weight:600;color:var(--ink-soft);cursor:pointer}
 .gateTab[aria-selected="true"]{background:var(--surface);color:var(--accent-dark);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 .gateTab:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
@@ -1377,6 +1377,8 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   /* ---------- 문서 저장소: 컬렉션별로 한 번 다 받아 두고 Realtime으로 갱신 ---------- */
   // ponytail: 컬렉션을 통째로 받음. 업무가 수만 건이 되면 기간별로 나눠 받을 것
   const cache={}, subs={}, loading={};
+  // 게스트(익명 로그인): 홈·공지·일정에 필요한 컬렉션만 읽기. 나머지는 빈 목록
+  const GUEST_COLLS=['notices','events','leaves','members','projects','parts','settings'];let guest=false;
   const newId=()=>crypto.randomUUID().replace(/-/g,'').slice(0,20);
   const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
   const merge=(a,b)=>{const o={...a};for(const k in b)o[k]=isObj(b[k])&&isObj(a?.[k])?merge(a[k],b[k]):b[k];return o;};
@@ -1390,6 +1392,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   function load(c,force){
     if(!loading[c]||force)loading[c]=(async()=>{
       const m=new Map();
+      if(guest){if(GUEST_COLLS.includes(c)){const {data,error}=await sb.rpc('wb_guest_docs',{p_coll:c});if(error)throw toErr(error);(data||[]).forEach(r=>m.set(r.id,r.data));}cache[c]=m;fire(c);touch();return;}
       for(let f=0;;f+=1000){const {data,error}=await sb.from('wb_docs').select('id,data').eq('coll',c).range(f,f+999);if(error)throw toErr(error);data.forEach(r=>m.set(r.id,r.data));if(data.length<1000)break;}
       cache[c]=m;fire(c);touch();
     })().catch(e=>{delete loading[c];throw e;});
@@ -1403,6 +1406,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   };
   const listen=(c,f,error)=>{(subs[c]||=new Set()).add(f);load(c).then(f,e=>error?.(e));return()=>subs[c].delete(f);};
   async function write(c,id,op,d){
+    if(guest)throw toErr({code:'42501',message:'permission'}); // 게스트는 보기만
     await load(c).catch(()=>{});
     const m=cache[c]||(cache[c]=new Map()), prev=m.get(id);
     if(op==='update'&&prev===undefined)throw toErr({code:'P0002',message:'not_found'});
@@ -1456,8 +1460,8 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   let me=null, isAdmin=false;
   const memberOf=uid=>{for(const [id,d] of cache.members||[])if(d.userId===uid)return {id,...d};return null;};
   const user={isOwner:()=>isAdmin,canEdit:()=>isAdmin,
-    can:async n=>n==='data.write'?true:n==='admin'?isAdmin:null,
-    id:async()=>me.id,me:async()=>({id:me.id,name:memberOf(me.id)?.name||''}),
+    can:async n=>n==='data.write'?!guest:n==='admin'?isAdmin:null,
+    id:async()=>me.id,me:async()=>({id:me.id,name:guest?me.name:memberOf(me.id)?.name||''}),
     profiles:async ids=>Object.fromEntries(ids.map(i=>[i,{id:i,name:memberOf(i)?.name||''}])),search:async()=>[]};
   const downloads={save:async({filename,data})=>{
     const blob=data instanceof Blob?data:new Blob([data],{type:'text/plain;charset=utf-8'});
@@ -1467,7 +1471,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   let readyRes;const ready=new Promise(r=>readyRes=r);
   const caps={};
   window.claude={use:async n=>{await ready;return caps[n]??null;}};
-  window.wbAuth={get email(){return me?.email||'';},get isAdmin(){return isAdmin;},get uid(){return me?.id||'';},signOut:()=>sb.auth.signOut().then(()=>location.reload()),
+  window.wbAuth={get guest(){return guest;},get guestName(){return guest?me?.name||'':'';},get email(){return me?.email||'';},get isAdmin(){return isAdmin;},get uid(){return me?.id||'';},signOut:()=>sb.auth.signOut().then(()=>location.reload()),
     // 관리자 목록·지정 (서버 함수 wb_admin_ids, wb_set_admin). 오류 문구는 서버가 한국어로 돌려줌
     listAdmins:async()=>{const {data,error}=await sb.rpc('wb_admin_ids');if(error)throw toErr(error);return data||[];},
     setAdmin:async(uid,on)=>{const {error}=await sb.rpc('wb_set_admin',{p_user:uid,p_on:on});if(error)throw Object.assign(new Error(error.message),{code:'admin'});if(uid===me.id)isAdmin=on;}};
@@ -1490,11 +1494,11 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   const savedEmail=()=>{try{return localStorage.getItem('wb-email')||'';}catch(e){return '';}};
   const keepEmail=e=>{try{localStorage.setItem('wb-email',e);}catch(x){}};
   const emailOk=email=>{if(isStaffEmail(email))return true;$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return false;};
-  const tabs=t=>`<div class="gateTabs" role="tablist" aria-label="로그인 또는 회원가입"><button type="button" role="tab" class="gateTab" data-gt="login" aria-selected="${t==='login'}">로그인</button><button type="button" role="tab" class="gateTab" data-gt="signup" aria-selected="${t==='signup'}">회원가입</button></div>`;
+  const tabs=t=>`<div class="gateTabs" role="tablist" aria-label="로그인 또는 회원가입"><button type="button" role="tab" class="gateTab" data-gt="login" aria-selected="${t==='login'}">로그인</button><button type="button" role="tab" class="gateTab" data-gt="signup" aria-selected="${t==='signup'}">회원가입</button><button type="button" role="tab" class="gateTab" data-gt="guest" aria-selected="${t==='guest'}">게스트 입장</button></div>`;
   const emailField=v=>`<label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="username" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(v)}">`;
   const pwField=(id,lab,ac)=>`<label for="${id}">${lab}</label><div class="gatePw"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="btn ghost sm" data-pw="${id}" aria-label="비밀번호 보기" aria-pressed="false">보기</button></div>`;
   gate.addEventListener('click',e=>{
-    const t=e.target.closest('[data-gt]');if(t){const em=$g('#gEmail')?.value.trim()||'';t.dataset.gt==='login'?loginStep('',em):signupStep(em);return;}
+    const t=e.target.closest('[data-gt]');if(t){const em=$g('#gEmail')?.value.trim()||'';t.dataset.gt==='login'?loginStep('',em):t.dataset.gt==='guest'?guestStep():signupStep(em);return;}
     const b=e.target.closest('[data-pw]');if(b){const i=$g('#'+b.dataset.pw),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'숨기기':'보기';b.setAttribute('aria-pressed',String(show));}
   });
   // 비밀번호 두 칸 확인(가입·새 비밀번호)
@@ -1536,6 +1540,20 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
       if(data.user&&Array.isArray(data.user.identities)&&!data.user.identities.length){loginStep("이미 가입된 메일이에요. 로그인하거나, 비밀번호를 모르면 '비밀번호 찾기'를 눌러 주세요.",email);return;}
       if(data.session){enter(data.session);return;} // 메일 확인을 끈 프로젝트
       codeStep(email,'signup');});
+  }
+
+  // 게스트 입장: 이름만 적고 익명 로그인. 홈·공지·일정만 보기 전용(서버 함수 wb_guest_docs가 범위를 정함)
+  function guestStep(){
+    card(`${tabs('guest')}<p>회사 계정 없이 이름만 적고 들어와요. <b>홈 · 공지 · 일정</b>을 볼 수만 있어요.</p>
+      <form id="gGuestF" class="gateForm" novalidate><label for="gGuestName">이름</label><input id="gGuestName" maxlength="20" autocomplete="name" placeholder="예: 홍길동">
+      <button class="btn primary" type="submit" id="gGo">게스트로 입장</button><p class="err" id="gErr" role="alert"></p></form>`);
+    $g('#gGuestName').focus();
+    $g('#gGuestF').addEventListener('submit',async e=>{e.preventDefault();$g('#gErr').textContent='';
+      const name=$g('#gGuestName').value.trim();if(!name){$g('#gErr').textContent='이름을 입력해 주세요.';return;}
+      $g('#gGo').disabled=true;
+      const {data,error}=await sb.auth.signInAnonymously({options:{data:{guest_name:name}}});
+      if(error||!data?.session){$g('#gGo').disabled=false;$g('#gErr').textContent=/anonymous.*disabled|not enabled/i.test(error?.message||'')?'게스트 입장이 아직 꺼져 있어요. 관리자에게 문의해 주세요.':authErr(error);return;}
+      enter(data.session);});
   }
 
   // 메일로 받은 코드 확인: signup = 가입 확인, recovery = 비밀번호 다시 만들기
@@ -1638,6 +1656,11 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
     box.querySelector('#onlineList').innerHTML=`<b>지금 접속 중</b>`+people.map(p=>`<div class="onlineItem">${typeof avatarHtml==='function'?avatarHtml(memberOf(p.uid)||{name:p.name},22):'<span class="syncDot"></span>'}<span>${escH(p.name||'이름 등록 전')}${p.uid===me?.id?' (나)':''}</span><span class="legend">${p.since?escH(hm(new Date(p.since)).slice(0,5))+'부터':''}</span></div>`).join('');
   }
   async function enter(session){
+    if(session.user.is_anonymous){ // 게스트: 실시간·접속자 표시 없이 1분마다 새로 받아 옴
+      guest=true;isAdmin=false;me={id:session.user.id,email:'',name:String(session.user.user_metadata?.guest_name||'게스트').trim().slice(0,20)||'게스트'};
+      try{await Promise.all(['members','projects','parts'].map(c=>load(c)));}catch(e){card(`<p>${isNetErr(e)?escH(PAUSED_HINT):'게스트 입장을 아직 쓸 수 없어요. 관리자에게 문의해 주세요.'}</p><p class="err">${escH(e.message)}</p><button class="btn" type="button" id="gOut">처음으로</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
+      setInterval(()=>Object.keys(loading).forEach(c=>load(c,true).catch(()=>{})),60000);
+      gate.hidden=true;gate.innerHTML='';Object.assign(caps,{db,user,downloads});readyRes();return;}
     me={id:session.user.id,email:(session.user.email||'').toLowerCase(),name:(session.user.user_metadata?.name||'').trim()};
     if(!isStaffEmail(me.email)){card(`<p>${escH(me.email)}은(는) 회사 메일이 아니라서 들어갈 수 없어요.</p><button class="btn" type="button" id="gOut">로그아웃</button>`);$g('#gOut').onclick=()=>window.wbAuth.signOut();return;}
     try{
@@ -1721,7 +1744,9 @@ const defName=k=>k.startsWith('grp:')?MENU_GRPS.find(g=>'grp:'+g[0]===k)?.[1]:ME
 const menuName=k=>String(menuCfg.names?.[k]||'').trim()||defName(k)||k;
 function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x=>x[0]),o=(cfg.order?.[g]||[]).filter(k=>def.includes(k));return [...new Set([...o,...def])];}
 // 관리자 묶음은 항상 관리자만, 나머지는 메뉴 권한 관리의 공개 범위대로. 업무 시간(hours)은 주간 보고를 따름
-function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
+const GUEST_MENUS=['home','notice','leave']; // 게스트가 볼 수 있는 메뉴
+const isGuest=()=>!!window.wbAuth?.guest;
+function menuOpen(k){if(isGuest())return GUEST_MENUS.includes(k);if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
 const firstMenu=()=>'home';
 NAV_ICO.notice='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>';
 NAV_ICO.home='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>';
@@ -3107,14 +3132,14 @@ function renderHome(){
   const st=m?memberStats(m,Y):null,rate=st&&st.quota?Math.round(st.used/st.quota*100):null;
   const due=mine.filter(t=>t.status!=='done'&&t.status!=='hold'&&t.dueDate&&t.dueDate<=soon).sort((a,b)=>a.dueDate.localeCompare(b.dueDate));
   const myLv=m?leaves.filter(l=>l.memberId===m.id&&(l.endDate||l.date||'')>=T&&(l.date||'')<=addDays(T,14)).sort((a,b)=>a.date.localeCompare(b.date)):[];
-  const N=due.length+myLv.length,dd=new Date(T+'T00:00:00');
+  const N=due.length+myLv.length,dd=new Date(T+'T00:00:00'),G=isGuest();
   const card=(id,lab,val,unit,sub,pri)=>`<button type="button" class="hmCard${pri?' pri':''}" data-hcard="${id}"><span class="hmCardL">${lab}</span><b class="num">${val}<small>${unit}</small></b><span class="legend">${sub}</span></button>`;
   const ttl=t=>{const r=rootOf(t);return r.id===t.id?t.title:`${r.title} · ${partOf(t.part).label}`;};
   const checks=[...due.map(t=>`<button type="button" class="hmItem" data-hpost="${esc(rootOf(t).id)}"><span class="hmIco${isLate(t)?' bad':''}" aria-hidden="true">!</span><span class="t"><b>${esc(ttl(t))}</b><span class="legend">${esc(statusOf(t.status).label)} · 마감 ${fmtDate(t.dueDate)} ${dday(t.dueDate)}</span></span>${isLate(t)?'<b class="lateTag">지연</b>':''}</button>`),
     ...myLv.map(l=>`<button type="button" class="hmItem" data-hlv="${esc(l.id)}"><span class="hmIco lv" aria-hidden="true">휴</span><span class="t"><b>${esc(leaveLabel(l))}</b><span class="legend">${fmtDate(l.date)}${l.endDate&&l.endDate!==l.date?' ~ '+fmtDate(l.endDate):''} · ${dday(l.date)}</span></span></button>`)].join('');
   const ck=m?checklists.find(c=>c.id===m.id):null,items=Array.isArray(ck?.items)?ck.items:[];
   const team=lvOrdered().map(x=>{const lv=leaveOn(x.id,T),L=W.filter(t=>ofMem(t,x)),d=L.filter(isDoing).length,l=L.filter(isLate).length;
-    return `<div class="hmMate${x.id===m?.id?' me':''}"><div class="hmMateH">${avatarHtml(x,28)}<b>${esc(x.name)}${x.id===m?.id?' <span class="legend">나</span>':''}</b><span class="pill ${lv?'s-hold':'s-done'}">${lv?esc(ltype(lv.type).label):'근무'}</span></div><span class="legend">진행 ${d}건${l?` · <b class="lateTag">지연 ${l}</b>`:''}</span></div>`;}).join('');
+    return `<div class="hmMate${x.id===m?.id?' me':''}"><div class="hmMateH">${avatarHtml(x,28)}<b>${esc(x.name)}${x.id===m?.id?' <span class="legend">나</span>':''}</b><span class="pill ${lv?'s-hold':'s-done'}">${lv?esc(ltype(lv.type).label):'근무'}</span></div>${G?'':`<span class="legend">진행 ${d}건${l?` · <b class="lateTag">지연 ${l}</b>`:''}</span>`}</div>`;}).join('');
   const ws=hmst.week||homeMonday(T),we=addDays(ws,6),D7=[...Array(7)].map((_,i)=>addDays(ws,i));lvDayItems=calDayMap(ws,we,calFilter(),true,false);
   // 주간 일정: 행 = 팀 전체 + 구성원, 열 = 월~일. 팀 전체 = 담당자 없는 일정·배포·이벤트 운영, 구성원 = 휴가·담당 일정·업무 마감
   const evOps=calDayMap(ws,we,{evops:true},true,false),inEv=(ev,d)=>!!ev.start&&ev.start<=d&&d<=(ev.end||ev.start);
@@ -3129,10 +3154,10 @@ function renderHome(){
   const wrows=`<tr><th class="hmWkWho" scope="row"><span class="hmTeamDot" aria-hidden="true"></span>팀 전체</th>${D7.map(d=>wcell(teamCell(d),d)).join('')}</tr>`+lvOrdered().map(x=>`<tr><th class="hmWkWho" scope="row">${avatarHtml(x,22)}${esc(x.name)}</th>${D7.map(d=>wcell(memCell(x,d),d)).join('')}</tr>`).join('');
   const days=`<div class="tablebox"><table class="hmWk"><thead><tr><th class="hmWkWho" scope="col">팀원</th>${D7.map((d,i)=>`<th scope="col" class="${d===T?'today':''}${isWeekend(d)?' we':''}"><span>${'월화수목금토일'[i]}${d===T?' · 오늘':''}</span><span class="num">${md(d)}</span></th>`).join('')}</tr></thead><tbody>${wrows}</tbody></table></div>`;
   const NT=ntList().slice(0,3);
-  area.innerHTML=`<div class="hmHello">${m?avatarHtml(m,56):''}<div><h2>${m?esc(m.name)+'님,':'안녕하세요,'}<br>오늘 확인할 일이 <em>${N}건</em> 있어요</h2><p class="legend">${dd.getMonth()+1}월 ${dd.getDate()}일 ${'일월화수목금토'[dd.getDay()]}요일${m?'':' · 구성원 목록에서 나를 고르면 내 업무가 보여요'}</p></div>
-      <div class="hmBtns">${m?'':'<button class="btn" type="button" id="hmWho">내 이름 선택</button>'}${canWrite?'<button class="btn" type="button" id="hmLeave">+ 휴가</button><button class="btn primary" type="button" id="hmTask">+ 업무</button>':''}</div></div>
-    <div class="hmCards">${card('done','이번 달 완료',done,'건',`${dd.getMonth()+1}월에 끝낸 내 업무`,true)}${card('dev','개발 진행중',review,'건','내가 요청한 업무')}${card('doing','진행 중 업무',doing,'건',late?`<span class="bad">지연 ${late}건</span>`:'지연 없음')}${card('leave','연차 사용',rate==null?'—':rate,rate==null?'':'%',st?`${fmtDays(st.used)}일 사용 · 예정 ${fmtDays(st.planned)}일`:'연차 일수 미설정')}</div>
-    <section class="hmSec"><h3>확인할 것 <span class="legend">${N}건</span></h3><div class="panel hmList">${checks||'<div class="hmEmpty">마감이 3일 안에 다가온 업무와 2주 안의 내 휴가가 없어요.</div>'}</div></section>
+  area.innerHTML=`<div class="hmHello">${m?avatarHtml(m,56):''}<div><h2>${G?`${esc(window.wbAuth.guestName)}님,<br>환영해요`:`${m?esc(m.name)+'님,':'안녕하세요,'}<br>오늘 확인할 일이 <em>${N}건</em> 있어요`}</h2><p class="legend">${dd.getMonth()+1}월 ${dd.getDate()}일 ${'일월화수목금토'[dd.getDay()]}요일${G?' · 게스트는 일정과 공지를 볼 수 있어요':m?'':' · 구성원 목록에서 나를 고르면 내 업무가 보여요'}</p></div>
+      <div class="hmBtns">${m||G?'':'<button class="btn" type="button" id="hmWho">내 이름 선택</button>'}${canWrite?'<button class="btn" type="button" id="hmLeave">+ 휴가</button><button class="btn primary" type="button" id="hmTask">+ 업무</button>':''}</div></div>
+    ${G?'':`<div class="hmCards">${card('done','이번 달 완료',done,'건',`${dd.getMonth()+1}월에 끝낸 내 업무`,true)}${card('dev','개발 진행중',review,'건','내가 요청한 업무')}${card('doing','진행 중 업무',doing,'건',late?`<span class="bad">지연 ${late}건</span>`:'지연 없음')}${card('leave','연차 사용',rate==null?'—':rate,rate==null?'':'%',st?`${fmtDays(st.used)}일 사용 · 예정 ${fmtDays(st.planned)}일`:'연차 일수 미설정')}</div>
+    <section class="hmSec"><h3>확인할 것 <span class="legend">${N}건</span></h3><div class="panel hmList">${checks||'<div class="hmEmpty">마감이 3일 안에 다가온 업무와 2주 안의 내 휴가가 없어요.</div>'}</div></section>`}
     ${m?`<section class="hmSec"><h3>내 체크리스트 <span class="legend">${items.filter(x=>!x.done).length}개 남음</span></h3><div class="panel">${items.map(x=>`<div class="ckRow${x.done?' done':''}"><label><input type="checkbox" data-ck="${esc(x.id)}" ${x.done?'checked':''}><span>${esc(x.text)}</span></label><button type="button" class="btn ghost sm" data-ckdel="${esc(x.id)}">지우기</button></div>`).join('')}
       <form class="ckAdd" id="ckForm"><input class="sel" id="ckIn" maxlength="200" placeholder="할 일을 쓰고 Enter" aria-label="체크리스트 할 일" autocomplete="off"><button class="btn" type="submit">추가</button></form></div><p class="legend" style="margin:6px 0 0">체크리스트는 나만 쓰는 메모예요. 업무 목록·변경 이력에는 남지 않아요.</p></section>`:''}
     <section class="hmSec"><h3>오늘 우리 팀 <span class="legend">${team?`근무 ${lvOrdered().filter(x=>!leaveOn(x.id,T)).length}명`:''}</span></h3>${team?`<div class="hmTeam">${team}</div>`:'<div class="panel hmEmpty">구성원이 없어요.</div>'}</section>
@@ -3210,12 +3235,12 @@ onArea('#noticeArea','click',e=>{if(e.target.closest('#ntAdd')){openNotice(null,
 function setTheme(dark){if(dark)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;try{localStorage.setItem('wb-theme',dark?'dark':'light');}catch(e){}drawSideFoot();}
 function drawSideFoot(){
   const box=$('#sideFoot');if(!box)return;
-  const m=myMember(),dark=document.documentElement.dataset.theme==='dark',auth=!!window.wbAuth&&storeReady,adm=isAdminUser();
+  const m=myMember(),dark=document.documentElement.dataset.theme==='dark',auth=!!window.wbAuth&&storeReady,adm=isAdminUser(),G=isGuest();
   const sub=[m?.org||'',m?.part?partOf(m.part).label:'',adm?'관리자':''].filter(Boolean).join(' · ')||'구성원';
-  const key=JSON.stringify([m?.id,m?.name,(m?.avatar||'').length,sub,dark,auth]);if(box.dataset.key===key)return;box.dataset.key=key;
+  const key=JSON.stringify([m?.id,m?.name,(m?.avatar||'').length,sub,dark,auth,G]);if(box.dataset.key===key)return;box.dataset.key=key;
   box.innerHTML=`<div class="sfRow"><span class="lbl">어두운 모드</span><button type="button" class="swt" id="themeSw" role="switch" aria-checked="${dark}" aria-label="어두운 모드" title="어두운 모드"><span></span></button></div>
-    <div class="sfMe">${m?'<div class="sfProf">':'<button type="button" class="sfProf" id="sfProf" title="내 이름 선택">'}${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span>${m?'</div>':'</button>'}</div>
-    ${auth?`<div class="sfRow sfAct lbl">${typeof openNotify==='function'?'<button class="btn ghost" type="button" id="sfNotify">알림 설정</button>':''}<button class="btn ghost" type="button" id="sfLogout">로그아웃</button></div>`:''}`;
+    <div class="sfMe">${G?`<div class="sfProf"><span class="hmIco" aria-hidden="true">G</span><span class="lbl"><b>${esc(window.wbAuth.guestName)}</b><span class="legend">게스트 · 보기 전용</span></span></div>`:`${m?'<div class="sfProf">':'<button type="button" class="sfProf" id="sfProf" title="내 이름 선택">'}${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span>${m?'</div>':'</button>'}`}</div>
+    ${auth?`<div class="sfRow sfAct lbl">${!G&&typeof openNotify==='function'?'<button class="btn ghost" type="button" id="sfNotify">알림 설정</button>':''}<button class="btn ghost" type="button" id="sfLogout">${G?'나가기':'로그아웃'}</button></div>`:''}`;
 }
 $('#sideFoot').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.id==='themeSw'){setTheme(document.documentElement.dataset.theme!=='dark');$('#themeSw')?.focus();return;}
@@ -5386,7 +5411,7 @@ render();
   if(!db){storeReady=true;$('#banner').textContent='로그인한 팀원만 업무를 볼 수 있습니다. claude.ai에 로그인 후 다시 열어 주세요.';$('#banner').hidden=false;render();return;}
   let w=null;try{w=u?await u.can('data.write'):null;}catch(e){}
   canWrite=w!==false;userCap=u;try{actorId=u?await u.id():null;}catch(e){}
-  if(w===false){$('#banner').textContent='보기 전용 권한입니다. 업무를 등록·수정하려면 공유한 사람에게 편집 권한을 요청하세요.';$('#banner').hidden=false;}
+  if(w===false){$('#banner').textContent=isGuest()?`게스트(${window.wbAuth.guestName})로 보는 중이에요 · 보기만 할 수 있어요.`:'보기 전용 권한입니다. 업무를 등록·수정하려면 공유한 사람에게 편집 권한을 요청하세요.';$('#banner').hidden=false;}
   let got=0;const ready=()=>{if(++got>=10&&!storeReady){storeReady=true;render();}}; // 마지막에 온 구독이 다시 그리지 않아도 로딩 화면에서 넘어가게
   const onErr=e=>{if(e?.code!=='revoked'){$('#banner').textContent='업무 목록을 불러오지 못했습니다. 페이지를 새로 고쳐 주세요.';$('#banner').hidden=false;}};
   let pr=false,tr=false,ar=false,mr=false,lr=false,rr=false,sr=false;

@@ -1210,6 +1210,24 @@ button.sfProf:hover{background:var(--sunk)}
 .card .num.late{color:var(--bad);font-weight:700}
 .bdAct{display:flex;justify-content:flex-end}
 .bdEmpty{border:1px dashed var(--line);border-radius:var(--r);padding:16px 8px;text-align:center;color:var(--muted);font-size:13px}
+/* 테스트 시나리오 관리 */
+.cv-CRITICAL{background:var(--bad-soft);color:var(--bad)}.cv-FATAL{background:var(--bad-soft);color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad-strong)}.cv-BLOCK{background:var(--sunk);color:var(--fg)}.cv-NT{background:var(--sunk);color:var(--muted)}
+.tcCards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.tcCard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px 16px;color:var(--fg);cursor:pointer;min-width:0}
+.tcCard:hover,.tcCard:focus-visible{border-color:var(--accent)}
+.tcCardT{display:flex;align-items:baseline;gap:8px;min-width:0}.tcCardT b{font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tcBar{display:flex;height:8px;border-radius:999px;overflow:hidden;background:var(--sunk)}.tcBar span{min-width:3px}
+.tcHead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tcHead h2{margin:0;font-size:18px;font-weight:800}
+.tcStat td,.tcStat th{white-space:nowrap}.tcStat .tcSum td{font-weight:800;background:var(--sunk)}
+.tcTable td{vertical-align:top}.tcTable .tcDet{max-width:360px;overflow-wrap:anywhere}
+.tcTable select.sel{height:28px;font-size:12.5px}
+.tcGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.tcGrid .f.w2{grid-column:span 2}.tcGrid .f.w4{grid-column:1/-1}
+.tcGrid textarea{min-height:64px}
+.tcAsList{display:flex;flex-wrap:wrap;gap:4px 12px}
+.tcTester{display:grid;grid-template-columns:120px 140px 140px minmax(0,1fr);gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+@media (max-width:760px){.tcGrid{grid-template-columns:1fr 1fr}.tcTester{grid-template-columns:1fr 1fr}}
+@media (max-width:480px){.tcGrid{grid-template-columns:1fr}.tcGrid .f.w2{grid-column:auto}}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
 </style>
 
@@ -1267,6 +1285,7 @@ button.sfProf:hover{background:var(--sunk)}
   <div class="area" id="eventOpsArea" hidden></div>
   <div class="area" id="manualsArea" hidden></div>
   <div class="area" id="regressArea" hidden></div>
+  <div class="area" id="tcscenArea" hidden></div>
   <div class="area" id="annualArea" hidden></div>
   <div class="area" id="menusArea" hidden></div>
 </div>
@@ -1303,7 +1322,7 @@ let modeFromUser=false; // 저장된 화면·#해시로 정해졌으면 기본 �
 try{const s=JSON.parse(localStorage.getItem('wb-ui')||'{}');modeFromUser=!!s.mode&&s.mode!=='perms';Object.assign(state,s);if(state.mode==='perms')state.mode='menus';state.pAnchor=null;state.pBasis='active';state.period='all';if(state.view==='matrix')state.view='list';}catch(e){}
 {let sm=null;try{sm=sessionStorage.getItem('wb-mode');}catch(e){}state.mode=sm||'home';modeFromUser=!!sm;if(!sm)state.view='board';} // 새로 접속하면 홈, 같은 탭 새로고침은 보던 화면
 // 링크 끝의 #report 같은 이름은 같은 탭 새로고침에서만 씀. 처음 접속은 무조건 홈
-{const h=location.hash.slice(1);if(modeFromUser&&['home','notice','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
+{const h=location.hash.slice(1);if(modeFromUser&&['home','notice','tcscen','tasks','staff','leave','report','hours','history','annual','menus','perms','accounts','eventops','manuals','regress'].includes(h)){state.mode=h==='perms'?'menus':h;modeFromUser=true;try{sessionStorage.setItem('wb-picked','1');}catch(e){}}}
 // 열린 접이식 메뉴는 바깥을 누르거나 항목을 고르면 닫음
 document.addEventListener('click',e=>{document.querySelectorAll('details.menu[open]').forEach(d=>{if(!d.contains(e.target)||e.target.closest('.menuList button'))d.open=false;});});
 function persistUI(){modeFromUser=true;try{sessionStorage.setItem('wb-mode',state.mode);}catch(e){}try{localStorage.setItem('wb-ui',JSON.stringify({mode:state.mode,period:state.period,pBasis:state.pBasis,view:state.view,project:state.project,part:state.part,sort:state.sort,status:state.status,assignee:state.assignee,late:state.late,sview:state.sview,cf:state.cf,post:state.post,yfold:state.yfold,lsort:state.lsort}));}catch(e){}}
@@ -1314,7 +1333,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 /* ---------- 메뉴(GNB): 정의 + 저장된 설정(settings/menus: order·names·access)으로 그림 ---------- */
 const BASE_GRPS=[['work','업무 관리'],['people','인사'],['admin','관리자']];
 let MENU_GRPS=BASE_GRPS;
-const BASE_ITEMS=[['home','home','홈'],['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['leave','people','일정·연차 관리'],['notice','people','공지'],
+const BASE_ITEMS=[['home','home','홈'],['tasks','work','업무 관리'],['report','work','주간 보고'],['eventops','work','이벤트 운영'],['manuals','work','매뉴얼 관리'],['regress','work','회귀 검증'],['tcscen','work','테스트 시나리오 관리'],['leave','people','일정·연차 관리'],['notice','people','공지'],
   ['staff','admin','인력 관리'],['accounts','admin','계정 관리'],['history','admin','변경 이력'],['menus','admin','메뉴 관리']];
 let MENU_ITEMS=BASE_ITEMS, CUSTOM=[];
 // 사용자 메뉴 목록을 메뉴 정의에 반영(저장된 설정, 또는 메뉴 관리에서 편집 중인 초안)
@@ -1344,6 +1363,7 @@ function menuOrder(g,cfg=menuCfg){const def=MENU_ITEMS.filter(x=>x[1]===g).map(x
 function menuOpen(k){if(k==='hours')k='staff';const it=MENU_ITEMS.find(x=>x[0]===k);if(!it)return false;const to=customOf(k)?.to;if(to&&!menuOpen(to))return false;if(isAdminUser())return true;if(it[1]==='admin')return false;const lv=menuCfg.accessLv?.[k];if(Array.isArray(lv)&&lv.length&&!lv.includes(myLevel()))return false;const a=accOf(menuCfg.access?.[k]);return !a.length||a.includes(myRole());}
 const firstMenu=()=>'home';
 NAV_ICO.notice='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.6A8 8 0 1 1 21 12z"/></svg>';
+NAV_ICO.tcscen='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></svg>';
 NAV_ICO.home='<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M10 21v-6h4v6"/></svg>';
 function renderNav(){
   const key=JSON.stringify([isAdminUser(),myRole(),myLevel(),CUSTOM,menuCfg.order,menuCfg.names,menuCfg.access,menuCfg.accessLv]);if(key===navKey)return;navKey=key;
@@ -1475,7 +1495,7 @@ function applyMode(){
   if(menuCfg.home==='annual')menuCfg.home='leave';
   renderNav();
   if(storeReady&&!menuOpen(state.mode))state.mode=firstMenu(); // 숨긴 메뉴로 들어오면(#해시·저장된 화면) 첫 메뉴로
-  const AREAS={home:'homeArea',notice:'noticeArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
+  const AREAS={home:'homeArea',notice:'noticeArea',tcscen:'tcscenArea',tasks:'taskArea',staff:'staffArea',leave:'leaveArea',report:'reportArea',hours:'hoursArea',history:'historyArea',annual:'annualArea',menus:'menusArea',accounts:'accountsArea',eventops:'eventOpsArea',manuals:'manualsArea',regress:'regressArea'};
   if(customOf(state.mode))AREAS[state.mode]='linkArea';
   if(!AREAS[state.mode])state.mode='home';
   for(const [k,id] of Object.entries(AREAS))$('#'+id).hidden=state.mode!==k;
@@ -1513,6 +1533,7 @@ function renderBody(){
   if(state.mode==='regress'){if(!document.activeElement?.matches?.('#cvQ,#regressArea .cvMemo'))renderRegress();return;}
   if(state.mode==='home'){renderHome();return;}
   if(state.mode==='notice'){renderNotice();return;}
+  if(state.mode==='tcscen'){renderTcs();return;}
   if(state.mode==='eventops'){renderEventOps();return;}
   if(state.mode==='annual'){renderAnnual();return;}
   if(state.mode==='menus'){renderMenus();return;}
@@ -1958,6 +1979,174 @@ document.addEventListener('keydown',e=>{
   if(!open)return;
   if(rtPop.contains(document.activeElement)){rtBack();return;} // 편집칸으로 돌아감
   getSelection().collapseToEnd();rtPop.hidden=true;
+});
+
+/* ---------- 테스트 시나리오 관리: 'TC 생성 파이프라인' 아티팩트의 관리 기능을 옮겨 옴(시나리오 생성은 원본에서, JSON으로 가져옴)
+   tcs_projects = 프로젝트(title·category·testers), tcs_rows = 시나리오 한 건(projectId + 원본과 같은 칸 + 테스터별 'tr:이름' 결과·'ts:이름' 진행상태·'tn:이름' 테스트 내역) ---------- */
+let tcsProjects=[],tcsRows=[];
+const TC_COLS=[['tcId','시나리오 ID'],['screenType','화면유형(FO/BO)'],['screen','화면 구분'],['category','시험항목(대분류)'],['subCategory','시험(중분류)'],['precondition','전제조건 (BO 설정 포함)'],['procedure','테스트 절차'],['testDetail','시험 내역'],['expected','기대결과'],['constraintTag','제약 태그'],['integrationTag','연동시스템'],['tester','테스터'],['testNote','테스트 내역'],['result','결과'],['status','진행상태']];
+const TC_RES=['PASS','MINOR','MAJOR','CRITICAL','FATAL','BLOCK','N/A'],TC_SEV=['N/A','PASS','BLOCK','MINOR','MAJOR','CRITICAL','FATAL'],TC_FAIL=['MINOR','MAJOR','CRITICAL','FATAL'];
+const TC_ST=['작성중','개발 검토','테스트불가','완료'],TC_CONS=['없음','일일1회제한','단독실행필요'],TC_INTEG=['없음','쿠폰','요금제','명의이전','기타연동'];
+const TC_KEY_RE=/^t[rns]:/,TC_BASE={tr:'result',ts:'status',tn:'testNote'};
+const tcst={proj:null,cat:'all',tester:'ALL',type:'ALL',res:'ALL',q:'',open:new Set(),sel:new Set()};
+const tcAs=r=>String(r?.tester||'').split(',').map(s=>s.trim()).filter(Boolean);
+// 테스터 n의 값. 담당자가 1명이고 그 칸이 아직 없으면 행의 값(원본과 같은 규칙)
+const tcTV=(r,n,k)=>{const v=r[k+':'+n];if(v!=null)return v;return tcAs(r).length===1?(r[TC_BASE[k]]||''):'';};
+const tcEff=r=>{const ns=tcAs(r);if(!ns.length)return r.result||'';const rs=ns.map(n=>tcTV(r,n,'tr')).filter(x=>TC_SEV.includes(x));return rs.length?rs.reduce((w,x)=>TC_SEV.indexOf(x)>TC_SEV.indexOf(w)?x:w):'';}; // 대표 결과 = 가장 심각한 값
+const tcEffSt=r=>{const ns=tcAs(r);if(!ns.length)return TC_ST.includes(r.status)?r.status:'작성중';return ns.map(n=>tcTV(r,n,'ts')).map(s=>TC_ST.includes(s)?s:'작성중').reduce((w,s)=>TC_ST.indexOf(s)<TC_ST.indexOf(w)?s:w);}; // 대표 진행상태 = 가장 덜 진행된 값
+const tcRowsOf=pid=>tcsRows.filter(r=>r.projectId===pid).sort((a,b)=>(a.seq??0)-(b.seq??0)||String(a.tcId||'').localeCompare(String(b.tcId||'')));
+const tcCls=v=>'cv-'+(v?String(v).replace('/',''):'NT');
+const tcPill=v=>`<span class="cvPill ${tcCls(v)}">${esc(v||'미실행')}</span>`;
+function tcStats(rows,testers){
+  const one=(L,get)=>{const c={};L.forEach(r=>{const v=get(r)||'';c[v]=(c[v]||0)+1;});const tot=L.length,pass=c.PASS||0,fail=TC_FAIL.reduce((a,k)=>a+(c[k]||0),0);
+    return {c,tot,prog:tot?Math.round((tot-(c['']||0))/tot*100):0,def:pass+fail?Math.round(fail/(pass+fail)*100):0};};
+  return {all:one(rows,tcEff),by:testers.map(n=>[n,one(rows.filter(r=>tcAs(r).includes(n)),r=>tcTV(r,n,'tr'))])};
+}
+function tcNextId(pid,type){let n=0;tcRowsOf(pid).filter(r=>(r.screenType||'FO')===type).forEach(r=>{const m=String(r.tcId||'').match(/(\d+)\s*$/);if(m)n=Math.max(n,+m[1]);});return `${type}-${String(n+1).padStart(3,'0')}`;}
+// 지금 보는 테스터 탭 기준으로 결과·진행상태를 저장할 칸(전체 탭 + 담당 여러 명이면 null → 상세에서 사람별로)
+const tcKey=(r,k)=>{const as=tcAs(r),n=tcst.tester!=='ALL'?tcst.tester:as.length===1?as[0]:null;if(n&&as.includes(n))return k+':'+n;return as.length?null:TC_BASE[k];};
+function renderTcs(){
+  const area=$('#tcscenArea');
+  if(area.contains(document.activeElement)&&document.activeElement.matches('input:not([type=checkbox]),textarea'))return; // 입력 중엔 다시 그리지 않음
+  if(!storeReady){area.innerHTML='<div class="empty"><h2>불러오는 중입니다</h2></div>';return;}
+  const P=tcsProjects.find(p=>p.id===tcst.proj);if(!P)tcst.proj=null;
+  area.innerHTML=P?tcProjHtml(P):tcListHtml();
+  const all=$('#tcSelAll');if(all){const ids=[...area.querySelectorAll('tr[data-tc]')].map(t=>t.dataset.tc);all.checked=ids.length>0&&ids.every(id=>tcst.sel.has(id));}
+}
+function tcListHtml(){
+  const w=canWrite,cats=[...new Set(tcsProjects.map(p=>p.category||'미분류'))].sort((a,b)=>a.localeCompare(b,'ko'));
+  if(tcst.cat!=='all'&&!cats.includes(tcst.cat))tcst.cat='all';
+  const L=tcsProjects.filter(p=>tcst.cat==='all'||(p.category||'미분류')===tcst.cat).sort((a,b)=>(b.updatedAt||b.createdAt||'').localeCompare(a.updatedAt||a.createdAt||''));
+  const tools=`<div class="rtool">${cats.length?`<div class="seg" role="group" aria-label="분류">${[['all','전체'],...cats.map(c=>[c,c])].map(([k,l])=>`<button type="button" data-tccat="${esc(k)}" aria-pressed="${tcst.cat===k}">${esc(l)}</button>`).join('')}</div>`:''}<span class="spacer"></span>${w?'<button class="btn" type="button" id="tcImport">JSON 가져오기</button><input type="file" id="tcFile" accept=".json,application/json" hidden><button class="btn primary" type="button" id="tcNewProj">+ 프로젝트</button>':''}</div>`;
+  if(!tcsProjects.length)return `${tools}<div class="empty"><h2>아직 테스트 시나리오 프로젝트가 없어요</h2><p>'TC 생성' 아티팩트에서 시나리오를 만든 뒤 <b>내보내기 → JSON</b>으로 받은 파일을 'JSON 가져오기'로 올리거나, '+ 프로젝트'로 직접 시작하세요.</p></div>`;
+  const cards=L.map(p=>{const R=tcRowsOf(p.id),s=tcStats(R,[]).all;
+    const bar=[...TC_RES,''].filter(k=>s.c[k]).map(k=>`<span class="${tcCls(k)}" style="flex:${s.c[k]}" title="${esc((k||'미실행')+' '+s.c[k]+'건')}"></span>`).join('');
+    return `<button type="button" class="panel tcCard" data-tcproj="${esc(p.id)}"><span class="tcCardT"><b>${esc(p.title||'(이름 없음)')}</b><span class="legend">${esc(p.category||'미분류')}</span></span><span class="legend">시나리오 ${R.length}건 · 진행률 ${s.prog}% · 결함률 ${s.def}%${(p.testers||[]).length?` · 테스터 ${p.testers.length}명`:''}</span>${R.length?`<span class="tcBar" aria-hidden="true">${bar}</span>`:''}</button>`;}).join('');
+  return `${tools}<div class="tcCards">${cards||'<div class="panel hmEmpty">이 분류에 프로젝트가 없어요.</div>'}</div>`;
+}
+function tcProjHtml(P){
+  const w=canWrite,R=tcRowsOf(P.id),T=P.testers||[];if(tcst.tester!=='ALL'&&!T.includes(tcst.tester))tcst.tester='ALL';
+  const tv=tcst.tester,st=tcStats(R,T),q=tcst.q.trim().toLowerCase(),resOf=r=>tv==='ALL'?tcEff(r):tcTV(r,tv,'tr');
+  const L=R.filter(r=>(tv==='ALL'||tcAs(r).includes(tv))&&(tcst.type==='ALL'||(r.screenType||'')===tcst.type)
+    &&(tcst.res==='ALL'||(tcst.res==='NT'?!resOf(r):resOf(r)===tcst.res))&&(!q||TC_COLS.some(([k])=>String(r[k]??'').toLowerCase().includes(q))));
+  for(const id of [...tcst.sel])if(!L.some(r=>r.id===id))tcst.sel.delete(id);
+  const head=`<div class="rtool tcHead"><button class="hlink" type="button" id="tcBack">← 프로젝트 목록</button><h2>${esc(P.title||'(이름 없음)')}</h2><span class="legend">${esc(P.category||'미분류')}${T.length?` · 테스터 ${esc(T.join(', '))}`:''}</span><span class="spacer"></span>
+    ${downloads&&R.length?exportMenu([['tcXlsx','엑셀 저장'],['tcJson','JSON 내보내기']]):''}${w?'<button class="btn ghost" type="button" id="tcProjEdit">프로젝트 정보</button><button class="btn ghost" type="button" id="tcProjDel">삭제</button><button class="btn primary" type="button" id="tcAdd">+ 시나리오</button>':''}</div>`;
+  const stat=R.length?`<div class="statWrap"><table class="stable tcStat"><thead><tr><th>테스터</th><th class="r">건수</th>${[...TC_RES,'미실행'].map(k=>`<th class="r">${k}</th>`).join('')}<th class="r" title="결과를 입력한 비율">진행률</th><th class="r" title="Fail / (PASS + Fail), Fail = MINOR·MAJOR·CRITICAL·FATAL">결함률</th></tr></thead>
+    <tbody>${[...st.by,['합계',st.all]].map(([n,s])=>`<tr${n==='합계'?' class="tcSum"':''}><td>${esc(n)}</td><td class="r num">${s.tot}</td>${[...TC_RES,''].map(k=>`<td class="r num">${s.c[k]||0}</td>`).join('')}<td class="r num">${s.prog}%</td><td class="r num">${s.def}%</td></tr>`).join('')}</tbody></table></div>`:'';
+  const filt=`<div class="cvFilt">${T.length?`<div class="seg" role="group" aria-label="테스터">${[['ALL','전체'],...T.map(n=>[n,n])].map(([k,l])=>`<button type="button" data-tctester="${esc(k)}" aria-pressed="${tv===k}">${esc(l)}</button>`).join('')}</div>`:''}
+    <div class="seg" role="group" aria-label="화면 유형">${[['ALL','전체'],['FO','FO'],['BO','BO']].map(([k,l])=>`<button type="button" data-tctype="${k}" aria-pressed="${tcst.type===k}">${l}</button>`).join('')}</div>
+    <select class="sel" id="tcRes" aria-label="결과">${optH([['ALL','결과 전체'],['NT','미실행'],...TC_RES.map(x=>[x,x])],tcst.res)}</select>
+    <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="tcQ" type="search" placeholder="시나리오 검색" value="${esc(tcst.q)}" aria-label="검색"></label><span class="legend">${L.length}건</span></div>`;
+  const bulk=w&&tcst.sel.size?`<div class="bulkBar" role="region" aria-label="선택한 시나리오 한꺼번에 바꾸기"><b>${tcst.sel.size}건 선택</b><span class="legend">${tv==='ALL'?'담당자 모두에게':esc(tv)+'에게'}</span>
+    <select class="sel" data-tcbulk="tr" aria-label="결과 일괄 변경"><option value="">결과 바꾸기</option><option value="-">미실행으로</option>${TC_RES.map(x=>`<option>${x}</option>`).join('')}</select>
+    <select class="sel" data-tcbulk="ts" aria-label="진행상태 일괄 변경"><option value="">진행상태 바꾸기</option>${TC_ST.map(x=>`<option>${x}</option>`).join('')}</select>
+    <button type="button" class="btn danger sm" id="tcBulkDel">선택 삭제</button></div>`:'';
+  const sel=(k,opts,cur,lab,cls='')=>`<select class="sel ${cls}" data-tcf="${esc(k)}" aria-label="${esc(lab)}">${optH(opts,cur)}</select>`;
+  const cell=(r,k)=>{const key=tcKey(r,k);if(!w||!key)return k==='tr'?tcPill(tcEff(r)):esc(tcEffSt(r));
+    const v=k==='tr'?(key.includes(':')?tcTV(r,key.slice(3),'tr'):r.result||''):(key.includes(':')?tcTV(r,key.slice(3),'ts'):r.status)||(k==='ts'?'작성중':'');
+    return k==='tr'?sel(key,[['','미실행'],...TC_RES.map(x=>[x,x])],v,'결과','cvSel '+tcCls(v)):sel(key,TC_ST.map(x=>[x,x]),v,'진행상태');};
+  const rows=L.map(r=>{const op=tcst.open.has(r.id),as=tcAs(r);
+    const fld=(k,lab,cls='',ta=false)=>`<div class="f ${cls}"><label>${lab}</label>${w?(ta?`<textarea data-tcf="${k}" rows="3">${esc(r[k]??'')}</textarea>`:`<input data-tcf="${k}" value="${esc(r[k]??'')}">`):`<span>${esc(r[k]||'—')}</span>`}</div>`;
+    const det=op?`<tr class="cvDet" data-tc="${esc(r.id)}"><td></td><td colspan="8"><div class="tcGrid">
+      ${w?`<div class="f"><label>화면유형</label>${sel('screenType',[['FO','FO'],['BO','BO']],r.screenType||'FO','화면유형')}</div>`:''}${fld('tcId','시나리오 ID')}${fld('screen','화면 구분','w2')}
+      ${fld('category','시험항목(대분류)','w2')}${fld('subCategory','시험(중분류)','w2')}
+      ${fld('precondition','전제조건 (BO 설정 포함)','w2',true)}${fld('procedure','테스트 절차','w2',true)}${fld('testDetail','시험 내역','w2',true)}${fld('expected','기대결과','w2',true)}
+      ${w?`<div class="f"><label>제약 태그</label>${sel('constraintTag',TC_CONS.map(x=>[x,x]),r.constraintTag||'없음','제약 태그')}</div><div class="f"><label>연동시스템</label>${sel('integrationTag',TC_INTEG.map(x=>[x,x]),r.integrationTag||'없음','연동시스템')}</div>`:''}
+      <div class="f w4"><label>담당 테스터</label>${T.length?`<div class="tcAsList">${[...new Set([...T,...as])].map(n=>`<label class="cfItem"><input type="checkbox" data-tcas="${esc(n)}" ${as.includes(n)?'checked':''} ${w?'':'disabled'}>${esc(n)}</label>`).join('')}</div>`:`<span class="legend">'프로젝트 정보'에서 테스터를 먼저 등록해 주세요.</span>`}</div>
+      <div class="f w4">${as.length?as.map(n=>`<div class="tcTester"><b>${esc(n)}</b>${w?sel('tr:'+n,[['','미실행'],...TC_RES.map(x=>[x,x])],tcTV(r,n,'tr'),n+' 결과','cvSel '+tcCls(tcTV(r,n,'tr')))+sel('ts:'+n,TC_ST.map(x=>[x,x]),tcTV(r,n,'ts')||'작성중',n+' 진행상태')+`<input data-tcf="tn:${esc(n)}" value="${esc(tcTV(r,n,'tn'))}" placeholder="테스트 내역" aria-label="${esc(n)} 테스트 내역">`:`${tcPill(tcTV(r,n,'tr'))}<span>${esc(tcTV(r,n,'ts')||'작성중')}</span><span>${esc(tcTV(r,n,'tn'))}</span>`}</div>`).join(''):`${fld('testNote','테스트 내역','w4')}`}</div>
+      </div>${w?'<div class="cvDetAct"><button type="button" class="btn ghost sm" data-tcdel>시나리오 삭제</button></div>':''}</td></tr>`:'';
+    return `<tr class="cvRow${TC_FAIL.includes(tcEff(r))?' is-major':''}" data-tc="${esc(r.id)}"><td class="selCell">${w?`<input type="checkbox" class="tcSel" ${tcst.sel.has(r.id)?'checked':''} aria-label="선택">`:''}</td>
+      <td class="nowrap"><button type="button" class="cvItem" data-tcopen aria-expanded="${op}" title="자세히 보기·고치기">${esc(r.tcId||'(ID 없음)')}</button></td><td><span class="cvSvc">${esc(r.screenType||'')}</span></td>
+      <td>${esc(r.screen||'')}</td><td>${esc(r.category||'')}${r.subCategory?`<span class="legend"> › ${esc(r.subCategory)}</span>`:''}</td><td class="tcDet">${esc(r.testDetail||'')}</td>
+      <td>${esc(as.join(', ')||'—')}</td><td>${cell(r,'tr')}</td><td>${cell(r,'ts')}</td></tr>${det}`;}).join('');
+  return `${head}${stat}${filt}${bulk}<div class="statWrap"><table class="stable cvTable tcTable"><thead><tr><th class="selCell">${w?'<input type="checkbox" id="tcSelAll" aria-label="보이는 시나리오 모두 선택">':''}</th><th>시나리오 ID</th><th>유형</th><th>화면 구분</th><th>시험항목</th><th>시험 내역</th><th>담당</th><th>결과${tv==='ALL'?'':`<br><span class="legend">${esc(tv)}</span>`}</th><th>진행상태</th></tr></thead>
+    <tbody>${rows||`<tr><td colspan="9" class="legend">${R.length?'조건에 맞는 시나리오가 없어요.':"아직 시나리오가 없어요. '+ 시나리오'로 추가하거나 목록에서 'JSON 가져오기'를 써 주세요."}</td></tr>`}</tbody></table></div>`;
+}
+async function tcSave(r,patch){patch.updatedAt=new Date().toISOString();Object.assign(r,patch);
+  try{await db.collection('tcs_rows').doc(r.id).update(patch);}catch(err){handleWriteError(err);}}
+function tcProjModal(P){
+  const cats=[...new Set(tcsProjects.map(p=>p.category||'미분류'))];
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="tcPForm" novalidate style="max-width:480px"><header><h2>${P?'프로젝트 정보':'새 프로젝트'}</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr"><div class="f"><label for="tcPTitle">프로젝트 이름 <b class="req">*</b></label><input id="tcPTitle" maxlength="80" value="${esc(P?.title||'')}"></div>
+      <div class="f"><label for="tcPCat">분류</label><input id="tcPCat" maxlength="40" list="tcCats" value="${esc(P?.category||'')}" placeholder="예: 알닷 · 비우면 미분류"><datalist id="tcCats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+      <div class="f"><label for="tcPTesters">테스터</label><textarea id="tcPTesters" rows="3" placeholder="이름을 쉼표나 줄바꿈으로 나눠 적어 주세요">${esc((P?.testers||[]).join(', '))}</textarea><span class="hint">빼도 그 사람이 적은 결과는 지우지 않아요.</span></div></div>
+    <footer><span class="err" id="tcPErr"></span><div class="r"><button class="btn" type="button" id="tcPCancel">취소</button><button class="btn primary" type="submit" id="tcPSave">${P?'저장':'만들기'}</button></div></footer></form></div>`;
+  $('#xClose').onclick=$('#tcPCancel').onclick=askClose;$('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')askClose();});$('#tcPForm').addEventListener('input',()=>{modalDirty=true;});setTimeout(()=>$('#tcPTitle')?.focus(),0);
+  $('#tcPForm').addEventListener('submit',async e=>{e.preventDefault();const title=$('#tcPTitle').value.trim();if(!title){$('#tcPErr').textContent='프로젝트 이름을 입력해 주세요.';return;}
+    const data={title,category:$('#tcPCat').value.trim()||'미분류',testers:[...new Set($('#tcPTesters').value.split(/[,\n]/).map(s=>s.trim()).filter(Boolean))],updatedAt:new Date().toISOString()};$('#tcPSave').disabled=true;
+    try{if(P){await db.collection('tcs_projects').doc(P.id).update(data);Object.assign(P,data);logChange('tcs','update',P.id,title);}
+      else{data.createdAt=data.updatedAt;const ref=await db.collection('tcs_projects').add(data);tcsProjects=[...tcsProjects.filter(x=>x.id!==ref.id),{id:ref.id,...data}];tcst.proj=ref.id;tcst.tester='ALL';logChange('tcs','create',ref.id,title);}
+      closeModal();render();}catch(err){$('#tcPSave').disabled=false;handleWriteError(err,'#tcPErr');}});
+}
+// 원본 도구의 'JSON 내보내기'(schema 1) 파일: 파일이 가리키는 프로젝트 1건과 그 시나리오를 새 프로젝트로 가져옴
+async function tcImportJson(file){
+  let d;try{d=JSON.parse(await file.text());}catch(e){toast('JSON 파일을 읽지 못했어요');return;}
+  if(!d||d.schema!==1||!Array.isArray(d.tcData)||!Array.isArray(d.historyList)){toast("TC 생성 도구의 '내보내기 → JSON' 파일이 아니에요");return;}
+  const h=Number.isInteger(d.currentProject)&&d.historyList[d.currentProject]?d.historyList[d.currentProject]:d.historyList.length===1?d.historyList[0]:{};
+  const rows=d.tcData.length?d.tcData:Array.isArray(h.snapshot)?h.snapshot:[];if(!rows.length){toast('가져올 시나리오가 없어요');return;}
+  let title=String(h.title||h.fileName||file.name.replace(/\.json$/i,'')||'가져온 프로젝트').trim();if(tcsProjects.some(p=>p.title===title))title+=` (가져옴 ${todayStr().slice(5).replace('-','.')})`;
+  const testers=[...new Set([...(Array.isArray(h.testers)?h.testers:[]),...(Array.isArray(d.testerList)?d.testerList:[]),...rows.flatMap(tcAs)].map(s=>String(s).trim()).filter(Boolean))];
+  evConfirm(`'${title}' 프로젝트로 시나리오 ${rows.length}건을 가져올까요?\n분류: ${h.category||'미분류'} · 테스터 ${testers.length}명`,async()=>{
+    const now=new Date().toISOString(),pd={title,category:String(h.category||'미분류'),testers,figmaUrl:String(h.figmaUrl||''),createdAt:now,updatedAt:now};
+    const pref=await db.collection('tcs_projects').add(pd);tcsProjects=[...tcsProjects.filter(x=>x.id!==pref.id),{id:pref.id,...pd}];
+    let i=0;for(const r of rows){const x={};for(const k of Object.keys(r))if(TC_COLS.some(c=>c[0]===k)||TC_KEY_RE.test(k))x[k]=r[k]??'';
+      const data={...x,projectId:pref.id,seq:typeof r.seq==='number'?r.seq:i,createdAt:now,updatedAt:now};const ref=await db.collection('tcs_rows').add(data);if(!tcsRows.some(y=>y.id===ref.id))tcsRows.push({id:ref.id,...data});i++;}
+    logChange('tcs','create',pref.id,title,null,null,`JSON에서 시나리오 ${rows.length}건 가져옴`);tcst.proj=pref.id;tcst.tester='ALL';render();toast(`시나리오 ${rows.length}건을 가져왔어요`);},'가져오기');
+}
+// 원본 도구에서도 다시 가져올 수 있는 같은 형식(schema 1)
+function tcBackup(P){const R=tcRowsOf(P.id).map(r=>{const o={};TC_COLS.forEach(([k])=>o[k]=r[k]??'');Object.keys(r).filter(k=>TC_KEY_RE.test(k)).forEach(k=>o[k]=r[k]);if(typeof r.seq==='number')o.seq=r.seq;return o;});
+  return {schema:1,exportedAt:new Date().toISOString(),tcData:R,historyList:[{title:P.title,category:P.category||'',testers:P.testers||[],figmaUrl:P.figmaUrl||'',snapshot:R,count:R.length,date:todayStr()}],currentProject:0,testerList:P.testers||[]};}
+async function tcXlsx(X,P){const wb=new X.Workbook();wb.creator='업무 관리 대시보드';const ws=wb.addWorksheet('테스트 시나리오 리스트'),T=P.testers||[];
+  const cols=[...TC_COLS.filter(([k])=>!['tester','testNote','result','status'].includes(k)).map(([k,l])=>({k,l})),{k:'tester',l:'테스터'},{k:'_res',l:'대표 결과'},{k:'_st',l:'진행상태'},...T.flatMap(n=>[{k:'tr:'+n,l:`결과(${n})`},{k:'ts:'+n,l:`진행상태(${n})`},{k:'tn:'+n,l:`테스트 내역(${n})`}])];
+  ws.columns=cols.map(c=>({header:c.l,key:c.k,width:/precondition|procedure|testDetail|expected|^tn:/.test(c.k)?40:14}));
+  tcRowsOf(P.id).forEach(r=>ws.addRow(Object.fromEntries(cols.map(c=>[c.k,c.k==='_res'?tcEff(r):c.k==='_st'?tcEffSt(r):TC_KEY_RE.test(c.k)?tcTV(r,c.k.slice(3),c.k.slice(0,2)):r[c.k]??'']))));
+  const h=ws.getRow(1);h.font={bold:true};h.fill={type:'pattern',pattern:'solid',fgColor:{argb:'FFD9EAF7'}};ws.views=[{state:'frozen',ySplit:1}];ws.eachRow(row=>{row.alignment={vertical:'top',wrapText:true};});
+  return wb.xlsx.writeBuffer();}
+const tcFileName=(P,ext)=>`테스트시나리오_${String(P.title||'').replace(/[\\/:*?"<>|\s]+/g,'_').slice(0,30)}_${todayStr().replace(/-/g,'')}.${ext}`;
+onArea('#tcscenArea','change',async e=>{const el=e.target;
+  if(el.id==='tcFile'){const f=el.files[0];el.value='';if(f)tcImportJson(f);return;}
+  if(el.id==='tcRes'){tcst.res=el.value;render();return;}
+  if(el.id==='tcSelAll'){document.querySelectorAll('#tcscenArea tr.cvRow[data-tc]').forEach(t=>el.checked?tcst.sel.add(t.dataset.tc):tcst.sel.delete(t.dataset.tc));render();return;}
+  if(el.classList.contains('tcSel')){const id=el.closest('[data-tc]').dataset.tc;el.checked?tcst.sel.add(id):tcst.sel.delete(id);render();return;}
+  if(el.dataset.tcbulk&&el.value){const k=el.dataset.tcbulk,v=el.value==='-'?'':el.value,L=tcsRows.filter(r=>tcst.sel.has(r.id)),tv=tcst.tester;
+    for(const r of L){const as=tcAs(r),ns=tv!=='ALL'?(as.includes(tv)?[tv]:[]):as,patch={};if(!as.length)patch[TC_BASE[k]]=v;else ns.forEach(n=>patch[k+':'+n]=v);if(Object.keys(patch).length)await tcSave(r,patch);}
+    toast(`${L.length}건을 바꿨어요`);render();return;}
+  if(!canWrite)return;const tr=el.closest('[data-tc]'),r=tr&&tcsRows.find(x=>x.id===tr.dataset.tc);if(!r)return;
+  if(el.dataset.tcas!=null){const P=tcsProjects.find(p=>p.id===r.projectId),order=[...new Set([...(P?.testers||[]),...tcAs(r)])],on=new Set([...tr.querySelectorAll('[data-tcas]:checked')].map(x=>x.dataset.tcas));
+    await tcSave(r,{tester:order.filter(n=>on.has(n)).join(', ')});render();return;}
+  const k=el.dataset.tcf;if(!k)return;const v=el.tagName==='SELECT'?el.value:el.value.trim();if(String(r[k]??'')===v)return;
+  if(k==='tcId'&&!v){el.value=r.tcId||'';return;}
+  await tcSave(r,{[k]:v});if(el.tagName==='SELECT'){el.blur();render();}
+});
+let tcqT;onArea('#tcscenArea','input',e=>{if(e.target.id!=='tcQ')return;clearTimeout(tcqT);tcqT=setTimeout(()=>{tcst.q=e.target.value;e.target.blur();renderTcs();const i=$('#tcQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},250);});
+onArea('#tcscenArea','focusout',e=>{if(e.target.matches?.('[data-tcf]'))setTimeout(()=>{if(!document.activeElement?.matches?.('#tcscenArea input,#tcscenArea textarea'))render();},0);});
+onArea('#tcscenArea','click',e=>{const b=e.target.closest('button');if(!b)return;
+  if(b.dataset.tccat){tcst.cat=b.dataset.tccat;render();return;}
+  if(b.dataset.tcproj){Object.assign(tcst,{proj:b.dataset.tcproj,tester:'ALL',type:'ALL',res:'ALL',q:''});tcst.open.clear();tcst.sel.clear();render();window.scrollTo(0,0);return;}
+  if(b.id==='tcBack'){tcst.proj=null;tcst.sel.clear();render();return;}
+  if(b.id==='tcNewProj'){tcProjModal(null);return;}
+  if(b.id==='tcImport'){$('#tcFile').click();return;}
+  if(b.dataset.tctester){tcst.tester=b.dataset.tctester;render();return;}
+  if(b.dataset.tctype){tcst.type=b.dataset.tctype;render();return;}
+  const P=tcsProjects.find(p=>p.id===tcst.proj);if(!P)return;
+  if(b.id==='tcProjEdit'){tcProjModal(P);return;}
+  if(b.id==='tcProjDel'){const R=tcRowsOf(P.id);evConfirm(`'${P.title}' 프로젝트를 삭제할까요?${R.length?`\n시나리오 ${R.length}건도 함께 지워져요.`:''}\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{
+    await wbDrop('tasks','tcproj',`테스트 시나리오 · ${P.title}${R.length?` (시나리오 ${R.length}건)`:''}`,[wbDocOf('tcs_projects',P),...R.map(r=>wbDocOf('tcs_rows',r))]);
+    tcsProjects=tcsProjects.filter(x=>x.id!==P.id);tcsRows=tcsRows.filter(r=>r.projectId!==P.id);tcst.proj=null;logChange('tcs','delete',P.id,P.title,null,null,'휴지통으로 옮김');render();toast('휴지통으로 옮겼어요');});return;}
+  if(b.id==='tcAdd'){(async()=>{const type=tcst.type==='BO'?'BO':'FO',now=new Date().toISOString(),R=tcRowsOf(P.id);
+    const data={projectId:P.id,tcId:tcNextId(P.id,type),screenType:type,screen:'',category:'',subCategory:'',precondition:'',procedure:'',testDetail:'',expected:'',constraintTag:'없음',integrationTag:'없음',tester:tcst.tester!=='ALL'?tcst.tester:'',testNote:'',result:'',status:'작성중',seq:R.reduce((m,r)=>Math.max(m,r.seq??0),-1)+1,createdAt:now,updatedAt:now};
+    try{const ref=await db.collection('tcs_rows').add(data);if(!tcsRows.some(r=>r.id===ref.id))tcsRows.push({id:ref.id,...data});tcst.open.add(ref.id);tcst.res='ALL';tcst.q='';render();setTimeout(()=>document.querySelector(`#tcscenArea tr.cvDet[data-tc="${CSS.escape(ref.id)}"] [data-tcf="screen"]`)?.focus(),0);}catch(err){handleWriteError(err);}})();return;}
+  if(b.id==='tcXlsx'||b.id==='tcJson'){const label=b.textContent;b.disabled=true;
+    (async()=>{try{if(b.id==='tcJson')await downloads.save({filename:tcFileName(P,'json'),data:new Blob([JSON.stringify(tcBackup(P),null,2)],{type:'application/json'})});
+      else{const X=await loadExcel();await downloads.save({filename:tcFileName(P,'xlsx'),data:new Blob([await tcXlsx(X,P)])});}}
+      catch(err){if(err?.code!=='declined')toast(err?.message==='load'?'엑셀 변환 도구를 불러오지 못했어요. 잠시 후 다시 눌러 주세요':'파일을 만들지 못했어요');}
+      finally{b.disabled=false;b.textContent=label;}})();return;}
+  if(b.id==='tcBulkDel'){const L=tcsRows.filter(r=>tcst.sel.has(r.id));if(!L.length)return;evConfirm(`선택한 시나리오 ${L.length}건을 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{
+    await wbDrop('tasks','tcrow',`시나리오 ${L.length}건 · ${P.title}`,L.map(r=>wbDocOf('tcs_rows',r)));const ids=new Set(L.map(r=>r.id));tcsRows=tcsRows.filter(r=>!ids.has(r.id));tcst.sel.clear();logChange('tcs','delete',P.id,P.title,null,null,`시나리오 ${L.length}건 휴지통으로`);render();toast('휴지통으로 옮겼어요');});return;}
+  const id=b.closest('[data-tc]')?.dataset.tc,r=id&&tcsRows.find(x=>x.id===id);if(!r)return;
+  if(b.dataset.tcopen!=null){tcst.open.has(id)?tcst.open.delete(id):tcst.open.add(id);render();return;}
+  if(b.dataset.tcdel!=null){evConfirm(`'${r.tcId||'시나리오'}'를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('tasks','tcrow',`시나리오 · ${r.tcId||''} · ${P.title}`,[wbDocOf('tcs_rows',r)]);tcsRows=tcsRows.filter(x=>x.id!==id);tcst.open.delete(id);tcst.sel.delete(id);logChange('tcs','delete',id,r.tcId,null,null,'휴지통으로 옮김');render();});}
 });
 
 /* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
@@ -3471,9 +3660,9 @@ let evPurged=false;
 /* ----- 휴지통(업무 관리 · 주간 보고): trash 컬렉션 문서 하나 = 지운 묶음 하나 {at, area, type, label, payload, by}
    payload.docs = 지운 문서 그대로 [{coll, id, data}] → 복구하면 같은 id로 다시 씀. 보고서 카테고리는 payload {docId, cat, idx} ----- */
 let wbTrash=[],wbPurged=false;
-const WB_TRASH_TYPE={notice:'공지',cvcase:'회귀 검증 케이스',cvrun:'회귀 검증 회차',manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
+const WB_TRASH_TYPE={tcproj:'테스트 시나리오 프로젝트',tcrow:'테스트 시나리오',notice:'공지',cvcase:'회귀 검증 케이스',cvrun:'회귀 검증 회차',manual:'매뉴얼',run:'진행 건',task:'업무',project:'프로젝트',comment:'댓글',report_cat:'보고서 카테고리'};
 const wbDocOf=(coll,o)=>{const {id,...data}=o;return {coll,id,data};};
-const wbLocal=c=>({notices,tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns,cvt_cases:cvtCases,cvt_runs:cvtRuns})[c]||[];
+const wbLocal=c=>({notices,tcs_projects:tcsProjects,tcs_rows:tcsRows,tasks,projects,assignments:assigns,comments,worklogs:wlogs,manuals,manual_versions:manualVers,manual_runs:manualRuns,cvt_cases:cvtCases,cvt_runs:cvtRuns})[c]||[];
 // 휴지통에 먼저 담고(실패하면 아무것도 지우지 않음) 지움
 async function wbDrop(area,type,label,docs,extra={}){
   await db.collection('trash').doc(evUid()).set({at:new Date().toISOString(),area,type,label,payload:{docs,...extra},by:myMember()?.name||''});
@@ -4856,7 +5045,7 @@ const HFIELDS={manual:[['title','제목'],['category','분류'],['version','버�
   site:[['title','제목'],['subtitle','설명'],['rmsTemplate','RMS 주소 규칙']],
   report:[]
 };
-const HENT={notice:'공지',regress:'회귀 검증',manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
+const HENT={tcs:'테스트 시나리오',notice:'공지',regress:'회귀 검증',manual:'매뉴얼',evt:'이벤트 운영',backup:'백업',task:'업무',assign:'투입 인력',project:'프로젝트',part:'파트',member:'구성원',leave:'휴가',report:'주간 보고',site:'제목·설명'};
 const HACT={create:['등록','s-done'],update:['수정','s-doing'],delete:['삭제','h-del'],confirm:['확정','s-review'],unconfirm:['확정 해제','s-wait'],restore:['복원','s-review']};
 function hval(f,v){
   if(v===''||v==null)return '';
@@ -5020,6 +5209,8 @@ render();
   db.collection('evt_rows').onSnapshot(s=>{evtRowsAll=s.docs.map(x=>({id:x.id,...x.data()}));if(['eventops','tasks','leave','home'].includes(state.mode))render();},onErr);
   db.collection('checklists').onSnapshot(s=>{checklists=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='home')render();},onErr);
   db.collection('notices').onSnapshot(s=>{notices=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='home'||state.mode==='notice')render();},onErr);
+  db.collection('tcs_projects').onSnapshot(s=>{tcsProjects=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='tcscen')render();},onErr);
+  db.collection('tcs_rows').onSnapshot(s=>{tcsRows=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='tcscen')render();},onErr);
   db.collection('trash').onSnapshot(s=>{wbTrash=s.docs.map(x=>({id:x.id,...x.data()}));if(!wbPurged){wbPurged=true;trashPurge('tasks');trashPurge('report');trashPurge('manual');trashPurge('regress');}trashDraw();wbTrashPaint();if(state.mode==='report'||state.mode==='manuals'||state.mode==='regress')render();},onErr);
   db.collection('manuals').onSnapshot(s=>{manuals=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals')render();if($('#mnPanel'))mnPanel();},onErr);
   db.collection('manual_runs').onSnapshot(s=>{manualRuns=s.docs.map(x=>({id:x.id,...x.data()}));if(state.mode==='manuals'||(state.mode==='tasks'&&state.post))render();if($('#mnPanel'))mnPanel();},onErr);

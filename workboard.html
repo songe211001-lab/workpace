@@ -1244,13 +1244,13 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .btn:active{transform:scale(.97)}
 .btn.sm,.editBtn,td .btn,th .btn,.panel h3 .btn,.menuList .btn{height:32px;border-radius:8px}
 .btn.primary{background:var(--accent-dark);border-color:var(--accent-dark)}
-.btn:not(.primary):not(.ghost):not(.danger){background:var(--sunk);border-color:transparent;color:var(--ink-soft)}
+.btn:not(.primary):not(.ghost):not(.danger){background:var(--sunk);border-color:var(--line);color:var(--ink-soft)}
 .btn:not(.primary):not(.ghost):not(.danger):hover{background:#e5e8eb;color:var(--fg)}
-/* 카드: 테두리 대신 흰 면 + 넉넉한 둥근 모서리(그림자 없이 평면) */
-.panel,.tc-list-card,.hmCard,.hmMate,.ntCard,.tablebox,.statWrap{border-color:transparent}
+/* 카드: 흰 면 + 연한 회색 테두리(--line) + 넉넉한 둥근 모서리 */
+.panel,.tc-list-card,.hmCard,.hmMate,.ntCard,.tablebox,.statWrap{border-color:var(--line)}
 .panel{border-radius:16px}
 /* 입력칸 */
-.sel,input.sel,select.sel,.f input,.f select,.f textarea,.search{border-radius:8px;background:var(--sunk);border-color:transparent}
+.sel,input.sel,select.sel,.f input,.f select,.f textarea,.search{border-radius:8px;background:var(--sunk);border-color:var(--line)}
 .sel:focus,.f input:focus,.f select:focus,.f textarea:focus{background:var(--surface);border-color:var(--accent)}
 /* 메뉴·머리줄 */
 .side{background:var(--surface)!important;border-right:1px solid var(--line)}
@@ -1266,17 +1266,17 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .hmSec h3{font-size:18px;font-weight:700}
 /* 상태 알약·탭 */
 .pill,.cvPill{border-radius:6px}
-.seg{border-radius:10px;background:var(--sunk);border-color:transparent;padding:2px}
+.seg{border-radius:10px;background:var(--sunk);border-color:var(--line);padding:2px}
 .seg button{border-radius:8px}
 .seg button[aria-pressed="true"],.stTabs button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,12,30,.08)}
-.stTabs{border-radius:10px;background:var(--sunk);border-color:transparent;padding:2px}.stTabs button{border-radius:8px}
+.stTabs{border-radius:10px;background:var(--sunk);border-color:var(--line);padding:2px}.stTabs button{border-radius:8px}
 .ptab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
 /* 보드 */
-.col{background:var(--sunk);border-radius:16px}
-.card{border-color:transparent;border-radius:12px;box-shadow:0 1px 2px rgba(0,12,30,.06)}
-.card:hover{border-color:transparent;box-shadow:0 0 0 1px var(--accent)}
-.bdChip{border-color:transparent;background:var(--sunk);border-radius:999px}
-.bdChip[aria-pressed="true"]{background:var(--fg);color:#fff}
+.col{background:var(--sunk);border:1px solid var(--line);border-radius:16px}
+.card{border-color:var(--line);border-radius:12px;box-shadow:0 1px 2px rgba(0,12,30,.06)}
+.card:hover{border-color:var(--accent);box-shadow:0 1px 2px rgba(0,12,30,.06)}
+.bdChip{border-color:var(--line);background:var(--sunk);border-radius:999px}
+.bdChip[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--surface)}
 .modal{border-radius:16px}
 
 /* 헤더 알림(멘션·업무 담당·공지) */

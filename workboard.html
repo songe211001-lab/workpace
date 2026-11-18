@@ -1315,6 +1315,24 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .dlT{font-size:14px;font-weight:600;min-width:0;overflow-wrap:anywhere}
 .dlS{font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
 .dlEmpty{padding:18px 4px;text-align:center;color:var(--muted);font-size:14px}
+
+/* 사용 가이드(헤더 '?') */
+.guideBtn{width:38px;height:38px;padding:0;display:inline-grid;place-items:center;border-radius:10px;flex:none;font-size:17px;font-weight:700}
+.gdOv{position:fixed;inset:0;z-index:200;background:var(--overlay)}
+.gdPanel{position:fixed;top:0;right:0;bottom:0;z-index:201;width:420px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow-3);display:flex;flex-direction:column}
+.gdHead{display:flex;align-items:center;gap:8px;padding:16px 20px 12px;border-bottom:1px solid var(--line)}
+.gdHead h2{margin:0;font-size:18px;font-weight:700;flex:1}
+.gdTabs{display:flex;flex-wrap:wrap;gap:6px;padding:12px 20px;border-bottom:1px solid var(--line)}
+.gdTabs button{border:1px solid var(--line);background:var(--sunk);color:var(--ink-soft);border-radius:999px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.gdTabs button[aria-pressed="true"]{background:var(--fg);border-color:var(--fg);color:var(--surface)}
+.gdBody{flex:1;overflow:auto;padding:16px 20px 24px}
+.gdBody h3{margin:0 0 4px;font-size:20px;font-weight:700}
+.gdBody h4{margin:18px 0 8px;font-size:15px;font-weight:700}
+.gdBody ul,.gdBody ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6;color:var(--ink-soft)}
+.gdBody b{color:var(--fg)}
+.gdCommon{margin-top:22px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--sunk)}
+.gdCommon h4{margin-top:0}
+@media (max-width:600px){.gdPanel{width:100vw;border-left:0}}
 </style>
 
 <!-- 화면 틀: 왼쪽 세로 메뉴(섹션 아코디언·접기, 좁은 화면에서는 서랍) + 위 헤더 + 본문 카드 -->
@@ -1335,7 +1353,7 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
     <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
-      <div class="bellWrap" id="bellWrap" hidden><button class="btn ghost bellBtn" type="button" id="bellBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="bellPop" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bellN" id="bellN" hidden></span></button><div class="bellPop" id="bellPop" role="dialog" aria-label="알림 목록" hidden></div></div>
+      <button class="btn ghost guideBtn" type="button" id="guideBtn" aria-label="사용 가이드" aria-haspopup="dialog" aria-expanded="false" hidden>?</button><div class="bellWrap" id="bellWrap" hidden><button class="btn ghost bellBtn" type="button" id="bellBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="bellPop" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bellN" id="bellN" hidden></span></button><div class="bellPop" id="bellPop" role="dialog" aria-label="알림 목록" hidden></div></div>
     </div>
   </header>
 <div class="wrap">
@@ -2955,7 +2973,7 @@ function bellItems(){const me=myMember();if(!me||!actorId)return [];const out=[]
   return out.sort((a,b)=>b.at.localeCompare(a.at)).slice(0,30);}
 const bellUnread=(it,me)=>it.at>(me.notifSeenAt||'')&&!(me.notifRead||[]).includes(it.k);
 function bellOff(){return (typeof isGuest==='function'&&isGuest())||!actorId||!myMember();}
-function bellPaint(){const w=$('#bellWrap');if(!w)return;if(bellOff()){w.hidden=true;bellShut(false);return;}w.hidden=false;
+function bellPaint(){const gb=$('#guideBtn');if(gb)gb.hidden=!actorId;const w=$('#bellWrap');if(!w)return;if(bellOff()){w.hidden=true;bellShut(false);return;}w.hidden=false;
   const me=myMember(),L=bellItems(),n=L.filter(it=>bellUnread(it,me)).length,b=$('#bellN');
   b.hidden=!n;b.textContent=n>99?'99+':String(n);$('#bellBtn').setAttribute('aria-label',n?`알림 ${n}개`:'알림');
   if(!$('#bellPop').hidden)bellList(L,me);}
@@ -2980,6 +2998,111 @@ $('#bellPop').addEventListener('click',e=>{const me=myMember();if(!me)return;
 $('#bellPop').addEventListener('keydown',e=>{if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;const L=[...$('#bellPop').querySelectorAll('button:not(:disabled)')],i=L.indexOf(document.activeElement);if(!L.length)return;e.preventDefault();L[(i+(e.key==='ArrowDown'?1:L.length-1))%L.length].focus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#bellPop').hidden){e.stopPropagation();bellShut(true);}},true);
 document.addEventListener('mousedown',e=>{if(!$('#bellPop').hidden&&!e.target.closest('#bellWrap'))bellShut(false);});
+
+/* ---------- 사용 가이드: 헤더 '?' → 오른쪽 패널. 문구는 GUIDE 한곳에서 고침(**굵게** 표기 가능) ---------- */
+const GUIDE={
+  home:{can:['맨 위 카드에서 이번 달 완료, 개발 진행중, 진행 중 업무, 연차 사용을 한눈에 볼 수 있어요.',
+      '**확인할 것**에서 마감이 다가오거나 지난 내 업무를 모아 볼 수 있어요.',
+      '**내 체크리스트**에 나만 보는 할 일을 적고 체크할 수 있어요.',
+      '**오늘 우리 팀**과 **주간 일정**에서 팀원별 근무·휴가와 한 주 일정을 볼 수 있어요.',
+      '**최근 공지**에서 새로 올라온 공지를 확인할 수 있어요.'],
+    how:['오른쪽 위 **+ 업무**로 새 업무를, **+ 휴가**로 휴가를 바로 등록해요.',
+      '주간 일정에서 **← 지난주**, **이번 주**, **다음 주 →**로 보고 싶은 주를 골라요.',
+      '왼쪽 메뉴 아래 **어두운 모드** 스위치로 화면을 어둡게 바꿀 수 있어요.']},
+  tasks:{can:['업무를 **목록**이나 **보드**로 바꿔 가며 볼 수 있어요.',
+      '진행 현황 탭(대기·기획·디자인·퍼블리싱·개발 진행중·보류·완료)으로 단계별 업무만 골라 볼 수 있어요.',
+      '보드 위 **전체**·**내 담당** 버튼과 헤더의 검색칸으로 업무를 좁혀 볼 수 있어요.',
+      '업무를 열면 담당자·기간·내용을 바로 고치고, 작업 시간을 기록하고, 댓글을 남길 수 있어요.',
+      '댓글에 **@**를 입력하고 이름을 고르면 그 사람에게 알림이 가요.'],
+    how:['위쪽 등록 칸에 프로젝트·제목·담당자를 넣고 **등록하기**를 눌러요.',
+      '보드 카드의 다음 단계 버튼(예: **디자인으로**)이나 **완료 처리**로 단계를 넘겨요.',
+      '카드를 눌러 상세를 열고, 댓글 칸에 **@이름**으로 동료를 불러 확인을 요청해요.']},
+  report:{can:['한 주의 운영 건수(반영·진행·접수)를 카테고리별 표로 볼 수 있어요.',
+      '카테고리마다 본문 칸이 있어 여러 사람이 함께 이번 주 내용을 적을 수 있어요.',
+      '**카테고리 추가**로 새 항목을 만들 수 있어요.',
+      '다 쓴 주는 **이 주 보고서 확정**으로 잠그고, **확정 해제**로 다시 열 수 있어요.'],
+    how:['각 카테고리 본문 칸에 이번 주 내용을 적어요.',
+      '보고가 끝나면 **이 주 보고서 확정**을 눌러 더 고쳐지지 않게 해요.']},
+  eventops:{can:['달별 이벤트 운영 시트를 만들어 이벤트를 행 단위로 관리할 수 있어요.',
+      '**+ 행 추가**로 이벤트를 적고, 여러 행을 골라 **선택 삭제**로 지울 수 있어요.',
+      '**관리대장 데이터 가져오기**로 기존 관리대장 내용을 불러올 수 있어요.',
+      '업무 상세에서 이벤트 행을 연결하면 서로 오갈 수 있고, 일정 달력에 시작·종료일이 표시돼요.'],
+    how:['**이번 달 시트 만들기**(또는 **새 달 만들기**)로 시트를 열어요.',
+      '**+ 행 추가**를 눌러 시작일·종료일·이벤트 ID·이벤트명을 적어요.']},
+  manuals:{can:['업무 매뉴얼을 분류별로 등록하고 단계별로 정리할 수 있어요.',
+      '검색칸에서 매뉴얼 제목·단계·표 내용을 한 번에 찾을 수 있어요.',
+      '**버전 올리기**로 이전 내용을 남긴 채 새 버전을 만들 수 있어요.',
+      '매뉴얼마다 피그마 링크를 붙여 둘 수 있어요.'],
+    how:['**+ 매뉴얼 등록**으로 새 매뉴얼을 만들어요.',
+      '**편집**을 눌러 단계를 적고, 다 쓰면 **편집 끝내기**를 눌러요.']},
+  regress:{can:['회귀 검증 케이스를 회차별로 점검하고 결과를 남길 수 있어요.',
+      '**+ 새 회차**로 점검 회차를 만들고, **+ 케이스**로 점검 항목을 더할 수 있어요.',
+      '**엑셀 가져오기**로 기존 케이스와 회차를 한 번에 불러올 수 있어요.',
+      '검색칸에서 케이스·점검 항목·메모를 찾을 수 있어요.'],
+    how:['**+ 새 회차**로 이번 점검 회차를 만들어요.',
+      '케이스마다 결과를 고르고 필요하면 메모를 적어요.',
+      '바뀐 것이 없는 케이스는 **동일**로 이전 회차 결과를 그대로 채워요.']},
+  leave:{can:['달력에서 일정·연차·업무 마감·이벤트 운영을 함께 볼 수 있어요. 위쪽 체크박스로 보일 종류를 골라요.',
+      '날짜를 누르면 달력 아래에 그날의 연차·일정·배포·이벤트 목록이 나와요.',
+      '목록에서 항목을 누르면 내용을 보거나 고칠 수 있어요.',
+      '날짜를 누른 채 여러 날로 끌면 그 기간으로 일정이나 연차를 등록할 수 있어요.'],
+    how:['날짜를 누르고, 아래 목록 위의 **+ 이 날 등록**을 눌러요.',
+      '**일정 등록**이나 **연차 신청**을 골라 내용을 적어요.',
+      '연차는 오른쪽 위 **+ 연차 신청**으로도 바로 등록할 수 있어요.']},
+  notice:{can:['팀 공지를 모아 볼 수 있어요.',
+      '**+ 공지 작성**으로 글자 서식을 넣어 공지를 쓸 수 있어요.',
+      '**목록 맨 위에 고정**을 체크하면 중요한 공지가 항상 위에 보여요.',
+      '쓴 사람과 관리자는 공지를 **수정**하거나 **삭제**할 수 있어요. 삭제한 공지는 휴지통에서 30일 동안 복구할 수 있어요.'],
+    how:['**+ 공지 작성**을 눌러요.',
+      '제목과 내용을 적고, 필요하면 **목록 맨 위에 고정**을 체크해요.',
+      '**등록**을 누르면 팀원들에게 알림이 가요.']},
+  staff:{can:['담당자별로 기간 안의 업무 시간을 모아 볼 수 있어요.',
+      '실제 소요 시간이 비어 있는 업무는 예상 소요 시간으로 계산해요.',
+      '사람 행을 누르면 업무별 시간을 펼쳐 볼 수 있어요.'],
+    how:['사람 이름 행을 눌러 업무별 시간을 확인해요.',
+      '펼친 목록에서 업무 이름을 누르면 그 업무 내용을 볼 수 있어요.']},
+  accounts:{can:['팀원 계정을 추가하고 이름·파트·소속·프로젝트를 고칠 수 있어요.',
+      '표시 순서를 정하면 홈 팀 목록과 주간 일정에 그 순서로 나와요.',
+      '업무·일정에 표시하지 않을 사람을 정할 수 있어요.',
+      '검색칸에서 이름·메일·파트·프로젝트로 계정을 찾을 수 있어요.'],
+    how:['**+ 계정 추가**로 새 팀원을 등록해요.',
+      '목록에서 사람을 눌러 정보를 고치고 저장해요.']},
+  history:{can:['업무·일정·공지 등이 언제 누구에 의해 바뀌었는지 날짜별로 볼 수 있어요.',
+      '검색칸에서 업무명·이름·변경 내용으로 이력을 찾을 수 있어요.',
+      '편집 권한이 있는 사람만 볼 수 있어요.'],
+    how:['검색칸에 업무명이나 이름을 넣어 원하는 변경을 찾아요.']},
+  menus:{can:['왼쪽 메뉴의 이름과 순서, 묶음(대메뉴)을 바꿀 수 있어요.',
+      '**+ 메뉴 추가**로 자주 쓰는 링크를 메뉴로 넣을 수 있어요.',
+      '**+ 묶음(대메뉴) 추가**로 메뉴를 새 묶음으로 나눌 수 있어요.',
+      '**기본값으로 되돌리기**로 처음 메뉴 구성으로 돌아갈 수 있어요.'],
+    how:['바꿀 메뉴의 이름 칸을 고쳐요.',
+      '**+ 메뉴 추가**를 누르고 이름과 링크 주소를 넣어요.']},
+};
+const GUIDE_COMMON=['헤더의 종 버튼에서 나를 멘션한 댓글, 나를 담당자로 넣은 업무, 새 공지를 알림으로 받아요.',
+  '알림을 누르면 그 업무나 공지로 이동하고, **모두 읽음**으로 한 번에 읽음 처리할 수 있어요.',
+  '이 가이드는 헤더의 **?** 버튼으로 언제든 다시 열 수 있어요.'];
+const gdMd=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');
+const gdKeys=()=>BASE_ITEMS.map(x=>x[0]).filter(k=>GUIDE[k]&&menuOpen(k));
+let gdCur='home';
+function gdDraw(){const p=$('#gdPanel');if(!p)return;const ks=gdKeys(),g=GUIDE[gdCur];
+  p.querySelector('.gdTabs').innerHTML=ks.map(k=>`<button type="button" data-gd="${k}" aria-pressed="${k===gdCur}">${esc(menuName(k))}</button>`).join('');
+  p.querySelector('.gdBody').innerHTML=`<h3>${esc(menuName(gdCur))}</h3><h4>이 화면에서 할 수 있는 일</h4><ul>${g.can.map(t=>`<li>${gdMd(t)}</li>`).join('')}</ul>
+    <h4>자주 쓰는 방법</h4><ol>${g.how.map(t=>`<li>${gdMd(t)}</li>`).join('')}</ol>
+    <section class="gdCommon"><h4>모든 화면에서</h4><ul>${GUIDE_COMMON.map(t=>`<li>${gdMd(t)}</li>`).join('')}</ul></section>`;
+  p.querySelector('.gdBody').scrollTop=0;}
+function gdOpen(){const m=state.mode==='hours'?'staff':state.mode,ks=gdKeys();gdCur=ks.includes(m)?m:(ks[0]||'home');
+  if(!$('#gdPanel')){const ov=document.createElement('div');ov.className='gdOv';ov.id='gdOv';
+    const p=document.createElement('aside');p.className='gdPanel';p.id='gdPanel';p.setAttribute('role','dialog');p.setAttribute('aria-modal','true');p.setAttribute('aria-labelledby','gdTitle');
+    p.innerHTML='<div class="gdHead"><h2 id="gdTitle">사용 가이드</h2><button class="btn ghost" type="button" id="gdClose">닫기</button></div><nav class="gdTabs" aria-label="가이드 메뉴"></nav><div class="gdBody" tabindex="-1"></div>';
+    document.body.append(ov,p);
+    ov.addEventListener('mousedown',gdClose);$('#gdClose').onclick=gdClose;
+    p.addEventListener('click',e=>{const b=e.target.closest('[data-gd]');if(!b)return;gdCur=b.dataset.gd;gdDraw();p.querySelector(`[data-gd="${gdCur}"]`)?.focus();});
+    p.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();e.stopPropagation();gdClose();return;}
+      if(e.key!=='Tab')return;const F=[...p.querySelectorAll('button,[tabindex="0"]')].filter(x=>!x.disabled&&x.offsetParent);if(!F.length)return;
+      const a=F[0],z=F[F.length-1];if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus();}else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus();}});}
+  gdDraw();$('#guideBtn').setAttribute('aria-expanded','true');$('#gdClose').focus();}
+function gdClose(){$('#gdOv')?.remove();$('#gdPanel')?.remove();const b=$('#guideBtn');if(b){b.setAttribute('aria-expanded','false');b.focus();}}
+$('#guideBtn').addEventListener('click',()=>$('#gdPanel')?gdClose():gdOpen());
 
 /* ---------- GNB 아래: 어두운 모드 스위치 + 내 프로필(알림 설정 · 로그아웃) ---------- */
 function setTheme(dark){if(dark)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;try{localStorage.setItem('wb-theme',dark?'dark':'light');}catch(e){}drawSideFoot();}

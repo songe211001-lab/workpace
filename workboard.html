@@ -1285,7 +1285,7 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .bellItem{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:10px;color:var(--fg);font:inherit;cursor:pointer}
 .bellItem:hover,.bellItem:focus-visible{background:var(--sunk)}
 .bellItem .bellK{grid-row:span 3;align-self:start;font-size:12px;font-weight:700;border-radius:6px;padding:2px 6px;background:var(--accent-soft);color:var(--accent-dark)}
-.bellItem .bellK.task{background:var(--ok-soft);color:var(--ok)}
+.bellItem .bellK.change,.bellItem .bellK.digest{background:var(--ok-soft);color:var(--ok)}.bellItem .bellK.leave{background:var(--design-soft);color:var(--design)}.bellItem .bellK.comment{background:var(--sunk);color:var(--ink-soft)}
 .bellItem .bellK.notice{background:var(--warn-soft);color:var(--warn)}
 .bellItem .bellT{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bellItem .bellP{font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -2965,23 +2965,58 @@ addEventListener('resize',()=>atClose());
 
 /* 알림 목록 */
 const relT=iso=>{const d=(Date.now()-new Date(iso).getTime())/6e4;if(!(d>=0))return stamp(iso);if(d<1)return '방금';if(d<60)return Math.floor(d)+'분 전';if(d<1440)return Math.floor(d/60)+'시간 전';if(d<10080)return Math.floor(d/1440)+'일 전';return fmtDate(iso.slice(0,10));};
-const BELL_K={mention:'멘션',task:'업무',notice:'공지'};
-function bellItems(){const me=myMember();if(!me||!actorId)return [];const out=[];
-  for(const c of comments)if(c.by!==actorId&&(c.mentions||[]).includes(me.id)){const t=tasks.find(x=>x.id===c.taskId);if(t)out.push({k:'c:'+c.id,type:'mention',at:c.at||'',by:c.by,title:t.title||'(제목 없음)',text:c.text||'',task:t.id});}
-  for(const t of tasks){const a=t.asgLog?.[me.id];if(a&&a.by&&a.by!==actorId&&asgIds(t).includes(me.id))out.push({k:'t:'+t.id+':'+a.at,type:'task',at:a.at||'',by:a.by,title:t.title||'(제목 없음)',text:t.note||'',task:t.id});}
+const BELL_K={change:'업무 변동',comment:'댓글',digest:'아침 요약',leave:'휴가',mention:'멘션',notice:'공지'};
+const NOTIF_SINCE2='2026-11-18T05:30:00.000Z'; // 업무 변동·댓글·휴가·아침 요약 알림은 이 시각 이후 기록부터
+const BELL_NF={change:'task',comment:'comment',digest:'digest',leave:'leave'}; // 알림 설정(메일과 같이 씀) 키
+// 알림용 변경 기록: 관리자가 아니어도 최근 300건만 받아 둠(14일 넘은 것은 계산에서 뺌)
+let bellHist=[],bellHistSub=null;
+function bellHistStart(){if(bellHistSub||!db||!actorId)return;try{bellHistSub=db.collection('history').orderBy('at','desc').limit(300).onSnapshot(s=>{bellHist=s.docs.map(x=>({id:x.id,...x.data()}));bellPaint();},()=>{});}catch(e){}}
+const BELL_TASK_F=['assignee','status','dueDate','priority','title']; // 메일 '내 업무 변동'과 같은 칸
+const trashDoc=(coll,id)=>{for(const t of wbTrash)for(const d of (t.payload?.docs||[]))if(d.coll===coll&&d.id===id)return d.data;return null;};
+function bellItems(){const me=myMember();if(!me||!actorId)return [];const out=[],T=todayStr(),since14=new Date(Date.now()-14*864e5).toISOString();
+  const nf={task:true,comment:true,leave:true,digest:true,...(me.notify||{})},on=t=>!BELL_NF[t]||nf[BELL_NF[t]]!==false;
+  const mineT=t=>!!t&&(asgIds(t).includes(me.id)||(!t.assigneeId&&t.assignee===me.name));
+  const reqT=t=>!!t&&(t.requesterId?t.requesterId===me.id:!!t.requester&&t.requester===me.name);
+  // 멘션·댓글(멘션된 댓글은 멘션 하나로)
+  for(const c of comments){if(c.by===actorId)continue;const t=tasks.find(x=>x.id===c.taskId);if(!t)continue;
+    if((c.mentions||[]).includes(me.id))out.push({k:'c:'+c.id,type:'mention',at:c.at||'',by:c.by,title:t.title||'(제목 없음)',text:c.text||'',task:t.id});
+    else if((c.at||'')>=NOTIF_SINCE2&&(mineT(t)||reqT(t)))out.push({k:'c:'+c.id,type:'comment',at:c.at||'',by:c.by,title:t.title||'(제목 없음)',text:c.text||'',task:t.id});}
+  // 담당자로 지정됨(asgLog)
+  for(const t of tasks){const a=t.asgLog?.[me.id];if(a&&a.by&&a.by!==actorId&&asgIds(t).includes(me.id))out.push({k:'t:'+t.id+':'+a.at,type:'change',at:a.at||'',by:a.by,title:t.title||'(제목 없음)',text:'담당자로 지정됐어요',task:t.id});}
+  // 변경 기록: 내 업무 변동 · 내 휴가 변동
+  for(const h of bellHist){if(!h.actor||h.actor===actorId||(h.at||'')<NOTIF_SINCE2||(h.at||'')<since14)continue;
+    if(h.entity==='task'&&(h.action==='update'||h.action==='delete')){
+      let t=tasks.find(x=>x.id===h.entityId),gone=false;if(!t){t=trashDoc('tasks',h.entityId);gone=true;}
+      if(h.action==='delete'){if(mineT(t))out.push({k:'h:'+h.id,type:'change',at:h.at,by:h.actor,title:h.label||'(제목 없음)',text:'업무가 삭제됐어요'});continue;}
+      const ch=(h.changes||[]).filter(c=>BELL_TASK_F.includes(c.f));if(!ch.length)continue;
+      const out1=ch.some(c=>c.f==='assignee'&&String(c.from||'').split(/,\s*/).includes(me.name)&&!String(c.to||'').split(/,\s*/).includes(me.name));
+      const rest=ch.filter(c=>!(c.f==='assignee'&&String(c.to||'').split(/,\s*/).includes(me.name))); // 지정된 건 위 asgLog 알림으로
+      if(!(mineT(t)&&rest.length)&&!out1)continue;
+      const txt=out1?'담당에서 빠졌어요':rest.map(c=>`${c.l}: ${c.from||'—'} → ${c.to||'—'}`).join(' · ');
+      out.push({k:'h:'+h.id,type:'change',at:h.at,by:h.actor,title:h.label||t?.title||'(제목 없음)',text:txt,task:gone?'':h.entityId});}
+    else if(h.entity==='leave'){const l=leaves.find(x=>x.id===h.entityId)||trashDoc('leaves',h.entityId);
+      const mine=l?l.memberId===me.id:String(h.label||'').startsWith(me.name+' ');if(!mine)continue;
+      const verb=h.action==='create'?'등록했어요':h.action==='delete'?'삭제했어요':'바꿨어요';
+      out.push({k:'h:'+h.id,type:'leave',at:h.at,by:h.actor,title:h.label||'휴가',text:`다른 사람이 내 휴가를 ${verb}`,leaveDate:l?.date||''});}}
+  // 아침 요약: 평일 08:30 이후 하루 1건, 오늘·내일 마감 또는 지연된 내 업무가 있을 때만
+  const now=new Date(),wd=now.getDay();
+  if(wd>=1&&wd<=5&&now.getHours()*60+now.getMinutes()>=510){const my=tasks.filter(t=>isPost(t)&&t.status!=='done'&&mineT(t)),tm=addDays(T,1);
+    const due=my.filter(t=>t.dueDate===T||t.dueDate===tm).length,late=my.filter(isLate).length;
+    const at=new Date(now.getFullYear(),now.getMonth(),now.getDate(),8,30).toISOString();
+    if(due||late)out.push({k:'d:'+T,type:'digest',at,by:'',title:'오늘 확인할 내 업무',text:[due?`오늘·내일 마감 ${due}건`:'',late?`지연 ${late}건`:''].filter(Boolean).join(' · '),digest:true});}
   for(const n of notices)if(n.by&&n.by!==actorId&&(n.at||'')>=NOTIF_SINCE)out.push({k:'n:'+n.id,type:'notice',at:n.at||'',by:n.by,title:n.title||'(제목 없음)',text:n.text||'',notice:n.id});
-  return out.sort((a,b)=>b.at.localeCompare(a.at)).slice(0,30);}
+  return out.filter(it=>on(it.type)).sort((a,b)=>b.at.localeCompare(a.at)).slice(0,30);}
 const bellUnread=(it,me)=>it.at>(me.notifSeenAt||'')&&!(me.notifRead||[]).includes(it.k);
 function bellOff(){return (typeof isGuest==='function'&&isGuest())||!actorId||!myMember();}
-function bellPaint(){const gb=$('#guideBtn');if(gb)gb.hidden=!actorId;const w=$('#bellWrap');if(!w)return;if(bellOff()){w.hidden=true;bellShut(false);return;}w.hidden=false;
+function bellPaint(){const gb=$('#guideBtn');if(gb)gb.hidden=!actorId;const w=$('#bellWrap');if(!w)return;if(bellOff()){w.hidden=true;bellShut(false);return;}w.hidden=false;bellHistStart();
   const me=myMember(),L=bellItems(),n=L.filter(it=>bellUnread(it,me)).length,b=$('#bellN');
   b.hidden=!n;b.textContent=n>99?'99+':String(n);$('#bellBtn').setAttribute('aria-label',n?`알림 ${n}개`:'알림');
   if(!$('#bellPop').hidden)bellList(L,me);}
-function bellList(L,me){const p=$('#bellPop'),foc=document.activeElement?.dataset?.bk;resolveNames(L.map(it=>it.by)).then(()=>p.querySelectorAll('[data-bby]').forEach(el=>el.textContent=actorName(el.dataset.bby)));
+function bellList(L,me){const p=$('#bellPop'),foc=document.activeElement?.dataset?.bk;resolveNames(L.map(it=>it.by).filter(Boolean)).then(()=>p.querySelectorAll('[data-bby]').forEach(el=>el.textContent=actorName(el.dataset.bby)));
   const any=L.some(it=>bellUnread(it,me));
   p.innerHTML=`<div class="bellHead"><h3>알림</h3><button class="btn ghost sm" type="button" id="bellAll" ${any?'':'disabled'}>모두 읽음</button></div>
     ${L.length?L.map(it=>{const u=bellUnread(it,me),pv=String(it.text).replace(/\s+/g,' ').trim().slice(0,40);
-      return `<button type="button" class="bellItem${u?' unread':''}" data-bk="${esc(it.k)}" aria-label="${u?'안 읽음, ':''}${BELL_K[it.type]}: ${esc(it.title)}"><span class="bellK ${it.type}">${BELL_K[it.type]}</span><span class="bellT">${esc(it.title)}</span><span class="bellP">${esc(pv)||'&nbsp;'}</span><span class="bellM"><span data-bby="${esc(it.by)}">${esc(actorName(it.by))}</span> · ${esc(relT(it.at))}</span></button>`;}).join(''):'<div class="bellEmpty">새 알림이 없어요.</div>'}`;
+      return `<button type="button" class="bellItem${u?' unread':''}" data-bk="${esc(it.k)}" aria-label="${u?'안 읽음, ':''}${BELL_K[it.type]}: ${esc(it.title)}"><span class="bellK ${it.type}">${BELL_K[it.type]}</span><span class="bellT">${esc(it.title)}</span><span class="bellP">${esc(pv)||'&nbsp;'}</span><span class="bellM">${it.by?`<span data-bby="${esc(it.by)}">${esc(actorName(it.by))}</span> · `:''}${esc(relT(it.at))}</span></button>`;}).join(''):'<div class="bellEmpty">새 알림이 없어요.</div>'}`;
   if(foc)p.querySelector(`[data-bk="${CSS.escape(foc)}"]`)?.focus();}
 function bellShut(focusBtn){const p=$('#bellPop');if(!p||p.hidden)return;p.hidden=true;$('#bellBtn').setAttribute('aria-expanded','false');if(focusBtn)$('#bellBtn').focus();}
 async function bellSave(patch){const me=myMember();if(!me)return;Object.assign(me,patch);bellPaint();
@@ -2994,6 +3029,8 @@ $('#bellPop').addEventListener('click',e=>{const me=myMember();if(!me)return;
   if(bellUnread(it,me)){const keep=bellItems().filter(x=>x.at>(me.notifSeenAt||'')).map(x=>x.k);bellSave({notifRead:[...(me.notifRead||[]).filter(k=>keep.includes(k)),it.k].slice(-200)});}
   bellShut(false);if($('#modalRoot').innerHTML)closeModal();
   if(it.notice){const n=notices.find(x=>x.id===it.notice);state.mode='notice';state.post=null;persistUI();render();window.scrollTo(0,0);if(n)openNotice(n);}
+  else if(it.type==='leave'){state.mode='leave';state.post=null;if(it.leaveDate){lstate.sel=it.leaveDate;lstate.month=it.leaveDate.slice(0,7);lstate.year=+it.leaveDate.slice(0,4);}persistUI();render();window.scrollTo(0,0);}
+  else if(it.digest||!it.task){Object.assign(state,{mode:'tasks',post:null,assignee:it.digest?'me':state.assignee});persistUI();render();window.scrollTo(0,0);}
   else{state.mode='tasks';openPost(it.task);}});
 $('#bellPop').addEventListener('keydown',e=>{if(e.key!=='ArrowDown'&&e.key!=='ArrowUp')return;const L=[...$('#bellPop').querySelectorAll('button:not(:disabled)')],i=L.indexOf(document.activeElement);if(!L.length)return;e.preventDefault();L[(i+(e.key==='ArrowDown'?1:L.length-1))%L.length].focus();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#bellPop').hidden){e.stopPropagation();bellShut(true);}},true);
@@ -3078,7 +3115,7 @@ const GUIDE={
     how:['바꿀 메뉴의 이름 칸을 고쳐요.',
       '**+ 메뉴 추가**를 누르고 이름과 링크 주소를 넣어요.']},
 };
-const GUIDE_COMMON=['헤더의 종 버튼에서 나를 멘션한 댓글, 나를 담당자로 넣은 업무, 새 공지를 알림으로 받아요.',
+const GUIDE_COMMON=['헤더의 종 버튼에서 내 업무 변동, 내 업무 댓글, 아침 요약, 내 휴가 변동, 멘션, 새 공지를 알림으로 받아요.',
   '알림을 누르면 그 업무나 공지로 이동하고, **모두 읽음**으로 한 번에 읽음 처리할 수 있어요.',
   '이 가이드는 헤더의 **?** 버튼으로 언제든 다시 열 수 있어요.'];
 const gdMd=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');

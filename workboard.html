@@ -1057,19 +1057,14 @@ div.tfNote{height:auto;overflow:auto}
 .tkTable td:nth-child(6),.tkTable td:nth-child(7){white-space:nowrap}
 .tkWho{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:150px}.tkWho .who{white-space:nowrap}
 .tkPart{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-soft);white-space:nowrap}.tkPart::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--c)}
-.lvSum{margin-top:12px;padding:12px 16px}.lvSum>summary{cursor:pointer;display:flex;align-items:center;gap:8px;margin-bottom:8px}.lvSum:not([open])>summary{margin-bottom:0}
-.lvSum .tablebox{border:0;border-radius:0} /* 패널 안 표는 패널 테두리 하나만 */
 .hideTag{margin-left:6px;font-size:11px;font-weight:700;color:var(--muted);background:var(--sunk);border-radius:4px;padding:1px 6px}
 .roleBadge.ext{background:var(--warn-soft);color:var(--warn)}
 .tkRms{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
 .rmsGo{min-width:28px;justify-content:center;text-decoration:none}.tkRms .rmsGo{min-width:0;height:24px;padding:0 6px}.rmsGo[aria-disabled]{opacity:.4;cursor:not-allowed}
-@media (max-width:480px){.lvSum .stable th,.lvSum .stable td{padding-left:6px;padding-right:6px}} /* 좁은 화면: 연차 현황 5칸이 한 화면에 */
 .ptBar .ptabs{margin:0 0 -1px;gap:2px}.ptBar .ptab{height:36px;padding:0 10px;font-size:14px} /* 업무 관리 프로젝트 탭: 다른 화면의 밑줄 탭과 같은 모양 */
 .mnRuleEd{min-height:36px;border:1px solid var(--line);border-radius:var(--r);padding:6px 10px;font-size:14px;line-height:1.6;background:var(--surface);outline:none;white-space:pre-wrap;overflow-wrap:anywhere}.mnRuleEd:focus{border-color:var(--accent)} /* 항목 표 입력 기준(서식 편집칸) */
 .cvPrev{display:inline-flex;align-items:center;gap:4px;white-space:nowrap} /* 회귀 검증: 이전 회차 결과 + '동일' */
 .evWho{color:var(--ink-soft);font-weight:500} /* 달력 일정 담당자 */
-.stable .lvMv{white-space:nowrap;width:1%;padding-left:4px;padding-right:4px}.lvMv .btn{padding:0 4px} /* 연차 현황 순서 버튼(관리자) */
-@media (max-width:480px){.lvMv .btn{display:flex;height:20px;min-height:0}.lvSum .stable .lvMv{padding-left:0;padding-right:0}} /* 좁은 화면: 위·아래를 세로로 */
 /* 업무 관리: 게시물의 파트별 요청 칩 · 요약 카드 파트별 줄 */
 .rqChips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
 .rqChip{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--ink-soft);border:1px solid var(--line);border-radius:999px;padding:1px 2px 1px 8px;background:var(--surface);white-space:nowrap}
@@ -1303,6 +1298,23 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .atPop li{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--fg)}
 .atPop li[aria-selected="true"]{background:var(--accent-soft);color:var(--accent-dark)}
 .atPop .legend{margin-left:auto;font-size:12px}
+
+/* 일정·연차 관리: 고른 날짜의 목록 */
+.cal .day{outline:none}
+.cal .day.sel{box-shadow:inset 0 0 0 2px var(--accent)}
+.cal .day:focus-visible{box-shadow:inset 0 0 0 2px var(--accent-dark)}
+.dayPanel{margin-top:12px;padding:16px}
+.dayPanel h3{display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:16px;font-weight:700}
+.dayPanel h3 .spacer{flex:1}
+.dlList{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.dlRow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--fg)}
+.dlRow[tabindex]{cursor:pointer}.dlRow[tabindex]:hover,.dlRow[tabindex]:focus-visible{border-color:var(--accent);outline:none}
+.dlK{grid-row:span 2;font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px;background:var(--sunk);color:var(--ink-soft);white-space:nowrap}
+.dlK.k-lv{background:var(--ok-soft);color:var(--ok)}.dlK.k-ev{background:var(--accent-soft);color:var(--accent-dark)}
+.dlK.k-dp{background:var(--warn-soft);color:var(--warn)}.dlK.k-evops{background:var(--design-soft);color:var(--design)}
+.dlT{font-size:14px;font-weight:600;min-width:0;overflow-wrap:anywhere}
+.dlS{font-size:13px;color:var(--muted);min-width:0;overflow-wrap:anywhere}
+.dlEmpty{padding:18px 4px;text-align:center;color:var(--muted);font-size:14px}
 </style>
 
 <!-- 화면 틀: 왼쪽 세로 메뉴(섹션 아코디언·접기, 좁은 화면에서는 서랍) + 위 헤더 + 본문 카드 -->
@@ -1541,7 +1553,7 @@ function passF(t){
   const q=state.q.trim().toLowerCase();
   return (state.part==='all'||t.part===state.part)&&
     (state.status==='all'||(state.status==='open'?t.status!=='done':t.status===state.status))&&
-    (state.assignee==='all'||(state.assignee==='me'?isMine(t):state.assignee==='myreq'?isMyReq(t):asNames(t).includes(state.assignee)))&&
+    (state.assignee==='all'||(state.assignee==='me'?isMine(t):asNames(t).includes(state.assignee)))&&
     (!state.rpart||(!isPost(t)&&t.part===state.rpart))&&
     (!q||[t.title,t.requester,...asNames(t),t.jiraKey,t.rmsNo,t.note,projOf(t.projectId)?.name].some(v=>(v||'').toLowerCase().includes(q)));
 }
@@ -1648,9 +1660,9 @@ function renderFilters(){
   state.part='all'; // 직무(파트) 구분 탭은 없앴다. 예전에 골라 둔 파트로 목록이 걸러진 채 남지 않게 항상 전체
   $('#fStatus').innerHTML=[['all','전체 현황'],['open','미완료 전체'],...STATUSES.map(s=>[s.k,s.label])].map(([k,l])=>`<option value="${k}" ${state.status===k?'selected':''}>${l}</option>`).join('');
   const names=[...new Set(scoped().flatMap(asNames))].filter(n=>!members.some(m=>m.name===n&&m.hideInWork)).sort((a,b)=>a.localeCompare(b,'ko'));
-  const me=myMember();if((state.assignee==='me'||state.assignee==='myreq')&&storeReady&&!me)state.assignee='all';
-  if(!['all','me','myreq'].includes(state.assignee)&&!names.includes(state.assignee))state.assignee='all';
-  $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option><option value="myreq" ${state.assignee==='myreq'?'selected':''}>내가 요청한 업무</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
+  const me=myMember();if(state.assignee==='myreq'||(state.assignee==='me'&&storeReady&&!me))state.assignee='all'; // '내가 요청한' 보기는 없앰
+  if(!['all','me'].includes(state.assignee)&&!names.includes(state.assignee))state.assignee='all';
+  $('#fAssignee').innerHTML=`<option value="all">전체 담당자</option><option value="me" ${state.assignee==='me'?'selected':''}>내 업무${me?` (${esc(me.name)})`:''}</option>`+names.map(n=>`<option ${state.assignee===n?'selected':''}>${esc(n)}</option>`).join('');
   if(document.activeElement!==$('#fSearch'))$('#fSearch').value=state.q;
   document.querySelectorAll('#viewSeg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===state.view));
   $('#lSort').value=state.lsort==='due'?'due':'req';$('#lSort').hidden=state.view==='board';
@@ -1671,7 +1683,7 @@ function renderBoard(){
           <div class="t bdT">${p.jiraKey?`<span class="jira">${esc(p.jiraKey)}</span>`:''}${esc(p.title)}</div>
           <div class="meta"><span class="bdWho">${whoMany(p,18,'담당 미지정')}</span>${due?`<span class="num${late?' late':''}">${fmtDate(due)} ${dday(due)}</span>`:''}</div>
           ${canWrite&&nx?`<div class="bdAct"><button type="button" class="btn sm${nx[0]==='done'?' primary':''}" data-next="${esc(p.id)}" data-to="${nx[0]}">${nx[1]}</button></div>`:''}</div>`;}).join('')||'<div class="bdEmpty">여기에 끌어 놓기</div>'}</div>`;}).join('');
-  const chips=[['all','전체'],['me','내 담당'],['myreq','내가 요청한']].map(([k,l])=>`<button type="button" class="bdChip" data-asg="${k}" aria-pressed="${state.assignee===k}">${l}</button>`).join('');
+  const chips=[['all','전체'],['me','내 담당']].map(([k,l])=>`<button type="button" class="bdChip" data-asg="${k}" aria-pressed="${state.assignee===k}">${l}</button>`).join('');
   main.innerHTML=`<div id="bdTop">
     <div class="bdChips" role="group" aria-label="담당 필터">${chips}</div></div>
     <div class="board" id="bdCols">${cols}</div>
@@ -2594,7 +2606,7 @@ const LEAVE_TYPES=[
   {k:'other',label:'공가·기타',days:1,deduct:false,multi:true,cls:'lt-o'}
 ];
 let members=[], leaves=[];
-const lstate={year:+todayStr().slice(0,4),month:todayStr().slice(0,7),member:'all',project:'all'};
+const lstate={year:+todayStr().slice(0,4),month:todayStr().slice(0,7),member:'all',project:'all',sel:todayStr()};
 const ltype=k=>LEAVE_TYPES.find(t=>t.k===k)||LEAVE_TYPES[0];
 const memOf=id=>members.find(m=>m.id===id);
 const shownMembers=()=>members.filter(m=>!m.hideInWork);
@@ -2632,16 +2644,9 @@ function renderTodayOff(){
   el.innerHTML=off.length?`오늘 부재 <b>${off.length}명</b> · ${off.map(l=>`${who(memOf(l.memberId).name,l.memberId,20)}(${esc(leaveLabel(l))})`).join(', ')}`:'오늘 부재자 없음';
 }
 
-// 일정·연차 관리(예전 '일정 관리' + '연차 관리'): 달력(일정·연차 함께 등록·수정) + 연차 현황
-let lvSumOpen=true;
-// 연차 현황 순서: 계정의 '표시 순서'(order)가 있으면 먼저, 나머지는 가나다순. 관리자는 표에서 위·아래로 바꿈
+// 일정·연차 관리(예전 '일정 관리' + '연차 관리'): 달력(일정·연차 함께 등록·수정) + 고른 날짜의 목록
+// 사람 순서: 계정의 '표시 순서'(order)가 있으면 먼저, 나머지는 가나다순(홈 팀·주간 일정)
 const lvOrdered=()=>{const ord=m=>m.order>0?+m.order:Infinity;return shownMembers().sort((a,b)=>ord(a)-ord(b)||a.name.localeCompare(b.name,'ko'));};
-function annualTable(Y){
-  const adm=isAdminUser(),L=lvOrdered();
-  const rows=L.map((m,i)=>{const s=memberStats(m,Y),pt=memberPartOf(m.part);
-    return `<tr><td class="nowrap"><b>${who(m.name,m.id,24)}</b></td><td>${pt?`<span class="tkPart" style="--c:${pt.c}">${esc(pt.label)}</span>`:'<span class="legend">—</span>'}</td><td class="r num">${fmtDays(s.used)}일</td><td class="r num">${fmtDays(s.planned)}일</td><td class="r num">${s.other?fmtDays(s.other)+'일':'—'}</td>${adm?`<td class="lvMv" data-mid="${esc(m.id)}"><button type="button" class="btn ghost sm" data-lvmv="-1" ${i?'':'disabled'} aria-label="${esc(m.name)} 위로" title="위로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg></button><button type="button" class="btn ghost sm" data-lvmv="1" ${i<L.length-1?'':'disabled'} aria-label="${esc(m.name)} 아래로" title="아래로"><svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button></td>`:''}</tr>`;}).join('');
-  return `<div class="tablebox"><table class="stable"><thead><tr><th>이름</th><th>파트</th><th class="r">사용</th><th class="r">예정</th><th class="r">기타 휴가</th>${adm?'<th class="lvMv" aria-label="순서"></th>':''}</tr></thead><tbody>${rows}</tbody></table></div>`;
-}
 // 달력에서 날짜(또는 기간)를 고르면: 일정 등록 / 연차 신청 중 선택
 function calAsk(a,b){const f=d=>`${+d.slice(5,7)}/${+d.slice(8,10)}`,rng=b&&b!==a?`${f(a)} ~ ${f(b)}`:f(a||todayStr());
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:400px"><header><h2>무엇을 등록할까요? <span class="legend">${esc(rng)}</span></h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
@@ -2655,17 +2660,29 @@ function renderLeave(){
     area.innerHTML=`<div class="empty"><h2>구성원을 먼저 등록해 주세요</h2><p>사람별로 연간 연차 일수를 정해 두면, 연차·반차·반반차를 등록할 때마다 사용·예정·잔여 일수가 자동으로 계산됩니다.</p>${isAdminUser()?'<button class="btn primary" type="button" id="lEmptyAdd">구성원 추가</button>':''}</div>`;
     $('#lEmptyAdd')?.addEventListener('click',openMembers);return;
   }
-  const Y=+lstate.month.slice(0,4);
   const tools=`<div class="rtool"><span class="spacer"></span>${canWrite?'<button class="btn" type="button" id="lAddLeave">+ 연차 신청</button>':''}</div>`;
-  area.innerHTML=`${tools}${calPanel(lstate,calFilter(),true,false)}<details class="panel lvSum"${lvSumOpen?' open':''}><summary><b>${Y}년 연차 현황</b><span class="legend">사용 · 예정 · 기타 휴가</span></summary>${annualTable(Y)}</details>`;
+  area.innerHTML=`${tools}${calPanel(lstate,calFilter(),true,false)}${dayListPanel(lstate.sel)}`;
 }
-onArea('#leaveArea','click',async e=>{if(e.target.closest('#lAddLeave')){openLeave(null,undefined,undefined,true);return;}
-  const b=e.target.closest('[data-lvmv]');if(!b||!isAdminUser())return;
-  const L=lvOrdered(),i=L.findIndex(m=>m.id===b.closest('[data-mid]').dataset.mid),j=i+ +b.dataset.lvmv;if(i<0||j<0||j>=L.length)return;
-  [L[i],L[j]]=[L[j],L[i]];const ch=L.map((m,k)=>[m,k+1]).filter(([m,o])=>m.order!==o);ch.forEach(([m,o])=>m.order=o);render(); // 보이는 사람 전부 1부터 다시 매김
-  document.querySelector(`#leaveArea [data-mid="${CSS.escape(L[j].id)}"] [data-lvmv="${b.dataset.lvmv}"]:not(:disabled)`)?.focus();
-  try{await Promise.all(ch.map(([m,o])=>db.collection('members').doc(m.id).update({order:o})));logChange('member','update','order','연차 현황 순서',null,null,L.map(m=>m.name).join(' → '));}catch(err){handleWriteError(err);}});
-$('#leaveArea').addEventListener('toggle',e=>{if(e.target.classList?.contains('lvSum'))lvSumOpen=e.target.open;},true);
+onArea('#leaveArea','click',e=>{if(e.target.closest('#lAddLeave')){openLeave(null,undefined,undefined,true);return;}
+  if(e.target.closest('#dlAdd')){calAsk(lstate.sel||todayStr());return;}});
+
+/* 고른 날짜의 목록: 달력 칸과 같은 데이터(calDayMap)를 그날 하루로 다시 계산해서, 칸에서 잘린 항목까지 모두 보여 줌 */
+const DL_K=[['lv','k-lv','연차'],['evd','k-dp','배포'],['evops','k-evops','이벤트'],['evdue','','마감'],['evp','k-ev','일정']];
+function dayListPanel(k){
+  const d=new Date(k+'T00:00:00'),W='일월화수목금토'[d.getDay()];
+  const box=document.createElement('div');box.innerHTML=(calDayMap(k,k,calFilter(),true,false)[k]||[]).join('');
+  const rows=[...box.children].map(c=>{const kk=DL_K.find(([cl])=>c.classList.contains(cl))||['','','항목'],lab=kk[2];
+    const tag=c.querySelector('.evtag')?.textContent||'';c.querySelector('.evtag')?.remove();c.querySelector('.av,img,.avatar')?.remove();
+    let title=c.textContent.trim(),sub=c.getAttribute('title')||'';
+    const ev=c.dataset.eid&&events.find(x=>x.id===c.dataset.eid),lv=c.dataset.lid&&leaves.find(x=>x.id===c.dataset.lid);
+    if(lv){const m=memOf(lv.memberId);title=`${m?.name||''} ${ltype(lv.type).label}`.trim();sub=leaveLabel(lv)+(lv.note?' · '+lv.note:'');}
+    else if(ev&&ev.kind!=='deploy'){const per=ev.end&&ev.end!==ev.start?`${fmtDate(ev.start)} ~ ${fmtDate(ev.end)}`:fmtDate(ev.start);sub=[per,scWho(ev)?'담당 '+scWho(ev):'',ev.note||''].filter(Boolean).join(' · ');title=ev.title;}
+    else if(tag)sub=[tag,sub].filter(Boolean).join(' · ');
+    const attrs=['lid','eid','evrow'].filter(a=>c.dataset[a]).map(a=>`data-${a}="${esc(c.dataset[a])}"`).join(' ');
+    return `<li class="dlRow" data-date="${k}" ${attrs} ${attrs?'tabindex="0" role="button"':''}><span class="dlK ${kk[1]}">${lab}</span><span class="dlT">${esc(title)}</span><span class="dlS">${esc(sub)}</span></li>`;});
+  return `<section class="panel dayPanel" id="dayPanel" aria-live="polite"><h3><span>${d.getMonth()+1}월 ${d.getDate()}일 (${W})</span><span class="legend">${rows.length}건</span><span class="spacer"></span>${canWrite?'<button class="btn sm" type="button" id="dlAdd">+ 이 날 등록</button>':''}</h3>
+    ${rows.length?`<ul class="dlList">${rows.join('')}</ul>`:'<div class="dlEmpty">이 날은 일정이 없어요.</div>'}</section>`;
+}
 // 월 달력 하나: 일정 관리(lstate, 보기 필터 state.cf)와 연차 관리(astate, 연차만)가 같이 씀
 // 달력 칸별 항목(일정·배포·연차·업무 마감·이벤트 운영): 월 달력과 홈 주간 일정이 같이 씀
 function calDayMap(a0,b0,cf,withFilters,leaveRo){
@@ -2697,7 +2714,7 @@ function calPanel(st,cf,withFilters,leaveRo){
   for(const d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
     const k=ymd(d), items=byDay[k]||[];
     const cls=['day',d.getMonth()!==cm-1?'out':'',isWeekend(k)?'we':'',k===T?'today':'',canWrite?'can':''].join(' ');
-    cells+=`<div class="${cls}" data-date="${k}"><span class="dn">${d.getDate()}</span>${items.slice(0,4).join('')}${items.length>4?`<button type="button" class="more" data-more="${k}">+${items.length-4}건</button>`:''}</div>`;
+    const sl=st.sel!==undefined;cells+=`<div class="${cls}${sl&&k===st.sel?' sel':''}" data-date="${k}"${sl?` tabindex="0" role="button" aria-pressed="${k===st.sel}" aria-label="${+k.slice(5,7)}월 ${+k.slice(8,10)}일 ${(byDay[k]||[]).length}건"`:''}><span class="dn">${d.getDate()}</span>${items.slice(0,4).join('')}${items.length>4?`<button type="button" class="more" data-more="${k}">+${items.length-4}건</button>`:''}</div>`;
   }
   lvDayItems=byDay;
   return `<div class="panel">
@@ -2713,6 +2730,8 @@ let lvDrag=null, lvDragDone=false;
 const lvMark=(sel,a,b)=>document.querySelectorAll(sel+' .day[data-date]').forEach(d=>d.classList.toggle('pick',!!a&&d.dataset.date>=(a<b?a:b)&&d.dataset.date<=(a<b?b:a)));
 document.addEventListener('pointerup',()=>{if(!lvDrag)return;const {a,b,sel,only}=lvDrag;lvDrag=null;lvMark(sel);if(a!==b){lvDragDone=true;calNew(only,a<b?a:b,a<b?b:a);}});
 const calNew=(only,a,b)=>only==='ask'?calAsk(a,b):only?openLeave(null,a,b,true):openSched(null,a,b);
+// 날짜 고르기(일정·연차 관리): 아래 목록을 그 날짜로 바꾸고, 같은 칸에 포커스를 돌려줌
+function calPick(st,k,scroll){st.sel=k;render();const c=document.querySelector(`#leaveArea .day[data-date="${k}"]`);if(scroll)$('#dayPanel')?.scrollIntoView({block:'nearest',behavior:'smooth'});else c?.focus({preventScroll:true});}
 function bindCal(sel,st,only){
   onArea(sel,'pointerdown',e=>{const day=e.target.closest('.day[data-date]');if(!day||!canWrite||e.target.closest('[data-lid],[data-eid],[data-evrow],[data-more],.evdue,.lvRo')||e.button!==0)return;lvDrag={a:day.dataset.date,b:day.dataset.date,sel,only};});
   onArea(sel,'pointerover',e=>{if(!lvDrag)return;const day=e.target.closest('.day[data-date]');if(!day)return;lvDrag.b=day.dataset.date;lvMark(sel,lvDrag.a,lvDrag.b);});
@@ -2721,13 +2740,13 @@ function bindCal(sel,st,only){
     const id=e.target.id;
     if(id==='lPrev'||id==='lNext'){const [y,m]=st.month.split('-').map(Number);const d=new Date(y,m-1+(id==='lNext'?1:-1),1);st.month=ymd(d).slice(0,7);st.year=d.getFullYear();render();return;}
     if(id==='lThis'){st.month=todayStr().slice(0,7);st.year=+todayStr().slice(0,4);render();return;}
-    const mo=e.target.closest('[data-more]');if(mo){openDayList(mo.dataset.more);return;}
+    const mo=e.target.closest('[data-more]');if(mo){if(st===lstate){calPick(st,mo.dataset.more,true);return;}openDayList(mo.dataset.more);return;}
     const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}
-    const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date);return;}
+    const it=e.target.closest('[data-lid],[data-eid]');if(it){calItemOpen(it,it.closest('.day')?.dataset.date||it.dataset.date);return;}
     if(e.target.closest('.evdue,.lvRo'))return; // 업무 마감·(일정 관리의) 연차는 표시만
-    const day=e.target.closest('.day');if(day&&canWrite)calNew(only,day.dataset.date);
+    const day=e.target.closest('.day');if(day&&st===lstate){calPick(st,day.dataset.date);return;}if(day&&canWrite)calNew(only,day.dataset.date);
   });
-  onArea(sel,'keydown',e=>{if(e.key!=='Enter')return;const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date);});
+  onArea(sel,'keydown',e=>{if(e.key!=='Enter'&&e.key!==' ')return;if(st===lstate&&e.target.matches?.('.day[data-date]')){e.preventDefault();calPick(st,e.target.dataset.date);return;}if(e.key!=='Enter')return;const eo=e.target.closest('[data-evrow]');if(eo){evGoRow(eo.dataset.evrow);return;}const it=e.target.closest('[data-lid],[data-eid]');if(it)calItemOpen(it,it.closest('.day')?.dataset.date||it.dataset.date);});
 }
 bindCal('#leaveArea',lstate,'ask');
 
@@ -2824,7 +2843,7 @@ onArea('#homeArea','click',e=>{
   if(b.id==='hmPrev'||b.id==='hmNext'){hmst.week=addDays(hmst.week||homeMonday(todayStr()),b.id==='hmNext'?7:-7);render();return;}
   if(b.id==='hmThis'){hmst.week=null;render();return;}
   const c=b.dataset.hcard;if(c){if(c==='leave'){state.mode='leave';persistUI();render();return;}
-    Object.assign(state,{mode:'tasks',post:null,project:'all',late:false,rpart:'',assignee:c==='dev'?'myreq':'me',status:c==='doing'?'prog':c});persistUI();render();window.scrollTo(0,0);return;}
+    Object.assign(state,{mode:'tasks',post:null,project:'all',late:false,rpart:'',assignee:c==='dev'?'all':'me',status:c==='doing'?'prog':c});persistUI();render();window.scrollTo(0,0);return;}
   if(b.dataset.hpost){state.mode='tasks';openPost(b.dataset.hpost);return;}
   if(b.dataset.hlv){const l=leaves.find(x=>x.id===b.dataset.hlv);if(l)openLeave(l);return;}
   if(b.dataset.ckdel){ckSave(ckItems().filter(x=>x.id!==b.dataset.ckdel));return;}

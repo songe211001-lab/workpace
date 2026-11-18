@@ -1211,6 +1211,73 @@ button.sfProf:hover{background:var(--sunk)}
 .bdAct{display:flex;justify-content:flex-end}
 .bdEmpty{border:1px dashed var(--line);border-radius:var(--r);padding:16px 8px;text-align:center;color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:reduce){.side,.chev{transition:none}}
+/* 토스(TDS) 디자인 테마: DESIGN.md 토큰을 대시보드 변수에 연결(앞의 기본 값 위에 덮어씀)
+   - 색: TDS 팔레트(grey·blue·green·orange·red·teal·purple 50~900)에서만 고름
+   - 글자 대비 4.5:1 미만인 DESIGN.md 값은 같은 팔레트의 한 단계 진한 값으로(아래 '대비 보정' 표시)
+   - 글꼴: Toss Product Sans는 배포 권리가 없어 대체 글꼴 Pretendard Variable 사용(DESIGN.md 권장 대체) */
+:root{
+  --bg:#f2f4f6;           /* surface(grey100): 페이지 바탕 */
+  --surface:#ffffff;      /* canvas: 카드·표·모달 */
+  --sunk:#f9fafb;         /* grey50: 칩·호버 바탕 */
+  --line:#e5e8eb;         /* border(grey200) */
+  --fg:#191f28;           /* foreground(grey900) */
+  --ink-soft:#333d4b;     /* 대비 보정: body grey700 → grey800 (보조 글자와 단계 구분) */
+  --muted:#4e5968;        /* 대비 보정: muted #8b95a1(3.0:1) → grey700 #4e5968(회색 바탕 위에서도 6:1 이상) */
+  --grey-400:#b0b8c1; --na:#8b95a1;
+  --accent:#3182f6;       /* primary(blue500): 선택 표시·스위치·강조 선 */
+  --accent-dark:#1b64da;  /* 대비 보정: 흰 글자 위 버튼·링크는 blue700(흰 글자 5.4:1). #3182f6은 3.7:1 */
+  --accent-soft:#e8f3ff;  /* weak-background(blue50) */
+  --accent-fg:#ffffff;
+  --ok:#027648; --ok-strong:#03b26c; --ok-soft:#f0faf6; --ok-border:#aeefd5;   /* green900/500/50/100 */
+  --warn:#b84500; --warn-strong:#fb8800; --warn-soft:#fff3e0; --warn-border:#ffcd80; /* warn 글자는 대비 보정(orange900 3.4:1 → 4.9:1) */
+  --bad:#d22030; --bad-strong:#f04452; --bad-soft:#ffeeee; --bad-border:#feafb4;    /* red700/500/50/200 */
+  --design:#8222a2; --design-soft:#f9f0fc; --pub:#1b64da; --pub-soft:#e8f3ff; --dev:#076565; --dev-soft:#edf8f8;
+  --overlay:rgba(0,12,30,.45);
+  --shadow-3:0 8px 24px rgba(0,12,30,.08); --shadow-toast:0 8px 24px rgba(0,12,30,.16);
+  --font-ui:"Toss Product Sans","Pretendard Variable",Pretendard,"IBM Plex Sans",-apple-system,"Malgun Gothic",sans-serif;
+  --r:10px; --r-sm:8px; --r-lg:16px; --r-xl:16px;   /* 버튼 medium 10px, 큰 카드 16px */
+}
+:root[data-theme="dark"]{--accent:#3182f6;--accent-dark:#64a8ff;--accent-soft:#16243a;--accent-fg:#0b1a33;--pub:#90c2ff;--pub-soft:#16243a}
+body{font-family:var(--font-ui);letter-spacing:-.01em}
+/* 버튼: TDS medium(38px · 10px) 기준, 굵기 600. 눌렀을 때 살짝 작아지는 TDS 동작 */
+.btn{height:38px;padding:0 14px;border-radius:10px;font-size:14px;font-weight:600;transition:transform .1s,background .12s}
+.btn:active{transform:scale(.97)}
+.btn.sm,.editBtn,td .btn,th .btn,.panel h3 .btn,.menuList .btn{height:32px;border-radius:8px}
+.btn.primary{background:var(--accent-dark);border-color:var(--accent-dark)}
+.btn:not(.primary):not(.ghost):not(.danger){background:var(--sunk);border-color:transparent;color:var(--ink-soft)}
+.btn:not(.primary):not(.ghost):not(.danger):hover{background:#e5e8eb;color:var(--fg)}
+/* 카드: 테두리 대신 흰 면 + 넉넉한 둥근 모서리(그림자 없이 평면) */
+.panel,.tc-list-card,.hmCard,.hmMate,.ntCard,.tablebox,.statWrap{border-color:transparent}
+.panel{border-radius:16px}
+/* 입력칸 */
+.sel,input.sel,select.sel,.f input,.f select,.f textarea,.search{border-radius:8px;background:var(--sunk);border-color:transparent}
+.sel:focus,.f input:focus,.f select:focus,.f textarea:focus{background:var(--surface);border-color:var(--accent)}
+/* 메뉴·머리줄 */
+.side{background:var(--surface)!important;border-right:1px solid var(--line)}
+.navItem{border-radius:10px;font-weight:600}
+.navItem[aria-selected="true"]{background:var(--accent-soft);color:var(--accent-dark)}
+.topbar{background:var(--surface)}
+.pageTitle{font-size:20px;font-weight:700}
+/* 홈: TDS 제목 크기(t3 22/31 · t4 20/29) */
+.hmHello h2{font-size:26px;line-height:35px;font-weight:700}
+.hmHello h2 em{color:var(--accent)}
+.hmCard b{font-size:26px;font-weight:700}
+.hmCard.pri{background:var(--accent-soft);border-color:transparent}.hmCard.pri .hmCardL,.hmCard.pri b{color:var(--accent-dark)}
+.hmSec h3{font-size:18px;font-weight:700}
+/* 상태 알약·탭 */
+.pill,.cvPill{border-radius:6px}
+.seg{border-radius:10px;background:var(--sunk);border-color:transparent;padding:2px}
+.seg button{border-radius:8px}
+.seg button[aria-pressed="true"],.stTabs button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,12,30,.08)}
+.stTabs{border-radius:10px;background:var(--sunk);border-color:transparent;padding:2px}.stTabs button{border-radius:8px}
+.ptab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--fg)}
+/* 보드 */
+.col{background:var(--sunk);border-radius:16px}
+.card{border-color:transparent;border-radius:12px;box-shadow:0 1px 2px rgba(0,12,30,.06)}
+.card:hover{border-color:transparent;box-shadow:0 0 0 1px var(--accent)}
+.bdChip{border-color:transparent;background:var(--sunk);border-radius:999px}
+.bdChip[aria-pressed="true"]{background:var(--fg);color:#fff}
+.modal{border-radius:16px}
 </style>
 
 <!-- 화면 틀: 왼쪽 세로 메뉴(섹션 아코디언·접기, 좁은 화면에서는 서랍) + 위 헤더 + 본문 카드 -->

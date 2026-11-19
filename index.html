@@ -1019,6 +1019,31 @@ a.rms:hover{text-decoration:underline}
 .ppR .tlTitle{margin:0}
 .ppRScroll{overflow-x:hidden}.ppR .wlAdd{grid-template-columns:1fr 1fr}.ppR .wlAdd #wlNote{grid-column:1/-1}.ppR .wlAdd #wlAddBtn{grid-column:1/-1;justify-self:end}
 
+/* 업무 상세 패널: 촘촘한 글씨·간격 */
+#ppPanel .ppHead{padding:12px 16px;gap:4px}
+#ppPanel .ppPath,#ppPanel .ppDates{font-size:12px;color:var(--muted)}
+#ppPanel .ppSt{font-size:11px;padding:2px 8px}
+#ppPanel .ppHead .tfTitle,#ppPanel .ppHead .tfTitleRo{font-size:17px;font-weight:700;height:auto;padding:2px 0}
+#ppPanel .ppTop .btn{height:32px;font-size:13px;padding:0 12px}
+#ppPanel #tfSaved{white-space:nowrap;font-size:12px}#ppPanel .ppTop .btn{flex:none}
+#ppPanel .ppL,#ppPanel .ppRScroll{padding:14px 16px;gap:14px}
+#ppPanel .ppSecT,#ppPanel .tfSecHead h3,#ppPanel .tlTitle{font-size:13px;font-weight:700;color:var(--accent-dark);margin:0 0 8px}
+#ppPanel .tfSecHead{margin-bottom:0}#ppPanel .tfSecHead h3{margin:0}
+#ppPanel .tfSecHead .legend{font-size:12px}
+#ppPanel .ppL .tfRows{gap:10px 12px}
+#ppPanel .ppL .tfRow{gap:4px}
+#ppPanel .ppL .tfLab{font-size:12px;font-weight:500;color:var(--muted)}
+#ppPanel .ppL .tfIn,#ppPanel .ppL .tfVal,#ppPanel .ppL .asPick>summary,#ppPanel .ppL #evLkIn{height:32px;min-height:32px;font-size:13px;padding:0 10px;border-radius:6px}
+#ppPanel .ppL .tfCtl>.btn.sm,#ppPanel .ppL .tfCtl>a.rmsGo{height:32px;min-width:32px}
+#ppPanel .ppNote{font-size:12px;margin-top:-4px}
+#ppPanel .cpEd,#ppPanel [data-tf="note"]{font-size:13px;line-height:1.6}
+#ppPanel .wlAdd input,#ppPanel .wlAdd select{height:32px;font-size:13px;padding:0 10px;border-radius:6px}
+#ppPanel .wlAdd .btn,#ppPanel #cpSend{height:32px;font-size:13px;padding:0 14px}
+#ppPanel .wlBox .hint,#ppPanel .ppR .hint{font-size:12px}
+#ppPanel .hitems{font-size:13px}
+#ppPanel .cmHead,#ppPanel .cmBody{font-size:13px}
+#ppPanel .composer{padding:10px 16px;gap:6px}
+#ppPanel .composer .cpEd{min-height:64px}
 @media (max-width:760px){.ppPanel{width:100vw;border-left:0}.ppScrim{display:none}.ppCols{display:block;overflow:auto}.ppL{border-right:0;overflow:visible}.ppR{display:block}.ppRScroll{overflow:visible}.ppL .tfRows{grid-template-columns:1fr}}
 .tfPage{gap:18px}
 .tfHead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}

@@ -1350,19 +1350,25 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
 .bellBtn{position:relative;width:38px;height:38px;padding:0;display:inline-grid;place-items:center;border-radius:10px}
 .bellBtn svg{width:20px;height:20px}
 .bellN{position:absolute;top:2px;right:0;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center;font-variant-numeric:tabular-nums}
-.bellPop{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:min(360px,calc(100vw - 32px));max-height:min(480px,70vh);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-3);padding:6px}
-.bellHead{display:flex;align-items:center;gap:8px;padding:8px 10px 6px}
-.bellHead h3{margin:0;font-size:15px;font-weight:700;flex:1}
-.bellItem{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;width:100%;text-align:left;background:none;border:0;border-radius:10px;padding:10px;color:var(--fg);font:inherit;cursor:pointer}
+.bellPop{position:absolute;right:0;top:calc(100% + 6px);z-index:60;width:min(380px,calc(100vw - 32px));max-height:min(520px,70vh);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-3);padding:0}
+.bellHead{position:sticky;top:0;z-index:1;display:flex;align-items:center;gap:2px;padding:10px 10px 10px 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.bellHead h3{margin:0 auto 0 0;font-size:15px;font-weight:700}
+.bellTab,.bellLink{border:0;background:none;font:inherit;font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.bellTab[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent-dark)}
+.bellLink{color:var(--accent-dark)}.bellLink:disabled{color:var(--muted);opacity:.6;cursor:default}
+.bellTab:hover,.bellLink:not(:disabled):hover{background:var(--sunk)}.bellTab[aria-pressed="true"]:hover{background:var(--accent-soft)}
+.bellGear{width:30px;height:30px;margin-left:2px;padding:0;display:inline-grid;place-items:center;border:0;background:none;border-radius:8px;color:var(--muted);cursor:pointer}
+.bellGear:hover{background:var(--sunk);color:var(--fg)}.bellGear svg{width:18px;height:18px}
+.bellItem{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:12px 16px;color:var(--fg);font:inherit;cursor:pointer}
+.bellItem:last-child{border-bottom:0}
 .bellItem:hover,.bellItem:focus-visible{background:var(--sunk)}
-.bellItem .bellK{grid-row:span 3;align-self:start;font-size:12px;font-weight:700;border-radius:6px;padding:2px 6px;background:var(--accent-soft);color:var(--accent-dark)}
-.bellItem .bellK.change,.bellItem .bellK.digest{background:var(--ok-soft);color:var(--ok)}.bellItem .bellK.leave{background:var(--design-soft);color:var(--design)}.bellItem .bellK.comment{background:var(--sunk);color:var(--ink-soft)}
-.bellItem .bellK.notice{background:var(--warn-soft);color:var(--warn)}
-.bellItem .bellT{font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bellItem .bellP{font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.bellItem .bellM{font-size:12px;color:var(--muted)}
+.bellItem.unread{background:color-mix(in srgb,var(--accent-soft) 45%,transparent)}
+.bellItem .bellT{font-size:14px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bellItem.unread .bellT{font-weight:700}
 .bellItem.unread .bellT::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:2px}
-.bellEmpty{padding:24px 10px;text-align:center;color:var(--muted);font-size:14px}
+.bellItem .bellTime{font-size:12px;color:var(--muted);white-space:nowrap;align-self:center}
+.bellItem .bellP{grid-column:1/-1;font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bellEmpty{padding:32px 10px;text-align:center;color:var(--muted);font-size:14px}
 /* 댓글 멘션 */
 .mention{color:var(--accent-dark);background:var(--accent-soft);border-radius:4px;padding:0 2px;font-weight:600}
 .atPop{position:fixed;z-index:1000;min-width:180px;max-width:260px;max-height:240px;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-3);padding:4px;margin:0;list-style:none}
@@ -3441,11 +3447,12 @@ function bellPaint(){const gb=$('#guideBtn');if(gb)gb.hidden=!actorId;const w=$(
   const me=myMember(),L=bellItems(),n=L.filter(it=>bellUnread(it,me)).length,b=$('#bellN');
   b.hidden=!n;b.textContent=n>99?'99+':String(n);$('#bellBtn').setAttribute('aria-label',n?`알림 ${n}개`:'알림');
   if(!$('#bellPop').hidden)bellList(L,me);}
+let bellTab='all'; // 종 팝업 탭(전체·안 읽음). 팝업을 다시 열어도 유지
 function bellList(L,me){const p=$('#bellPop'),foc=document.activeElement?.dataset?.bk;resolveNames(L.map(it=>it.by).filter(Boolean)).then(()=>p.querySelectorAll('[data-bby]').forEach(el=>el.textContent=actorName(el.dataset.bby)));
-  const any=L.some(it=>bellUnread(it,me));
-  p.innerHTML=`<div class="bellHead"><h3>알림</h3><button class="btn ghost sm" type="button" id="bellAll" ${any?'':'disabled'}>모두 읽음</button></div>
-    ${L.length?L.map(it=>{const u=bellUnread(it,me),pv=String(it.text).replace(/\s+/g,' ').trim().slice(0,40);
-      return `<button type="button" class="bellItem${u?' unread':''}" data-bk="${esc(it.k)}" aria-label="${u?'안 읽음, ':''}${BELL_K[it.type]}: ${esc(it.title)}"><span class="bellK ${it.type}">${BELL_K[it.type]}</span><span class="bellT">${esc(it.title)}</span><span class="bellP">${esc(pv)||'&nbsp;'}</span><span class="bellM">${it.by?`<span data-bby="${esc(it.by)}">${esc(actorName(it.by))}</span> · `:''}${esc(relT(it.at))}</span></button>`;}).join(''):'<div class="bellEmpty">새 알림이 없어요.</div>'}`;
+  const any=L.some(it=>bellUnread(it,me)),V=bellTab==='unread'?L.filter(it=>bellUnread(it,me)):L,tab=(k,t)=>`<button type="button" class="bellTab" data-btab="${k}" aria-pressed="${bellTab===k}">${t}</button>`;
+  p.innerHTML=`<div class="bellHead"><h3>알림</h3>${tab('all','전체')}${tab('unread','안 읽음')}<button class="bellLink" type="button" id="bellAll" ${any?'':'disabled'}>모두 읽음</button>${typeof openNotify==='function'?`<button class="bellGear" type="button" id="bellGear" aria-label="알림 설정"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>`:''}</div>
+    ${V.length?V.map(it=>{const u=bellUnread(it,me),pv=String(it.text).replace(/\s+/g,' ').trim().slice(0,120);
+      return `<button type="button" class="bellItem${u?' unread':''}" data-bk="${esc(it.k)}" aria-label="${u?'안 읽음, ':''}${BELL_K[it.type]}: ${esc(it.title)}, ${esc(relT(it.at))}"><span class="bellT">[${BELL_K[it.type]}] ${esc(it.title)}</span><span class="bellTime">${esc(relT(it.at))}</span><span class="bellP">${it.by?`<span data-bby="${esc(it.by)}">${esc(actorName(it.by))}</span>: `:''}${esc(pv)||'&nbsp;'}</span></button>`;}).join(''):`<div class="bellEmpty">${bellTab==='unread'?'안 읽은 알림이 없어요.':'새 알림이 없어요.'}</div>`}`;
   if(foc)p.querySelector(`[data-bk="${CSS.escape(foc)}"]`)?.focus();}
 function bellShut(focusBtn){const p=$('#bellPop');if(!p||p.hidden)return;p.hidden=true;$('#bellBtn').setAttribute('aria-expanded','false');if(focusBtn)$('#bellBtn').focus();}
 async function bellSave(patch){const me=myMember();if(!me)return;Object.assign(me,patch);bellPaint();
@@ -3453,6 +3460,8 @@ async function bellSave(patch){const me=myMember();if(!me)return;Object.assign(m
 $('#bellBtn').addEventListener('click',()=>{const p=$('#bellPop');if(!p.hidden){bellShut(false);return;}
   p.hidden=false;$('#bellBtn').setAttribute('aria-expanded','true');bellList(bellItems(),myMember());(p.querySelector('.bellItem')||p.querySelector('button:not(:disabled)'))?.focus();});
 $('#bellPop').addEventListener('click',e=>{const me=myMember();if(!me)return;
+  const tb=e.target.closest('[data-btab]');if(tb){bellTab=tb.dataset.btab;bellList(bellItems(),me);$(`#bellPop [data-btab="${bellTab}"]`)?.focus();return;}
+  if(e.target.closest('#bellGear')){bellShut(false);openNotify();return;}
   if(e.target.closest('#bellAll')){const L=bellItems(),top=L.reduce((a,it)=>it.at>a?it.at:a,new Date().toISOString());bellSave({notifSeenAt:top,notifRead:[]});toast('모두 읽음으로 표시했어요');return;}
   const b=e.target.closest('[data-bk]');if(!b)return;const it=bellItems().find(x=>x.k===b.dataset.bk);if(!it)return;
   if(bellUnread(it,me)){const keep=bellItems().filter(x=>x.at>(me.notifSeenAt||'')).map(x=>x.k);bellSave({notifRead:[...(me.notifRead||[]).filter(k=>keep.includes(k)),it.k].slice(-200)});}

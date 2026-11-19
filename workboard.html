@@ -2917,8 +2917,8 @@ onArea('#noticeArea','click',e=>{if(e.target.closest('#ntAdd')){openNotice(null,
 const NOTIF_SINCE='2026-11-18T00:00:00.000Z'; // 이 기능 이전에 올라온 공지는 알림으로 만들지 않음
 const asgIds=t=>[t?.assigneeId,...(t?.coIds||[])].filter(Boolean);
 // 담당자에 새로 들어간 사람마다 {by, at} 기록. 새로 들어간 사람이 없으면 null
-function asgStamp(prev,next){const had=new Set(prev?asgIds(prev):[]),add=asgIds(next).filter(id=>!had.has(id));if(!add.length)return null;
-  const now=new Date().toISOString(),log={...(prev?.asgLog||{})};add.forEach(id=>{log[id]={by:actorId||'',at:now};});return log;}
+function asgStamp(prev,next){const had=new Set(prev?asgIds(prev):[]),nw=asgIds(next),add=nw.filter(id=>!had.has(id)),rm=[...had].filter(id=>!nw.includes(id));if(!add.length&&!rm.length)return null;
+  const now=new Date().toISOString(),log={...(prev?.asgLog||{})};add.forEach(id=>{log[id]={by:actorId||'',at:now};});rm.forEach(id=>{log[id]={by:actorId||'',at:now,out:true};});return log;}
 const reEsc=s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
 // 본문의 @이름 → 구성원 id(나 제외, 중복 제외). 긴 이름부터 맞춰서 '김철'이 '김철수'를 가로채지 않게
 function mentionIds(text){const me=myMember(),out=[];if(!text||!text.includes('@'))return out;
@@ -2982,17 +2982,20 @@ function bellItems(){const me=myMember();if(!me||!actorId)return [];const out=[]
     if((c.mentions||[]).includes(me.id))out.push({k:'c:'+c.id,type:'mention',at:c.at||'',by:c.by,title:t.title||'(제목 없음)',text:c.text||'',task:t.id});
     else if((c.at||'')>=NOTIF_SINCE2&&(mineT(t)||reqT(t)))out.push({k:'c:'+c.id,type:'comment',at:c.at||'',by:c.by,title:t.title||'(제목 없음)',text:c.text||'',task:t.id});}
   // 담당자로 지정됨(asgLog)
-  for(const t of tasks){const a=t.asgLog?.[me.id];if(a&&a.by&&a.by!==actorId&&asgIds(t).includes(me.id))out.push({k:'t:'+t.id+':'+a.at,type:'change',at:a.at||'',by:a.by,title:t.title||'(제목 없음)',text:'담당자로 지정됐어요',task:t.id});}
+  for(const t of tasks){const a=t.asgLog?.[me.id];if(!a||!a.by)continue;const inT=asgIds(t).includes(me.id);
+    if(!a.out&&inT)out.push({k:'t:'+t.id+':'+a.at,type:'change',at:a.at||'',by:a.by,title:t.title||'(제목 없음)',text:a.by===actorId?'내 업무로 등록했어요':'담당자로 지정됐어요',task:t.id}); // 내가 등록한 내 업무도 알림(메일과 같음)
+    else if(a.out&&!inT&&a.by!==actorId)out.push({k:'t:'+t.id+':'+a.at,type:'change',at:a.at||'',by:a.by,title:t.title||'(제목 없음)',text:'담당에서 빠졌어요',task:t.id});}
   // 변경 기록: 내 업무 변동 · 내 휴가 변동
   for(const h of bellHist){if(!h.actor||h.actor===actorId||(h.at||'')<NOTIF_SINCE2||(h.at||'')<since14)continue;
     if(h.entity==='task'&&(h.action==='update'||h.action==='delete')){
       let t=tasks.find(x=>x.id===h.entityId),gone=false;if(!t){t=trashDoc('tasks',h.entityId);gone=true;}
       if(h.action==='delete'){if(mineT(t))out.push({k:'h:'+h.id,type:'change',at:h.at,by:h.actor,title:h.label||'(제목 없음)',text:'업무가 삭제됐어요'});continue;}
       const ch=(h.changes||[]).filter(c=>BELL_TASK_F.includes(c.f));if(!ch.length)continue;
-      const out1=ch.some(c=>c.f==='assignee'&&String(c.from||'').split(/,\s*/).includes(me.name)&&!String(c.to||'').split(/,\s*/).includes(me.name));
-      const rest=ch.filter(c=>!(c.f==='assignee'&&String(c.to||'').split(/,\s*/).includes(me.name))); // 지정된 건 위 asgLog 알림으로
-      if(!(mineT(t)&&rest.length)&&!out1)continue;
-      const txt=out1?'담당에서 빠졌어요':rest.map(c=>`${c.l}: ${c.from||'—'} → ${c.to||'—'}`).join(' · ');
+      const rest=ch.filter(c=>c.f!=='assignee'); // 담당 지정·해제는 위 담당 기록(asgLog)으로
+      const doneL=STATUSES.find(x=>x.k==='done')?.label,done=rest.some(c=>c.f==='status'&&c.to===doneL);
+      const forMe=mineT(t)&&rest.length,forReq=!mineT(t)&&reqT(t)&&done; // 요청자는 완료될 때만
+      if(!forMe&&!forReq)continue;
+      const txt=forReq?'요청한 업무가 완료됐어요':rest.map(c=>`${c.l}: ${c.from||'—'} → ${c.to||'—'}`).join(' · ');
       out.push({k:'h:'+h.id,type:'change',at:h.at,by:h.actor,title:h.label||t?.title||'(제목 없음)',text:txt,task:gone?'':h.entityId});}
     else if(h.entity==='leave'){const l=leaves.find(x=>x.id===h.entityId)||trashDoc('leaves',h.entityId);
       const mine=l?l.memberId===me.id:String(h.label||'').startsWith(me.name+' ');if(!mine)continue;
@@ -3115,7 +3118,7 @@ const GUIDE={
     how:['바꿀 메뉴의 이름 칸을 고쳐요.',
       '**+ 메뉴 추가**를 누르고 이름과 링크 주소를 넣어요.']},
 };
-const GUIDE_COMMON=['헤더의 종 버튼에서 내 업무 변동, 내 업무 댓글, 아침 요약, 내 휴가 변동, 멘션, 새 공지를 알림으로 받아요.',
+const GUIDE_COMMON=['헤더의 종 버튼에서 내 업무 변동(내가 등록한 내 업무, 내가 요청한 업무의 완료 포함), 내 업무 댓글, 아침 요약, 내 휴가 변동, 멘션, 새 공지를 알림으로 받아요.',
   '알림을 누르면 그 업무나 공지로 이동하고, **모두 읽음**으로 한 번에 읽음 처리할 수 있어요.',
   '이 가이드는 헤더의 **?** 버튼으로 언제든 다시 열 수 있어요.'];
 const gdMd=t=>esc(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');

@@ -2307,9 +2307,6 @@ function renderPost(p){
       ${(isLate(p)&&!k.length)||lv?`<div class="ppNote">${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}</div>`:''}
       ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
       ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
-      ${row('예상 소요시간',num('estHours',p.estHours,'예상 소요시간'))}
-      ${row('실제 소요시간',num('actHours',p.actHours,'실제 소요시간',wl.length>0))}
-      <div class="ppNote"><span class="hint">1MD = 8h${wl.length?' · 작업 시간 기록이 있으면 실제는 합계로 자동 계산돼요':''}</span></div>
       ${row('Jira',txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"'))}
       ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn" title="RMS 주소 규칙" aria-label="RMS 주소 규칙">⚙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
       ${row('피그마 링크',`${txt('link',p.link,'피그마 링크','placeholder="Figma URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}

@@ -162,8 +162,10 @@ returns text language sql immutable as $$
     when 'qpm' then '오후 반반차' when 'quarter' then '반반차' when 'sick' then '병가' when 'family' then '경조사' else '공가·기타' end;
 $$;
 
--- 구성원 한 명에게 알림 한 줄. 본인이 한 변경, 계정 연결 전, 알림을 끈 종류는 보내지 않음
-create or replace function public.wb_queue(p_member text, p_kind text, p_line text)
+-- 구성원 한 명에게 알림 한 줄. 본인이 한 변경(p_self가 아니면), 계정 연결 전, 알림을 끈 종류는 보내지 않음
+-- p_self: 내가 등록한 내 업무처럼 본인이 한 변경도 알릴 때 true
+drop function if exists public.wb_queue(text, text, text);
+create or replace function public.wb_queue(p_member text, p_kind text, p_line text, p_self boolean default false)
 returns void language plpgsql security definer set search_path = public, auth as $$
 declare m jsonb; v_uid text; v_email text;
 begin
@@ -171,7 +173,7 @@ begin
   select data into m from public.wb_docs where coll = 'members' and id = p_member;
   if m is null then return; end if;
   v_uid := coalesce(m->>'userId', '');
-  if v_uid = '' or v_uid = coalesce(auth.uid()::text, '') then return; end if;
+  if v_uid = '' or (not p_self and v_uid = coalesce(auth.uid()::text, '')) then return; end if;
   if coalesce(m->'notify'->>p_kind, 'true') = 'false' then return; end if;
   select email into v_email from auth.users where id::text = v_uid;
   if v_email is null then return; end if;
@@ -193,7 +195,7 @@ create or replace function public.wb_enqueue()
 returns trigger language plpgsql security definer set search_path = public, auth as $$
 declare
   v_coll text; o jsonb; n jsonb; r jsonb; t jsonb;
-  v_actor text; v_head text; v_chg text; v_line text; v_req text; v_verb text;
+  v_actor text; v_head text; v_chg text; v_line text; v_req text; v_verb text; v_reqid text;
 begin
   if tg_op = 'DELETE' then v_coll := old.coll; o := old.data;
   else v_coll := new.coll; n := new.data; if tg_op = 'UPDATE' then o := old.data; end if; end if;
@@ -209,13 +211,13 @@ begin
     select '"' || (r->>'title') || '"' || coalesce(' (' || (p.data->>'name') || ')', '') into v_head
       from (select 1) x left join public.wb_docs p on p.coll = 'projects' and p.id = r->>'projectId';
     if tg_op = 'INSERT' then
-      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'))
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'), true)
         from public.wb_task_people(n) x;
     elsif tg_op = 'DELETE' then
       perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 삭제했어요') from public.wb_task_people(o) x;
     else
       -- 새로 담당이 된 사람 / 담당에서 빠진 사람
-      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'))
+      perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 배정했어요 · 완료 일정 ' || public.wb_md(n->>'dueDate'), true)
         from public.wb_task_people(n) x where x not in (select public.wb_task_people(o));
       perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무의 담당자에서 나를 뺐어요')
         from public.wb_task_people(o) x where x not in (select public.wb_task_people(n));
@@ -228,6 +230,16 @@ begin
       if v_chg <> '' then
         perform public.wb_queue(x, 'task', v_actor || '님이 ' || v_head || ' 업무를 바꿨어요: ' || v_chg)
           from public.wb_task_people(n) x where x in (select public.wb_task_people(o));
+      end if;
+      -- 요청자(담당이 아닌 경우)에게는 완료될 때만
+      if (n->>'status') = 'done' and (o->>'status') is distinct from 'done' then
+        v_reqid := nullif(n->>'requesterId', '');
+        if v_reqid is null then
+          select id into v_reqid from public.wb_docs where coll = 'members' and data->>'name' = n->>'requester' limit 1;
+        end if;
+        if v_reqid is not null and v_reqid not in (select public.wb_task_people(n)) then
+          perform public.wb_queue(v_reqid, 'task', v_actor || '님이 요청하신 ' || v_head || ' 업무를 완료했어요');
+        end if;
       end if;
     end if;
 
@@ -313,7 +325,7 @@ $$;
 revoke execute on function public.wb_cron_ok(text) from public, anon, authenticated;
 grant execute on function public.wb_cron_ok(text) to service_role;
 
-revoke execute on function public.wb_queue(text, text, text), public.wb_queue_digest(), public.wb_take_outbox(),
+revoke execute on function public.wb_queue(text, text, text, boolean), public.wb_queue_digest(), public.wb_take_outbox(),
   public.wb_mark_outbox(bigint[], text) from public, anon, authenticated;
 grant execute on function public.wb_take_outbox(), public.wb_mark_outbox(bigint[], text) to service_role;
 

@@ -1124,6 +1124,20 @@ tr.evFlash td{background:var(--warn-soft)!important;transition:background .3s}
 @media (max-width:700px){.hmWeek{grid-template-columns:1fr}.hmDay{border-left:0;border-top:1px solid var(--line);min-height:0}.hmDay:first-child{border-top:0}}
 /* GNB 아래: 어두운 모드 스위치 + 내 프로필 */
 .gnbHome{padding-bottom:4px}
+.hdIco{width:38px;height:38px;padding:0;display:inline-grid;place-items:center;flex:none;border-radius:50%!important;border:1px solid var(--line)!important;background:var(--surface);color:var(--ink-soft)}
+.hdIco:hover{background:var(--sunk);color:var(--fg)}.hdIco svg{width:19px;height:19px}
+.meWrap{position:relative;flex:none;margin-left:4px}
+.mePill{display:inline-flex;align-items:center;gap:6px;height:38px;max-width:240px;padding:0 12px 0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--fg);font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.mePill:hover,.mePill[aria-expanded="true"]{border-color:var(--accent);background:var(--sunk)}
+.mePill .meNm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.meBadge{flex:none;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark)}
+.mePill svg{width:14px;height:14px;flex:none;color:var(--muted);transition:transform .15s}.mePill[aria-expanded="true"] svg{transform:rotate(180deg)}
+.mePop{position:absolute;right:0;top:calc(100% + 6px);z-index:60;min-width:240px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-3);padding:6px}
+.mePop .meInfo{padding:10px 12px 12px;border-bottom:1px solid var(--line);margin-bottom:6px}
+.mePop .meInfo b{display:block;font-size:15px}.mePop .meInfo span{display:block;margin-top:2px;font-size:13px;color:var(--muted);word-break:break-all}
+.mePop .meAct{display:block;width:100%;text-align:left;border:0;background:none;font:inherit;font-size:14px;padding:10px 12px;border-radius:8px;color:var(--fg);cursor:pointer}
+.mePop .meAct:hover,.mePop .meAct:focus-visible{background:var(--sunk)}.mePop .meAct.out{color:var(--bad)}
+@media (max-width:600px){.mePill .meNm,.mePill .meBadge{display:none}.mePill{padding:0 10px}}
 .sideFoot{margin-top:auto;position:sticky;bottom:0;background:inherit;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
 .sfRow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 6px;font-size:13px;color:var(--ink-soft)}
 .swt{flex:none;width:38px;height:22px;border-radius:999px;border:0;background:var(--grey-400);position:relative;padding:0;transition:background .2s}
@@ -1359,7 +1373,7 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
     <div class="actions" id="taskActions" hidden><select class="sel" id="fStatus" aria-label="진행 현황"></select><select class="sel" id="fAssignee" aria-label="담당자"></select><label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="fSearch" type="search" placeholder="제목 · 프로젝트 · 담당자 · 요청자 검색" aria-label="업무 검색"></label><button class="btn trBtn" type="button" id="tkTrashBtn">휴지통</button></div><div class="actions" id="leaveActions" hidden><button class="btn primary" id="btnLeaveAdd" type="button">+ 일정 등록</button></div>
     <div class="modeRow topRight">
       <span class="todayOff" id="todayOff"></span>
-      <button class="btn ghost guideBtn" type="button" id="guideBtn" aria-label="사용 가이드" aria-haspopup="dialog" aria-expanded="false" hidden>?</button><div class="bellWrap" id="bellWrap" hidden><button class="btn ghost bellBtn" type="button" id="bellBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="bellPop" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bellN" id="bellN" hidden></span></button><div class="bellPop" id="bellPop" role="dialog" aria-label="알림 목록" hidden></div></div>
+      <button class="btn ghost hdIco" type="button" id="themeBtn" aria-label="어두운 모드로 바꾸기"></button><button class="btn ghost guideBtn hdIco" type="button" id="guideBtn" aria-label="사용 가이드" aria-haspopup="dialog" aria-expanded="false" hidden>?</button><div class="bellWrap" id="bellWrap" hidden><button class="btn ghost bellBtn hdIco" type="button" id="bellBtn" aria-haspopup="dialog" aria-expanded="false" aria-controls="bellPop" aria-label="알림"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="bellN" id="bellN" hidden></span></button><div class="bellPop" id="bellPop" role="dialog" aria-label="알림 목록" hidden></div></div><div class="meWrap" id="meWrap"><button type="button" class="mePill" id="meBtn" aria-haspopup="menu" aria-expanded="false" aria-controls="mePop"></button><div class="mePop" id="mePop" role="menu" aria-label="내 정보" hidden></div></div>
     </div>
   </header>
 <div class="wrap">
@@ -3057,7 +3071,7 @@ const GUIDE={
       '**최근 공지**에서 새로 올라온 공지를 확인할 수 있어요.'],
     how:['오른쪽 위 **+ 업무**로 새 업무를, **+ 휴가**로 휴가를 바로 등록해요.',
       '주간 일정에서 **← 지난주**, **이번 주**, **다음 주 →**로 보고 싶은 주를 골라요.',
-      '왼쪽 메뉴 아래 **어두운 모드** 스위치로 화면을 어둡게 바꿀 수 있어요.']},
+      '헤더의 **해/달** 버튼으로 화면을 밝게·어둡게 바꿀 수 있어요.']},
   tasks:{can:['업무를 **목록**이나 **보드**로 바꿔 가며 볼 수 있어요.',
       '진행 현황 탭(대기·기획·디자인·퍼블리싱·개발 진행중·보류·완료)으로 단계별 업무만 골라 볼 수 있어요.',
       '보드 위 **전체**·**내 담당** 버튼과 헤더의 검색칸으로 업무를 좁혀 볼 수 있어요.',
@@ -3153,23 +3167,50 @@ function gdOpen(){const m=state.mode==='hours'?'staff':state.mode,ks=gdKeys();gd
 function gdClose(){$('#gdOv')?.remove();$('#gdPanel')?.remove();const b=$('#guideBtn');if(b){b.setAttribute('aria-expanded','false');b.focus();}}
 $('#guideBtn').addEventListener('click',()=>$('#gdPanel')?gdClose():gdOpen());
 
-/* ---------- GNB 아래: 어두운 모드 스위치 + 내 프로필(알림 설정 · 로그아웃) ---------- */
+/* ---------- 헤더 오른쪽: 어두운 모드(해/달) · 내 정보(비밀번호 변경 · 로그아웃) ---------- */
 function setTheme(dark){if(dark)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;try{localStorage.setItem('wb-theme',dark?'dark':'light');}catch(e){}drawSideFoot();}
-function drawSideFoot(){
-  const box=$('#sideFoot');if(!box)return;
+function drawSideFoot(){ // 이름은 예전 그대로(여러 곳에서 부름): 헤더의 테마 버튼과 내 정보 버튼을 그림. 왼쪽 메뉴 아래 영역은 비움
+  const box=$('#sideFoot');if(box){box.innerHTML='';box.hidden=true;}
   const m=myMember(),dark=document.documentElement.dataset.theme==='dark',auth=!!window.wbAuth&&storeReady,adm=isAdminUser();
-  const sub=[m?.org||'',m?.part?partOf(m.part).label:'',adm?'관리자':''].filter(Boolean).join(' · ')||'구성원';
-  const key=JSON.stringify([m?.id,m?.name,(m?.avatar||'').length,sub,dark,auth]);if(box.dataset.key===key)return;box.dataset.key=key;
-  box.innerHTML=`<div class="sfRow"><span class="lbl">어두운 모드</span><button type="button" class="swt" id="themeSw" role="switch" aria-checked="${dark}" aria-label="어두운 모드" title="어두운 모드"><span></span></button></div>
-    <div class="sfMe">${m?'<div class="sfProf">':'<button type="button" class="sfProf" id="sfProf" title="내 이름 선택">'}${m?avatarHtml(m,32):'<span class="hmIco" aria-hidden="true">?</span>'}<span class="lbl"><b>${m?esc(m.name):'내 이름 선택'}</b><span class="legend">${m?esc(sub):'눌러서 나를 골라 주세요'}</span></span>${m?'</div>':'</button>'}</div>
-    ${auth?`<div class="sfRow sfAct lbl">${typeof openNotify==='function'?'<button class="btn ghost" type="button" id="sfNotify">알림 설정</button>':''}<button class="btn ghost" type="button" id="sfLogout">로그아웃</button></div>`:''}`;
+  const tb=$('#themeBtn');if(tb){tb.innerHTML=dark?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';tb.setAttribute('aria-label',dark?'밝은 모드로 바꾸기':'어두운 모드로 바꾸기');tb.title=tb.getAttribute('aria-label');}
+  const w=$('#meWrap');if(!w)return;
+  const part=m?.part?partOf(m.part).label:'',key=JSON.stringify([m?.id,m?.name,part,adm,auth,window.wbAuth?.email||m?.email||'']);if(w.dataset.key===key)return;w.dataset.key=key;
+  const badges=[part,adm?'관리자':''].filter(Boolean).map(t=>`<span class="meBadge">${esc(t)}</span>`).join('');
+  $('#meBtn').innerHTML=m?`<span class="meNm">${esc(m.name)}</span>${badges}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>`:'<span class="meNm">내 이름 선택</span>';
+  $('#meBtn').setAttribute('aria-label',m?`내 정보: ${m.name}${part?', '+part:''}${adm?', 관리자':''}`:'내 이름 선택');
+  const email=window.wbAuth?.email||m?.email||'';
+  $('#mePop').innerHTML=m?`<div class="meInfo"><b>${esc([m.name,part].filter(Boolean).join(' · '))}</b>${email?`<span>${esc(email)}</span>`:''}</div>
+    ${auth&&window.wbAuth?.changePassword?'<button type="button" class="meAct" role="menuitem" id="mePw">비밀번호 변경</button>':''}${auth?'<button type="button" class="meAct out" role="menuitem" id="meOut">로그아웃</button>':''}`:'';
 }
-$('#sideFoot').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
-  if(b.id==='themeSw'){setTheme(document.documentElement.dataset.theme!=='dark');$('#themeSw')?.focus();return;}
-  if(b.id==='sfProf'){openWhoAmI();return;}
-  if(b.id==='sfNotify'){openNotify();return;}
-  if(b.id==='sfLogout')window.wbAuth?.signOut();});
-
+function meShut(focusBtn){const p=$('#mePop');if(!p||p.hidden)return;p.hidden=true;$('#meBtn').setAttribute('aria-expanded','false');if(focusBtn)$('#meBtn').focus();}
+$('#themeBtn').addEventListener('click',()=>setTheme(document.documentElement.dataset.theme!=='dark'));
+$('#meBtn').addEventListener('click',()=>{if(!myMember()){openWhoAmI();return;}const p=$('#mePop');if(!p.hidden){meShut(false);return;}
+  bellShut(false);p.hidden=false;$('#meBtn').setAttribute('aria-expanded','true');p.querySelector('button')?.focus();});
+$('#mePop').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;meShut(false);
+  if(b.id==='mePw')openPwChange();else if(b.id==='meOut')window.wbAuth?.signOut();});
+document.addEventListener('mousedown',e=>{if(!$('#mePop').hidden&&!e.target.closest('#meWrap'))meShut(false);});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#mePop').hidden){e.stopPropagation();meShut(true);}},true);
+// 비밀번호 변경: 현재 비밀번호를 다시 확인한 뒤 새 비밀번호로 바꿈
+function openPwChange(){const A=window.wbAuth;if(!A?.changePassword)return;const min=A.pwMin||8;
+  const fld=(id,lab,ac)=>`<div class="f full"><label for="${id}">${lab}</label><input id="${id}" type="password" autocomplete="${ac}"></div>`;
+  $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><form class="modal" id="pwForm" style="max-width:420px" novalidate>
+    <header><h2>비밀번호 변경</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
+    <div class="body" style="grid-template-columns:1fr">
+      <div class="f full"><label>계정</label><span>${esc(A.email||'')}</span></div>
+      ${fld('pwCur','현재 비밀번호','current-password')}${fld('pwNew',`새 비밀번호 <span class="legend">${min}자 이상</span>`,'new-password')}${fld('pwNew2','새 비밀번호 확인','new-password')}
+    </div>
+    <footer><span class="err" id="pwErr" role="alert"></span><div class="r"><button class="btn" type="button" id="pwCancel">취소</button><button class="btn primary" type="submit" id="pwSave">변경</button></div></footer>
+  </form></div>`;
+  $('#xClose').onclick=$('#pwCancel').onclick=closeModal;
+  $('#ov').addEventListener('mousedown',e=>{if(e.target.id==='ov')closeModal();});
+  $('#pwCur').focus();
+  $('#pwForm').addEventListener('submit',async e=>{e.preventDefault();const cur=$('#pwCur').value,pw=$('#pwNew').value,err=$('#pwErr');
+    if(!cur){err.textContent='현재 비밀번호를 넣어 주세요.';$('#pwCur').focus();return;}
+    if(pw.length<min){err.textContent=`새 비밀번호는 ${min}자 이상으로 만들어 주세요.`;$('#pwNew').focus();return;}
+    if(pw!==$('#pwNew2').value){err.textContent='새 비밀번호 확인이 달라요.';$('#pwNew2').focus();return;}
+    $('#pwSave').disabled=true;err.textContent='';
+    try{await A.changePassword(cur,pw);closeModal();toast('비밀번호를 바꿨어요');}catch(x){$('#pwSave').disabled=false;err.textContent=x?.message||'잠시 후 다시 시도해 주세요.';}});
+}
 /* ---------- 이벤트 운영: 알닷 이벤트 운영 관리대장의 기능을 옮겨 옴(1단계: 이벤트 관리 탭) ----------
    저장(wb_docs): evt_months = 월·블록·설정 문서(id 'event_YYYY-MM' / 'settings'), evt_rows = 행 문서(id = 원본 _uid)
    필드는 문서에 평평하게 둠(바뀐 칸만 update). 원본 이벤트ID(id)는 문서 id와 겹치지 않게 eid로 저장 */

@@ -950,16 +950,30 @@ a.rms:hover{text-decoration:underline}
 .ppL{overflow:auto;padding:16px 20px 24px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
 .ppR{display:flex;flex-direction:column;min-height:0;background:var(--surface)}
 .ppRScroll{flex:1;min-height:0;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
-.ppSecT{margin:0;font-size:14px;font-weight:700}
-.ppL .tfRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.ppL .tfRow{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:0;background:var(--sunk);border-radius:10px;padding:8px 10px}
+/* 업무 정보: 라벨 + 입력 2열, 입력 모양은 작업 시간 기록과 같게 */
+.ppL .tfRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;align-items:start}
+.ppL .tfRow{display:flex;flex-direction:column;align-items:stretch;gap:5px;min-height:0;background:none;border-radius:0;padding:0}
 .ppL .tfRow.wide{grid-column:1/-1}
-.ppL .tfLab{font-size:12px;font-weight:600}
-.ppL .tfCtl input.tfIn[type=text]{width:100%}
+.ppL .tfLab{font-size:12px;font-weight:600;color:var(--muted)}
+.ppL .tfCtl{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0;max-width:100%}
+.ppL .tfCtl>.tfIn,.ppL .tfCtl>.tfVal,.ppL .tfCtl>.asPick{flex:1 1 0;width:100%;min-width:0;max-width:none}
+.ppL .tfIn,.ppL .tfVal,.ppL .asPick>summary{height:36px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0 10px;font-size:14px;color:var(--fg);width:100%;max-width:none}
+.ppL .tfVal{display:flex;align-items:center;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.ppL input.tfIn[type=text],.ppL .tfNum{width:100%}
+.ppL .tfIn:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.ppL .asPick>summary{display:flex;align-items:center}
+.ppL .tfCtl>.btn.sm,.ppL .tfCtl>a.rmsGo{flex:none;height:36px;min-width:36px;padding:0 8px;justify-content:center}
+.ppL .tfCtl>a:not(.btn){flex:none;font-size:13px;white-space:nowrap}
+.ppL .tfCtl>.hint{flex-basis:100%}
+.ppL .rmsRule{flex-basis:100%}
+.ppL .tfCtl>.evLks{flex:1 1 100%;min-width:0;width:100%;max-width:none}.ppL #evLkIn{width:100%;height:36px;box-sizing:border-box;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:0 10px;font-size:14px;color:var(--fg)}
+.ppL .ppNote{grid-column:1/-1;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:-6px;font-size:12px}
+.ppL .ppNote .hint{margin:0}
+.ppSecT{font-size:16px;font-weight:800;margin:0}
 .ppR .composer{margin:0;border:0;border-top:1px solid var(--line);border-radius:0}
 .ppR .tlTitle{margin:0}
 .ppRScroll{overflow-x:hidden}.ppR .wlAdd{grid-template-columns:1fr 1fr}.ppR .wlAdd #wlNote{grid-column:1/-1}.ppR .wlAdd #wlAddBtn{grid-column:1/-1;justify-self:end}
-.ppL .tfCtl{max-width:100%}.ppL .tfCtl>*{max-width:100%}
+
 @media (max-width:760px){.ppPanel{width:100vw;border-left:0}.ppScrim{display:none}.ppCols{display:block;overflow:auto}.ppL{border-right:0;overflow:visible}.ppR{display:block}.ppRScroll{overflow:visible}.ppL .tfRows{grid-template-columns:1fr}}
 .tfPage{gap:18px}
 .tfHead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
@@ -1958,7 +1972,7 @@ function renderPost(p){
   const sel=(f,arr,cur,lab)=>ro?`<span class="tfVal">${esc((arr.find(([x])=>String(x)===String(cur))||[,'—'])[1])}</span>`:`<select class="tfIn" data-tf="${f}" aria-label="${lab}">${optH(arr,cur)}</select>`;
   const date=(f,v,lab)=>ro?`<span class="tfVal num">${v?fmtDate(v):'—'}</span>`:`<input type="date" class="tfIn" data-tf="${f}" value="${esc(v||'')}" aria-label="${lab}">`;
   const num=(f,v,lab,dis)=>ro?`<span class="tfVal num">${v!==''&&v!=null?esc(v)+'h':'—'}</span>`:`<input type="number" class="tfIn tfNum" data-tf="${f}" min="0" step="0.5" inputmode="decimal" value="${esc(v??'')}" placeholder="시간(h)" aria-label="${lab}" ${dis?'disabled title="작업 시간 기록 합계로 자동 계산돼요"':''}>`;
-  const WIDE=['기간','소요시간','RMS','피그마 링크','이벤트 연결'],row=(lab,ctl)=>`<div class="tfRow${WIDE.includes(lab)?' wide':''}"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
+  const WIDE=['피그마 링크','이벤트 연결'],row=(lab,ctl)=>`<div class="tfRow${WIDE.includes(lab)?' wide':''}"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
   const cm=taskMember(p),orphan=p.assignee&&!cm?p.assignee:'',lv=cm&&leaveOn(cm.id,p.dueDate),rh=rmsHref(p),wl=wlogs.filter(w=>w.taskId===p.id).sort((x,y)=>x.date.localeCompare(y.date));
   const people=[...new Set([...members.map(m=>m.name),...tasks.flatMap(x=>[x.assignee,x.requester])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const link=p.link?(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link):'';
@@ -1975,15 +1989,19 @@ function renderPost(p){
       ${row('파트',sel('part',isReq?rqParts(p.part):PARTS.map(x=>[x.k,x.label]),p.part,'파트'))}
       ${row('담당자',(ro?`<span class="tfVal">${esc(asNames(p).join(', ')||'—')}</span>`:asPick('tfAs',asValsOf(p),orphan))+(orphan?'<span class="hint">구성원 목록에 없는 이름이에요. 구성원을 골라 연결해 주세요.</span>':''))}
       ${row('요청자',txt('requester',p.requester,'요청자','list="tfPeople" placeholder="이름 또는 부서"'))}
-      ${row('기간',`${date('requestDate',p.requestDate,'요청일')}<span class="legend">~</span>${date('dueDate',p.dueDate,'마감일')}${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}`)}
-      ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
       ${row('우선순위',sel('priority',PRIS.map((l,i)=>[i,l]),p.priority??2,'우선순위'))}
-      ${row('소요시간',`<span class="legend">예상</span>${num('estHours',p.estHours,'예상 소요시간')}<span class="legend">실제</span>${num('actHours',p.actHours,'실제 소요시간',wl.length>0)}<span class="hint">1MD = 8h</span>`)}
+      ${row('요청일',date('requestDate',p.requestDate,'요청일'))}
+      ${row('마감일',date('dueDate',p.dueDate,'마감일'))}
+      ${(isLate(p)&&!k.length)||lv?`<div class="ppNote">${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}</div>`:''}
+      ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
+      ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
+      ${row('예상 소요시간',num('estHours',p.estHours,'예상 소요시간'))}
+      ${row('실제 소요시간',num('actHours',p.actHours,'실제 소요시간',wl.length>0))}
+      <div class="ppNote"><span class="hint">1MD = 8h${wl.length?' · 작업 시간 기록이 있으면 실제는 합계로 자동 계산돼요':''}</span></div>
       ${row('Jira',txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"'))}
-      ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn">주소 규칙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
+      ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn" title="RMS 주소 규칙" aria-label="RMS 주소 규칙">⚙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
       ${row('피그마 링크',`${txt('link',p.link,'피그마 링크','placeholder="Figma URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
       ${isReq?'':row('이벤트 연결',evLinkCell(p,ro))}
-      ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
     </div>
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
     <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="tfLive">실시간 연결됨</span>${p.updatedAt?`<span class="legend">마지막 수정: ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}<span class="spacer"></span>

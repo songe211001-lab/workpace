@@ -3,7 +3,8 @@
 // 받는 사람별로 한 통에 묶어 회사 SMTP로 보냅니다.
 // 배포: supabase functions deploy send-mail --no-verify-jwt  (호출은 x-cron-secret 헤더를 Vault 값과 비교해 확인)
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.117.2";
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+// denomailer는 한글 제목·본문 인코딩이 표준과 달라(인코딩된 제목 안 공백, 소문자 16진수) 메일이 원문 그대로 보여서 nodemailer로 바꿈
+import nodemailer from "npm:nodemailer@6.9.16";
 
 type Row = { id: number; email: string; name: string; kind: string; line: string; created_at: string };
 
@@ -23,13 +24,13 @@ function compose(name: string, rows: Row[], appUrl: string) {
   const lines = (r: Row) => r.line.split("\n");
   const text = `${name}님, 대시보드 알림이에요.\n\n` +
     groups.map(([k, l]) => `■ ${KIND[k]}\n` + l.flatMap(lines).map((s) => `- ${s}`).join("\n")).join("\n\n") +
-    `\n\n대시보드 열기: ${appUrl}\n알림은 대시보드의 '내 프로필'에서 끌 수 있어요.`;
+    `\n\n대시보드 열기: ${appUrl}\n알림은 대시보드 왼쪽 메뉴 아래 '알림 설정'에서 끌 수 있어요.`;
   const html = `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;color:#141f2c;line-height:1.6">
     <p>${esc(name)}님, 대시보드 알림이에요.</p>
     ${groups.map(([k, l]) => `<p style="margin:16px 0 4px;font-weight:700">${KIND[k]}</p><ul style="margin:0;padding-left:20px">${
       l.flatMap(lines).map((s) => `<li>${esc(s)}</li>`).join("")}</ul>`).join("")}
     <p style="margin-top:20px"><a href="${esc(appUrl)}" style="color:#d74844;font-weight:700">대시보드 열기</a></p>
-    <p style="color:#4b5765;font-size:12px">알림은 대시보드의 '내 프로필'에서 끌 수 있어요.</p></div>`;
+    <p style="color:#4b5765;font-size:12px">알림은 대시보드 왼쪽 메뉴 아래 '알림 설정'에서 끌 수 있어요.</p></div>`;
   return { subject, text, html };
 }
 
@@ -51,13 +52,11 @@ Deno.serve(async (req) => {
   for (const r of rows) byEmail.set(r.email, [...(byEmail.get(r.email) ?? []), r]);
 
   // Supabase Edge Functions는 25·587 포트로 나가는 연결을 막아요. 회사 SMTP의 465(SSL) 포트를 쓰세요
-  const smtp = new SMTPClient({
-    connection: {
-      hostname: env("SMTP_HOST"),
-      port: Number(Deno.env.get("SMTP_PORT") ?? "465"),
-      tls: true,
-      auth: { username: env("SMTP_USER"), password: env("SMTP_PASS") },
-    },
+  const smtp = nodemailer.createTransport({
+    host: env("SMTP_HOST"),
+    port: Number(Deno.env.get("SMTP_PORT") ?? "465"),
+    secure: true,
+    auth: { user: env("SMTP_USER"), pass: env("SMTP_PASS") },
   });
   let sent = 0;
   try {
@@ -65,7 +64,7 @@ Deno.serve(async (req) => {
       const ids = list.map((r) => r.id);
       try {
         const m = compose(list[0].name || "팀원", list, env("APP_URL"));
-        await smtp.send({ from: env("MAIL_FROM"), to: email, subject: m.subject, content: m.text, html: m.html });
+        await smtp.sendMail({ from: env("MAIL_FROM"), to: email, subject: m.subject, text: m.text, html: m.html });
         await db.rpc("wb_mark_outbox", { p_ids: ids, p_error: null });
         sent++;
       } catch (e) {
@@ -74,7 +73,7 @@ Deno.serve(async (req) => {
       }
     }
   } finally {
-    await smtp.close();
+    smtp.close();
   }
   return Response.json({ sent, recipients: byEmail.size });
 });

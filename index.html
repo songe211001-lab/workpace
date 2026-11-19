@@ -989,6 +989,7 @@ a.rms:hover{text-decoration:underline}
 .ppPath{font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ppSt{flex:none;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark)}
 .ppTop .spacer{flex:1}
+.ppDates{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted)}.ppDates:empty{display:none}
 .ppHead .tfTitle,.ppHead .tfTitleRo{font-size:19px;font-weight:700;margin:0;width:100%}
 .ppCols{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
 .ppL{overflow:auto;padding:16px 20px 24px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
@@ -2289,11 +2290,12 @@ function renderPost(p){
   const people=[...new Set([...members.map(m=>m.name),...tasks.flatMap(x=>[x.assignee,x.requester])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const link=p.link?(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link):'';
   const wlKeep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||cm?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
-  const fold=tfFold.has(p.id),np=nextPart(p.part),cpKeep=main.dataset.post===p.id&&$('#cpText')?rtClean($('#cpText').innerHTML):''; // 다시 그려도 쓰던 댓글 유지
+  const fold=false,np=nextPart(p.part),cpKeep=main.dataset.post===p.id&&$('#cpText')?rtClean($('#cpText').innerHTML):''; // 다시 그려도 쓰던 댓글 유지
   const prj=projects.find(x=>x.id===p.projectId);
   const html=`<div class="postView tfPage">
-    <div class="ppHead"><div class="ppTop"><span class="ppPath">${esc([prj?.name,partOf(p.part).label].filter(Boolean).join(' · '))}</span><span class="ppSt">${esc(st.label)}</span>${isReq?`<button class="hlink" type="button" id="postParent" data-back="${esc(p.parentId)}">← 게시물: ${esc(rootOf(p).title)}</button>`:''}<span class="spacer"></span><span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span><button class="btn ghost" type="button" id="postBack" data-back="">닫기</button></div>
-      ${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}</div>
+    <div class="ppHead"><div class="ppTop"><span class="ppPath">${esc([prj?.name,partOf(p.part).label].filter(Boolean).join(' · '))}</span><span class="ppSt">${esc(st.label)}</span>${isReq?`<button class="hlink" type="button" id="postParent" data-back="${esc(p.parentId)}">← 게시물: ${esc(rootOf(p).title)}</button>`:''}<span class="spacer"></span><span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span>${canWrite?'<button class="btn ghost" type="button" id="tfDel">삭제</button>':''}<button class="btn ghost" type="button" id="postBack" data-back="">닫기</button></div>
+      ${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}
+      <div class="ppDates">${p.createdAt?`<span>최초 등록 ${esc(fmtDT(p.createdAt))}</span>`:''}${p.updatedAt?`<span>마지막 수정 ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}</div></div>
     <div class="ppCols"><div class="ppL"><h3 class="ppSecT">업무 정보</h3>
     <div class="tfRows">
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
@@ -2305,16 +2307,14 @@ function renderPost(p){
       ${row('요청일',date('requestDate',p.requestDate,'요청일'))}
       ${row('마감일',date('dueDate',p.dueDate,'마감일'))}
       ${(isLate(p)&&!k.length)||lv?`<div class="ppNote">${isLate(p)&&!k.length?`<b class="lateTag">지연 ${dday(p.dueDate)}</b>`:''}${lv?`<span class="hint warnHint">담당자가 이날 휴가예요 (${esc(leaveLabel(lv))})</span>`:''}</div>`:''}
-      ${row('실제 완료일',date('doneDate',p.doneDate,'실제 완료일'))}
-      ${row('등록',`<span class="tfVal">${esc(stamp(p.createdAt)||'—')}</span>`)}
       ${row('Jira',txt('jiraKey',p.jiraKey,'Jira 키','placeholder="Jira 키" spellcheck="false"'))}
       ${row('RMS',`${txt('rmsNo',p.rmsNo,'RMS 번호','placeholder="RMS 번호" spellcheck="false" inputmode="numeric"')}${rh?`<a class="btn ghost sm rmsGo" href="${esc(rh)}" target="_blank" rel="noopener" title="RMS 바로가기" aria-label="RMS 바로가기">↗</a>`:`<button type="button" class="btn ghost sm rmsGo" disabled title="${p.rmsNo?'주소 규칙을 설정하면 바로가기가 생겨요':'RMS 번호를 입력하면 바로가기가 생겨요'}">↗</button>`}${canWrite?'<button type="button" class="btn ghost sm" id="rmsRuleBtn" title="RMS 주소 규칙" aria-label="RMS 주소 규칙">⚙</button>':''}<span class="rmsRule" id="rmsRule" hidden><input id="rmsTpl" class="sel" value="${esc(site?.rmsTemplate||'')}" placeholder="예: https://rms.회사.com/request/{no}" spellcheck="false" aria-label="RMS 주소 규칙"><button type="button" class="btn sm" id="rmsTplSave">저장</button></span>`)}
       ${row('피그마 링크',`${txt('link',p.link,'피그마 링크','placeholder="Figma URL" spellcheck="false"')}${link?`<a href="${esc(link)}" target="_blank" rel="noopener">열기 ↗</a>`:''}`)}
       ${isReq?'':row('이벤트 연결',evLinkCell(p,ro))}
     </div>
     <datalist id="tfPeople">${people.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
-    <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="tfLive">실시간 연결됨</span>${p.updatedAt?`<span class="legend">마지막 수정: ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}<span class="spacer"></span>
-      <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
+    <section class="tfSec"><div class="tfSecHead"><h3>내용</h3><span class="spacer"></span>
+      </div>
       ${fold?'':ro?`<div class="tfNote tfNoteRo">${p.note||p.noteHtml?rtShow(p.noteHtml,p.note):'<span class="legend">내용이 없어요.</span>'}</div>`:rtEditor('tfNote','data-tf="note" aria-label="내용"',p.noteHtml?rtClean(p.noteHtml):rtFromText(p.note),'요청 배경, 변경 이력, 이슈')}
       <span class="err" id="tErr"></span></section>
     </div><div class="ppR"><div class="ppRScroll">

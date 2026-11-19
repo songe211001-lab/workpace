@@ -2431,7 +2431,7 @@ mainEv('change',e=>{
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
   if(el.dataset.pst){setPostStatus(el.dataset.pst,el.value);el.blur();return;}
   if(el.id==='evLkIn'&&canWrite){const p=tasks.find(x=>x.id===state.post),v=el.value.trim();if(!p||!v)return;const ids=p.evRowIds||[];
-    const r=evtRowsAll.find(x=>x.kind==='event'&&x.name&&!ids.includes(x.id)&&evOptLabel(x)===v);
+    const r=evLinkable(p,ids).find(x=>evOptLabel(x)===v);
     if(!r){$('#tErr').textContent='목록에서 이벤트를 골라 주세요.';return;}$('#tErr').textContent='';el.value='';el.blur();evLinkSet(p,[...ids,r.id]);return;}
 });
 let dragId=null;
@@ -3377,6 +3377,9 @@ function evWarnOf(p){return (p.evRowIds||[]).some(id=>evMismatch(evtRowsAll.find
 function evGoRow(rid){const r=evtRowsAll.find(x=>x.id===rid);if(!r){toast('이벤트 운영에서 삭제된 행이에요');return;}
   const m=evtMonths.find(x=>x.id===r.monthId);if(m)est.month=m.key;evtTab='events';est.filter='전체';closeModal();state.mode='eventops';persistUI();render();window.scrollTo(0,0);
   setTimeout(()=>{const tr=document.querySelector(`#eventOpsArea tr[data-uid="${CSS.escape(rid)}"]`);if(!tr)return;tr.scrollIntoView({block:'center'});tr.classList.add('evFlash');setTimeout(()=>tr.classList.remove('evFlash'),1800);},0);}
+// 이벤트 연결 후보: 이번 달 이벤트만
+function evTaskMonths(){return new Set([evMid(todayStr().slice(0,7))]);}
+const evLinkable=(p,ids)=>{const ms=evTaskMonths(p);return evtRowsAll.filter(r=>r.kind==='event'&&r.name&&!ids.includes(r.id)&&ms.has(r.monthId));};
 // 게시물 상세의 '이벤트 연결' 칸
 function evLinkCell(p,ro){const ids=p.evRowIds||[],go=menuOpen('eventops');
   const chips=ids.map(id=>{const r=evtRowsAll.find(x=>x.id===id),un=ro?'':`<button type="button" class="btn ghost sm" data-evun="${esc(id)}" aria-label="연결 해제" title="연결 해제">×</button>`;
@@ -3384,8 +3387,8 @@ function evLinkCell(p,ro){const ids=p.evRowIds||[],go=menuOpen('eventops');
     const op=evIdUrl(r.eid),dv=evDevUrl(r.devId),mm=evMismatch(r,p),nm=esc(r.name||'(이벤트명 없음)');
     return `<span class="evLk${mm?' warn':''}"><span class="cvPill evp-${esc(r.status)}">${esc(r.status)}</span>${go?`<button type="button" class="hlink" data-evgo="${esc(id)}" title="이벤트 운영에서 보기">${nm}</button>`:`<b>${nm}</b>`}<span class="legend">${esc(evMonthLabel(r))}${r.eid?' · '+esc(r.eid):''}</span>${op?`<a class="btn ghost sm" href="${esc(op)}" target="_blank" rel="noopener" title="운영 페이지">운영 ↗</a>`:''}${dv?`<a class="btn ghost sm" href="${esc(dv)}" target="_blank" rel="noopener" title="DEV 확인 페이지">DEV ↗</a>`:''}${mm?`<b class="lateTag" title="게시물 진행 현황(${esc(statusOf(postStatus(p,kidsOf(p))).label)})과 이벤트 작업상태(${esc(r.status)})가 서로 달라요">⚠ 상태 확인</b>`:''}${un}</span>`;}).join('');
   if(ro)return `<div class="evLks">${chips||'<span class="tfVal">—</span>'}</div>`;
-  const opts=evtRowsAll.filter(r=>r.kind==='event'&&r.name&&!ids.includes(r.id)).sort((a,b)=>(b.monthId||'').localeCompare(a.monthId||'')||(a.sortOrder-b.sortOrder)).map(r=>`<option value="${esc(evOptLabel(r))}">`).join('');
-  return `<div class="evLks">${chips}<input class="sel evLkIn" id="evLkIn" list="evLkList" placeholder="이벤트명 또는 이벤트ID로 찾아 연결" aria-label="연결할 이벤트 찾기" autocomplete="off"><datalist id="evLkList">${opts}</datalist></div>`;}
+  const ms=[...evTaskMonths(p)].map(id=>+id.slice(-2)+'월'),opts=evLinkable(p,ids).sort((a,b)=>(b.monthId||'').localeCompare(a.monthId||'')||(a.sortOrder-b.sortOrder)).map(r=>`<option value="${esc(evOptLabel(r))}">`).join('');
+  return `<div class="evLks">${chips}<input class="sel evLkIn" id="evLkIn" list="evLkList" placeholder="${esc(ms.join('·'))} 이벤트에서 이름 또는 이벤트ID로 찾아 연결" aria-label="연결할 이벤트 찾기" autocomplete="off"><datalist id="evLkList">${opts}</datalist></div>`;}
 async function evLinkSet(p,ids){const before={...p};
   try{await db.collection('tasks').doc(p.id).update({evRowIds:ids,updatedAt:new Date().toISOString()});logChange('task','update',p.id,p.title,before,{...p,evRowIds:ids});}catch(err){handleWriteError(err,'#tErr');}}
 // 이벤트 운영 표의 '업무 ↗' 버튼(연결된 게시물마다)

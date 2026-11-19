@@ -978,6 +978,33 @@ a.rms:hover{text-decoration:underline}
 .mpOut:hover,.mpOut:focus-visible{color:var(--fg);outline:2px solid var(--line)}
 @media (max-width:420px){.mpCard{padding:28px 20px}}
 /* ---------- 업무 상세(게시판형 수정) ---------- */
+/* 업무 상세: 목록 위 오른쪽 사이드 패널 */
+.postPane{position:fixed;inset:0;z-index:45;display:flex;pointer-events:none}
+.postPane[hidden]{display:none}
+.ppScrim{flex:1;background:rgba(15,23,42,.16)}
+.ppPanel{pointer-events:auto;width:max(60vw,720px);max-width:100vw;height:100%;background:var(--bg);border-left:1px solid var(--line);box-shadow:var(--shadow-3);display:flex;flex-direction:column;overflow:hidden;outline:none}
+.ppPanel>.postView{flex:1;min-height:0;gap:0}
+.ppHead{padding:14px 20px 12px;border-bottom:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.ppTop{display:flex;align-items:center;gap:8px;min-width:0}
+.ppPath{font-size:13px;color:var(--muted);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ppSt{flex:none;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent-dark)}
+.ppTop .spacer{flex:1}
+.ppHead .tfTitle,.ppHead .tfTitleRo{font-size:19px;font-weight:700;margin:0;width:100%}
+.ppCols{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)}
+.ppL{overflow:auto;padding:16px 20px 24px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:16px}
+.ppR{display:flex;flex-direction:column;min-height:0;background:var(--surface)}
+.ppRScroll{flex:1;min-height:0;overflow:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px}
+.ppSecT{margin:0;font-size:14px;font-weight:700}
+.ppL .tfRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.ppL .tfRow{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:0;background:var(--sunk);border-radius:10px;padding:8px 10px}
+.ppL .tfRow.wide{grid-column:1/-1}
+.ppL .tfLab{font-size:12px;font-weight:600}
+.ppL .tfCtl input.tfIn[type=text]{width:100%}
+.ppR .composer{margin:0;border:0;border-top:1px solid var(--line);border-radius:0}
+.ppR .tlTitle{margin:0}
+.ppRScroll{overflow-x:hidden}.ppR .wlAdd{grid-template-columns:1fr 1fr}.ppR .wlAdd #wlNote{grid-column:1/-1}.ppR .wlAdd #wlAddBtn{grid-column:1/-1;justify-self:end}
+.ppL .tfCtl{max-width:100%}.ppL .tfCtl>*{max-width:100%}
+@media (max-width:760px){.ppPanel{width:100vw;border-left:0}.ppScrim{display:none}.ppCols{display:block;overflow:auto}.ppL{border-right:0;overflow:visible}.ppR{display:block}.ppRScroll{overflow:visible}.ppL .tfRows{grid-template-columns:1fr}}
 .tfPage{gap:18px}
 .tfHead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
 .tfHead .hlink{flex:none;font-size:14px;color:var(--ink-soft)}
@@ -1472,6 +1499,7 @@ body{font-family:var(--font-ui);letter-spacing:-.01em}
   </div>
 
   <div id="main"></div>
+  <div class="postPane" id="postPane" hidden><div class="ppScrim" aria-hidden="true"></div><section class="ppPanel" id="ppPanel" role="dialog" aria-label="업무 상세" tabindex="-1"></section></div>
   </div>
 
   <div class="area" id="leaveArea" hidden></div>
@@ -2054,7 +2082,7 @@ function renderBody(){
   renderPostNew();
   if(state.post&&storeReady&&!tasks.some(x=>x.id===state.post))state.post=null;
   const post=state.post&&tasks.find(x=>x.id===state.post);
-  $('#taskArea').classList.toggle('postOpen',!!post);if(!post)main.dataset.post='';
+  ppShow(!!post);
   if(!storeReady){main.innerHTML=`<div class="empty"><h2>업무를 불러오는 중입니다</h2><p>잠시만 기다려 주세요.</p></div>`;return;}
   if(!projects.length){
     main.innerHTML=`<div class="empty"><h2>첫 프로젝트를 등록해 주세요</h2><p>파견 중인 프로젝트를 먼저 추가하면, 그 아래에 기획·디자인·퍼블·개발·QA 업무를 등록하고 함께 볼 수 있습니다.</p>${canWrite?'<button class="btn primary" type="button" id="emptyProj">프로젝트 추가</button>':''}</div>`;
@@ -2064,7 +2092,7 @@ function renderBody(){
   if(!tasks.length){
     main.innerHTML=`<div class="empty"><h2>아직 등록된 업무가 없습니다</h2><p>${canWrite?"위 '프로젝트 등록하기'에서 첫 업무를 등록하고, 게시물에 댓글로 업무를 요청해 보세요.":'등록된 업무가 생기면 여기에 보여요.'}</p></div>`;return;
   }
-  if(post){renderPost(post);return;}
+  if(post)renderPost(post);
   if(state.view==='board')renderBoard();
   else renderList();
 }
@@ -2133,7 +2161,11 @@ function keepVals(box,html){
 }
 const optH=(arr,cur)=>arr.map(([k,l])=>`<option value="${esc(k)}" ${String(cur)===String(k)?'selected':''}>${esc(l)}</option>`).join('');
 const stamp=s=>(s||'').slice(0,16).replace('T',' ');
-function openPost(id){tfSavedMsg='';state.post=id;persistUI();render();window.scrollTo(0,0);}
+let ppFrom=''; // 패널을 연 목록 행 id(닫으면 그 행으로 포커스를 돌려줌)
+function openPost(id){tfSavedMsg='';const was=state.post;state.post=id;persistUI();render();
+  if(id&&id!==was)setTimeout(()=>$('#ppPanel')?.focus({preventScroll:true}),0);
+  else if(!id&&was&&ppFrom)$('#main').querySelector(`[data-post="${CSS.escape(ppFrom)}"],[data-id="${CSS.escape(ppFrom)}"]`)?.focus?.({preventScroll:true});}
+function ppShow(on){const w=$('#postPane');if(!w)return;w.hidden=!on;if(!on)$('#ppPanel').dataset.post='';}
 
 // 맨 위 '프로젝트 등록하기' 카드: 게시물(최상위 업무)을 바로 만듦
 let pnOpen=false; // 모바일에서 등록 카드를 펼쳤는지(데스크톱은 늘 펼침)
@@ -2223,12 +2255,12 @@ function renderList(){
 const tfFold=new Set();let tfSavedMsg='';
 const tfWlSum=list=>Math.round(list.reduce((a,w)=>a+(+w.hours||0),0)*100)/100;
 function renderPost(p){
-  const main=$('#main');
+  const main=$('#ppPanel');
   if(main.dataset.post===p.id&&($('#tfAs')?.open||$('#cpAs')?.open))return; // 담당자 고르는 중엔 다시 그리지 않음
   if(main.dataset.post===p.id&&main.contains(document.activeElement)&&document.activeElement.matches('[data-tf],#cpText,#evLkIn'))return; // 칸 입력 중엔 다시 그리지 않음
   const isReq=!!p.parentId&&tasks.some(x=>x.id===p.parentId),k=isReq?[]:kidsOf(p),st=statusOf(postStatus(p,k)),cms=comments.filter(c=>c.taskId===p.id),ro=!canWrite;
   const items=[...cms.map(c=>({at:c.at||'',c}))].sort((a,b)=>a.at.localeCompare(b.at));
-  resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#main [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
+  resolveNames(cms.map(c=>c.by)).then(()=>document.querySelectorAll('#ppPanel [data-by]').forEach(el=>el.textContent=actorName(el.dataset.by)));
   const tl=items.map(({c,t})=>c?`<li class="tlItem"><div class="cmHead">${whoBy(c.by,22)}<b data-by="${esc(c.by)}">${esc(actorName(c.by))}</b><span class="legend">${esc(stamp(c.at))}</span>${c.by&&c.by===actorId?`<button type="button" class="btn ghost cmDel" data-cm="${esc(c.id)}">삭제</button>`:''}</div><div class="cmBody">${cmShow(c)}</div></li>`
     :`<li class="tlItem rq${isLate(t)?' is-late':''}"><div class="cmHead"><span class="rqTag">진행 상태</span><span class="part"><span class="sw" style="background:${partOf(t.part).c}"></span>${esc(partOf(t.part).label)}</span>${asNames(t).length?`<b>${whoMany(t,22,'')}</b>`:''}${t.dueDate?`<span class="legend num">마감 ${fmtDate(t.dueDate)}${t.status!=='done'?' '+dday(t.dueDate):''}</span>`:''}
       <select class="sel rqSt" data-rq="${esc(t.id)}" aria-label="진행 현황" ${canWrite?'':'disabled'}>${optH(STATUSES.map(s=>[s.k,s.label]),t.status)}</select><button type="button" class="btn ghost rqEdit" data-rqe="${esc(t.id)}">${canWrite?'수정':'보기'}</button></div>
@@ -2238,15 +2270,17 @@ function renderPost(p){
   const sel=(f,arr,cur,lab)=>ro?`<span class="tfVal">${esc((arr.find(([x])=>String(x)===String(cur))||[,'—'])[1])}</span>`:`<select class="tfIn" data-tf="${f}" aria-label="${lab}">${optH(arr,cur)}</select>`;
   const date=(f,v,lab)=>ro?`<span class="tfVal num">${v?fmtDate(v):'—'}</span>`:`<input type="date" class="tfIn" data-tf="${f}" value="${esc(v||'')}" aria-label="${lab}">`;
   const num=(f,v,lab,dis)=>ro?`<span class="tfVal num">${v!==''&&v!=null?esc(v)+'h':'—'}</span>`:`<input type="number" class="tfIn tfNum" data-tf="${f}" min="0" step="0.5" inputmode="decimal" value="${esc(v??'')}" placeholder="시간(h)" aria-label="${lab}" ${dis?'disabled title="작업 시간 기록 합계로 자동 계산돼요"':''}>`;
-  const row=(lab,ctl)=>`<div class="tfRow"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
+  const WIDE=['기간','소요시간','RMS','피그마 링크','이벤트 연결'],row=(lab,ctl)=>`<div class="tfRow${WIDE.includes(lab)?' wide':''}"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
   const cm=taskMember(p),orphan=p.assignee&&!cm?p.assignee:'',lv=cm&&leaveOn(cm.id,p.dueDate),rh=rmsHref(p),wl=wlogs.filter(w=>w.taskId===p.id).sort((x,y)=>x.date.localeCompare(y.date));
   const people=[...new Set([...members.map(m=>m.name),...tasks.flatMap(x=>[x.assignee,x.requester])].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
   const link=p.link?(/^https?:\/\//.test(p.link)?p.link:'https://'+p.link):'';
   const wlKeep={d:$('#wlDate')?.value||todayStr(),m:$('#wlMem')?.value||cm?.id||'',h:$('#wlH')?.value||'',n:$('#wlNote')?.value||''};
   const fold=tfFold.has(p.id),np=nextPart(p.part),cpKeep=main.dataset.post===p.id&&$('#cpText')?rtClean($('#cpText').innerHTML):''; // 다시 그려도 쓰던 댓글 유지
+  const prj=projects.find(x=>x.id===p.projectId);
   const html=`<div class="postView tfPage">
-    <div class="tfHead"><button class="hlink" type="button" id="postBack" data-back="${isReq?esc(p.parentId):''}">← ${isReq?'게시물':'목록'}</button>${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}<span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span></div>
-    ${isReq?`<p class="legend" style="margin:0">게시물: ${esc(rootOf(p).title)}</p>`:''}
+    <div class="ppHead"><div class="ppTop"><span class="ppPath">${esc([prj?.name,partOf(p.part).label].filter(Boolean).join(' · '))}</span><span class="ppSt">${esc(st.label)}</span>${isReq?`<button class="hlink" type="button" id="postParent" data-back="${esc(p.parentId)}">← 게시물: ${esc(rootOf(p).title)}</button>`:''}<span class="spacer"></span><span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span><button class="btn ghost" type="button" id="postBack" data-back="">닫기</button></div>
+      ${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}</div>
+    <div class="ppCols"><div class="ppL"><h3 class="ppSecT">업무 정보</h3>
     <div class="tfRows">
       ${row('프로젝트',sel('projectId',projects.map(x=>[x.id,x.name]),p.projectId,'프로젝트'))}
       ${row('진행 현황',sel('status',STATUSES.map(s=>[s.k,s.label]),p.status,'진행 현황'))}
@@ -2268,6 +2302,7 @@ function renderPost(p){
       <button type="button" class="btn ghost sm" id="tfFold" aria-expanded="${!fold}" aria-label="${fold?'펼치기':'접기'}">${fold?'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>':'<svg class="arw" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>'}</button>${canWrite?'<button type="button" class="btn ghost sm" id="tfDel">삭제</button>':''}</div>
       ${fold?'':ro?`<div class="tfNote tfNoteRo">${p.note||p.noteHtml?rtShow(p.noteHtml,p.note):'<span class="legend">내용이 없어요.</span>'}</div>`:rtEditor('tfNote','data-tf="note" aria-label="내용"',p.noteHtml?rtClean(p.noteHtml):rtFromText(p.note),'요청 배경, 변경 이력, 이슈')}
       <span class="err" id="tErr"></span></section>
+    </div><div class="ppR"><div class="ppRScroll">
     <section class="tfSec wlBox"><div class="tfSecHead"><h3>작업 시간 기록</h3><span class="legend">${wl.length?`합계 ${hrs(tfWlSum(wl))}h`:'아직 없음'}</span><span class="spacer"></span></div>
       ${wl.length?`<ul class="hitems">${wl.map(w=>`<li><span class="num">${md(w.date)}</span><b>${who(memOf(w.memberId)?.name||w.member||'',w.memberId,18,'')}</b><span class="legend">${esc(w.note||'')}</span><span class="num hh">${hrs(w.hours)}h</span>${canWrite?`<button type="button" class="btn ghost wlDel" data-wl="${esc(w.id)}">삭제</button>`:''}</li>`).join('')}</ul>`:''}
       ${canWrite?`<div class="wlAdd"><input type="date" id="wlDate" value="${esc(wlKeep.d)}" aria-label="작업한 날짜"><select id="wlMem" aria-label="작업한 사람">${members.filter(m=>isShown(m)||m.id===cm?.id).map(m=>`<option value="${esc(m.id)}" ${wlKeep.m===m.id?'selected':''}>${esc(m.name)}</option>`).join('')}</select><input type="number" id="wlH" min="0.25" step="0.25" inputmode="decimal" placeholder="시간(h)" value="${esc(wlKeep.h)}" aria-label="작업 시간"><input id="wlNote" placeholder="메모 (선택)" value="${esc(wlKeep.n)}" maxlength="80" aria-label="메모"><button type="button" class="btn" id="wlAddBtn">기록 추가</button></div>`:''}
@@ -2275,11 +2310,12 @@ function renderPost(p){
     ${manualRuns.some(r=>r.taskId===p.id)?`<div class="panel mnTaskRuns" style="padding:10px 14px"><span class="mnLab">매뉴얼 진행</span>${manualRuns.filter(r=>r.taskId===p.id).map(r=>`<button type="button" class="mnRunRow" data-mrun="${esc(r.id)}"><b>${esc(r.title)}${r.closedAt?' · 완료':''}</b>${mnBar(mnRunProg(r))}</button>`).join('')}</div>`:''}
     <h3 class="tlTitle">댓글 <span class="legend">${items.length}</span></h3>
     <ul class="cmList">${tl||`<li class="legend">아직 댓글이 없어요</li>`}</ul>
+    </div>
     ${canWrite?`<div class="composer">${rtEditor('cpEd',`id="cpText" aria-label="댓글 내용"`,cpKeep,'진행 상황, 확인 요청 등을 남겨 주세요')}
       <div class="cpRow">      <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
-  </div>`;
+  </div></div></div>`;
   if(main.dataset.post===p.id)keepVals(main,html);else main.innerHTML=html;
-  main.dataset.post=p.id;
+  main.dataset.post=p.id;main.setAttribute('aria-label','업무 상세: '+(p.title||'(제목 없음)'));
 }
 // 칸 하나 저장(그 칸만 update — 다른 사람이 다른 칸을 고쳐도 둘 다 남음)
 async function tfSave(p,f,raw){
@@ -2611,15 +2647,16 @@ async function gnbReload(mode){
   try{if(location.hash)history.replaceState(null,'',location.pathname+location.search+'#'+mode);}catch(e){} // 주소의 #메뉴가 저장한 메뉴보다 앞서므로 맞춰 둠
   location.reload();}
 $('#btnLeaveAdd').addEventListener('click',()=>openSched());
-$('#main').addEventListener('click',async e=>{
+const mainEv=(t,f,o)=>['#main','#ppPanel'].forEach(q=>$(q).addEventListener(t,f,o)); // 목록과 상세 패널에 같은 처리
+mainEv('click',async e=>{
   if(e.target.closest('a,select'))return;
   const nb=e.target.closest('[data-next]');if(nb){if(canWrite)setPostStatus(nb.dataset.next,nb.dataset.to);return;}
   const ac=e.target.closest('[data-asg]');if(ac){const k=ac.dataset.asg;if(k!=='all'&&!myMember()){openWhoAmI();return;}state.assignee=k;persistUI();render();return;}
   if(e.target.closest('#bdTop'))return;
   const yh=e.target.closest('[data-year]');if(yh){const f=new Set(state.yfold||[]),y=yh.dataset.year;f.has(y)?f.delete(y):f.add(y);state.yfold=[...f];persistUI();render();return;}
-  const pb=e.target.closest('#postBack');if(pb){openPost(pb.dataset.back||null);return;}
+  const pb=e.target.closest('#postBack,#postParent');if(pb){openPost(pb.dataset.back||null);return;}
   const mr=e.target.closest('[data-mrun]');if(mr){mnGoRun(mr.dataset.mrun);return;}
-  const p=state.post&&tasks.find(x=>x.id===state.post);
+  const p=e.currentTarget.id==='ppPanel'&&state.post&&tasks.find(x=>x.id===state.post);
   if(p){
     if(e.target.id==='cpSend'){sendPost(p,e.target);return;}
     const eg=e.target.closest('[data-evgo]');if(eg){evGoRow(eg.dataset.evgo);return;}
@@ -2646,17 +2683,20 @@ $('#main').addEventListener('click',async e=>{
   }
   // 게시물 행·보드 카드를 누르면 그 게시물 상세로(요청이면 속한 게시물)
   if(e.target.closest('.rmsGo'))return;
-  const row=e.target.closest('[data-post],[data-id]');if(!row)return;const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t)openPost(row.dataset.post?rootOf(t).id:t.id);
+  const row=e.target.closest('[data-post],[data-id]');if(!row){if(state.post&&e.currentTarget.id==='main')openPost(null);return;} // 패널이 열린 채 목록 빈 곳을 누르면 닫음
+  const t=tasks.find(x=>x.id===(row.dataset.post||row.dataset.id));if(t){ppFrom=row.dataset.post||row.dataset.id;openPost(row.dataset.post?rootOf(t).id:t.id);}
 });
+// 상세 패널: Esc로 닫기(다른 창·팝업·담당자 목록이 열려 있으면 그쪽이 먼저)
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||$('#postPane').hidden||$('#modalRoot').innerHTML||!$('#bellPop').hidden||!$('#mePop').hidden||document.querySelector('#ppPanel details[open]'))return;e.preventDefault();openPost(null);});
 // 상세의 '내용'(서식 편집칸)은 칸에서 나갈 때 저장
-$('#main').addEventListener('focusout',e=>{const ed=e.target.closest?.('[data-rt][data-tf="note"]');if(!ed||!canWrite||ed.contains(e.relatedTarget))return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'noteRich',rtRead(ed));});
+mainEv('focusout',e=>{const ed=e.target.closest?.('[data-rt][data-tf="note"]');if(!ed||!canWrite||ed.contains(e.relatedTarget))return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'noteRich',rtRead(ed));});
 // 상세의 담당자 목록을 닫으면 저장
-$('#main').addEventListener('toggle',e=>{if(e.target.id!=='tfAs'||e.target.open||!canWrite)return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'assignees',asVals('#tfAs'));},true);
-$('#main').addEventListener('keydown',e=>{if(e.key!=='Enter')return;
+mainEv('toggle',e=>{if(e.target.id!=='tfAs'||e.target.open||!canWrite)return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'assignees',asVals('#tfAs'));},true);
+mainEv('keydown',e=>{if(e.key!=='Enter')return;
   if(e.target.matches?.('input[data-tf]')){e.preventDefault();e.target.blur();return;}
   if(e.target.tagName==='INPUT'&&e.target.closest('.wlAdd')){e.preventDefault();const p=tasks.find(x=>x.id===state.post);if(p)tfAddWl(p);return;}
  const row=e.target.closest('[data-post],.card[data-id]');if(row&&row===e.target)row.click();});
-$('#main').addEventListener('change',e=>{
+mainEv('change',e=>{
   const el=e.target;
   if(el.dataset.tf&&canWrite){const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,el.dataset.tf,el.value);if(el.tagName==='SELECT'||el.type==='date')el.blur();return;}
   if(el.classList.contains('rqSt')){setReqStatus(el.dataset.rq,el.value);return;}
@@ -2666,15 +2706,15 @@ $('#main').addEventListener('change',e=>{
     if(!r){$('#tErr').textContent='목록에서 이벤트를 골라 주세요.';return;}$('#tErr').textContent='';el.value='';el.blur();evLinkSet(p,[...ids,r.id]);return;}
 });
 let dragId=null;
-$('#main').addEventListener('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragId=c.dataset.id;e.dataTransfer.effectAllowed='move';});
-$('#main').addEventListener('dragover',e=>{const col=e.target.closest('.col');if(!col||!dragId)return;e.preventDefault();document.querySelectorAll('.col.drop').forEach(c=>c!==col&&c.classList.remove('drop'));col.classList.add('drop');});
-$('#main').addEventListener('dragleave',e=>{const col=e.target.closest('.col');if(col&&!col.contains(e.relatedTarget))col.classList.remove('drop');});
-$('#main').addEventListener('drop',async e=>{
+mainEv('dragstart',e=>{const c=e.target.closest('.card');if(!c)return;dragId=c.dataset.id;e.dataTransfer.effectAllowed='move';});
+mainEv('dragover',e=>{const col=e.target.closest('.col');if(!col||!dragId)return;e.preventDefault();document.querySelectorAll('.col.drop').forEach(c=>c!==col&&c.classList.remove('drop'));col.classList.add('drop');});
+mainEv('dragleave',e=>{const col=e.target.closest('.col');if(col&&!col.contains(e.relatedTarget))col.classList.remove('drop');});
+mainEv('drop',async e=>{
   const col=e.target.closest('.col');if(!col||!dragId)return;e.preventDefault();col.classList.remove('drop');
   const t=tasks.find(x=>x.id===dragId);dragId=null;if(!t||postStatus(t,kidsOf(t))===col.dataset.status)return;
   await setPostStatus(t.id,col.dataset.status);
 });
-$('#main').addEventListener('dragend',()=>{dragId=null;document.querySelectorAll('.col.drop').forEach(c=>c.classList.remove('drop'));});
+mainEv('dragend',()=>{dragId=null;document.querySelectorAll('.col.drop').forEach(c=>c.classList.remove('drop'));});
 
 /* ---------- 내 업무: 로그인 계정을 구성원 한 명과 연결(members.userId) ---------- */
 function myMember(){return actorId?members.find(m=>m.userId===actorId):null;}

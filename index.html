@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>업무 관리 대시보드</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800&display=swap">
 <meta name="description" content="프로젝트·파트별 업무, 휴가, 투입 인력, 주간 보고를 한곳에서 관리하는 팀 업무 관리 대시보드">
 <meta property="og:type" content="website">
 <meta property="og:title" content="업무 관리 대시보드">
@@ -26,7 +26,7 @@
   --design:#a3306a; --design-soft:#fde8f2; --pub:#1c5fbf; --pub-soft:#e3edff; --dev:#5b3a9a; --dev-soft:#efe7fb;
   --shadow-3:0 12px 32px rgba(1,10,37,.10),0 2px 6px rgba(1,10,37,.06);
   --shadow-toast:0 8px 24px rgba(1,10,37,.16);
-  --font-ui:Pretendard,-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+  --font-ui:"Noto Sans KR",-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
   --font-num:var(--font-ui);
   --r:7px; --r-sm:6px; --r-lg:9px; --r-xl:11px;
   --ease:cubic-bezier(.22,.61,.36,1);
@@ -1361,7 +1361,7 @@ button.sfProf:hover{background:var(--sunk)}
 /* 토스(TDS) 디자인 테마: DESIGN.md 토큰을 대시보드 변수에 연결(앞의 기본 값 위에 덮어씀)
    - 색: TDS 팔레트(grey·blue·green·orange·red·teal·purple 50~900)에서만 고름
    - 글자 대비 4.5:1 미만인 DESIGN.md 값은 같은 팔레트의 한 단계 진한 값으로(아래 '대비 보정' 표시)
-   - 글꼴: Toss Product Sans는 배포 권리가 없어 대체 글꼴 Pretendard Variable 사용(DESIGN.md 권장 대체) */
+   - 글꼴: Toss Product Sans는 배포 권리가 없어 대체 글꼴로 Noto Sans KR 사용(구글 폰트) */
 :root{
   --bg:#f2f4f6;           /* surface(grey100): 페이지 바탕 */
   --surface:#ffffff;      /* canvas: 카드·표·모달 */
@@ -1381,7 +1381,7 @@ button.sfProf:hover{background:var(--sunk)}
   --design:#8222a2; --design-soft:#f9f0fc; --pub:#1b64da; --pub-soft:#e8f3ff; --dev:#076565; --dev-soft:#edf8f8;
   --overlay:rgba(0,12,30,.45);
   --shadow-3:0 8px 24px rgba(0,12,30,.08); --shadow-toast:0 8px 24px rgba(0,12,30,.16);
-  --font-ui:"Toss Product Sans","Pretendard Variable",Pretendard,"IBM Plex Sans",-apple-system,"Malgun Gothic",sans-serif;
+  --font-ui:"Noto Sans KR",-apple-system,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;
   --r:10px; --r-sm:8px; --r-lg:16px; --r-xl:16px;   /* 버튼 medium 10px, 큰 카드 16px */
 }
 :root[data-theme="dark"]{--accent:#3182f6;--accent-dark:#64a8ff;--accent-soft:#16243a;--accent-fg:#0b1a33;--pub:#90c2ff;--pub-soft:#16243a}

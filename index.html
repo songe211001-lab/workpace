@@ -462,6 +462,30 @@ a.rms:hover{text-decoration:underline}
 .nfItem>span{display:flex;flex-direction:column}
 .nfName{font-weight:600}
 /* 프로필 사진 (원형) */
+/* 매뉴얼 문서형 보기 */
+body.mnDocOn{overflow:hidden}
+.mnDoc{position:fixed;inset:0;z-index:19;background:var(--bg);display:grid;grid-template-columns:260px minmax(0,1fr)}
+.mdToc{border-right:1px solid var(--line);background:var(--surface);overflow:auto;padding:22px 12px}
+.mdTocHead{padding:2px 10px 16px}.mdTocHead b{display:block;font-size:16px;font-weight:800;line-height:1.4}.mdTocHead span{display:block;margin-top:4px;font-size:12px;color:var(--muted)}
+.mdToc nav{display:flex;flex-direction:column;gap:2px}
+.mdToc nav button{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 10px;border-radius:8px;font-size:13px;line-height:1.45;color:var(--ink-soft)}
+.mdToc nav button:hover{background:var(--sunk);color:var(--fg)}.mdToc nav button:focus-visible{outline:2px solid var(--accent)}
+.mdToc nav button.on{background:var(--accent-soft);color:var(--accent-dark);font-weight:700}
+.mdMain{position:relative;overflow:auto;padding:24px 40px 96px;outline:none}
+.mdWrap{max-width:960px;margin:0 auto}
+.mdTop{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.mdHead{margin-bottom:20px}.mdHead h1{margin:0 0 6px;font-size:26px;font-weight:800;line-height:1.3}.mdHead p{margin:0 0 10px;color:var(--ink-soft);font-size:14px}
+.mdHeadL{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.mdCard{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;margin-bottom:16px;display:flex;flex-direction:column;gap:12px}
+.mdCardH{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mdCardH h2{flex:1;display:flex;align-items:center;gap:10px;margin:0;font-size:18px;font-weight:800}
+.mdNo{flex:none;display:inline-grid;place-items:center;min-width:24px;height:24px;padding:0 6px;border-radius:999px;background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+.mdQuick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mdQ{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.mdQ:hover{border-color:var(--accent)}.mdQ:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.mdQ b{font-size:14px;line-height:1.4}.mdQ .legend{font-size:12px;line-height:1.55}
+.mdTable th[scope=row]{width:30%;text-align:left;vertical-align:top}.mdTable td{white-space:pre-wrap;overflow-wrap:anywhere}
+.mdEmpty{grid-column:1/-1;display:grid;place-items:center;align-content:center;gap:12px;height:100%;color:var(--muted)}
+@media (max-width:1023px){.mnDoc{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.mdToc{border-right:0;border-bottom:1px solid var(--line);padding:10px 12px;overflow-x:auto;overflow-y:hidden}.mdTocHead{display:none}.mdToc nav{flex-direction:row;gap:6px}.mdToc nav button{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:6px 12px}.mdMain{padding:16px 16px 72px}.mdQuick{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:600px){.mdQuick{grid-template-columns:1fr}.mdCard{padding:16px}.mdHead h1{font-size:22px}}
 .avGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:10px}
 .avOpt{all:unset;box-sizing:border-box;cursor:pointer;border-radius:50%;padding:3px;display:grid;place-items:center;border:2px solid transparent}
 .avOpt img{width:100%;aspect-ratio:1;border-radius:50%;display:block}
@@ -2091,6 +2115,7 @@ function applyMode(){
   $('#pageTitle').textContent=menuName(navMode);
 }
 function render(){
+  if(MN_DOC){mnDocRender();if(MN_DOC?.tab)return;} // 새 탭 문서 보기는 문서만 그림
   renderBody();liftTools();bellPaint();
 }
 function liftTools(){
@@ -3649,8 +3674,8 @@ const GUIDE={
       '검색칸에서 매뉴얼 제목·단계·표 내용을 한 번에 찾을 수 있어요.',
       '**버전 올리기**로 이전 내용을 남긴 채 새 버전을 만들 수 있어요.',
       '매뉴얼마다 피그마 링크를 붙여 둘 수 있어요.'],
-    how:['**+ 매뉴얼 등록**으로 새 매뉴얼을 만들어요.',
-      '**편집**을 눌러 단계를 적고, 다 쓰면 **편집 끝내기**를 눌러요.']},
+    how:['매뉴얼 카드를 누르면 새 창에서 목차와 단계별 설명을 문서처럼 볼 수 있어요.',
+      '문서 화면의 **수정**을 눌러 단계를 고치고, 다 쓰면 **편집 끝내기**를 눌러요.']},
   regress:{can:['회귀 검증 케이스를 회차별로 점검하고 결과를 남길 수 있어요.',
       '**+ 새 회차**로 점검 회차를 만들고, **+ 케이스**로 점검 항목을 더할 수 있어요.',
       '**엑셀 가져오기**로 기존 케이스와 회차를 한 번에 불러올 수 있어요.',
@@ -4674,7 +4699,7 @@ function renderManuals(){
   if(mnst.id&&mnst.run){mnRunView(area);return;}
   if(mnst.id){mnDetail(area);return;}
   const cats=mnCats(),q=mnst.q.trim().toLowerCase();
-  const tools=`<label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="mnQ" type="search" value="${esc(mnst.q)}" placeholder="매뉴얼 · 단계 · 표 내용 검색" aria-label="매뉴얼 검색"></label><span class="spacer"></span>${trashBtn('mnTrashBtn',TRASH_SRC.manual.list().length)}${canWrite?'<button class="btn primary" type="button" id="mnNew">+ 매뉴얼 등록</button>':''}`;
+  const tools=`<label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="mnQ" type="search" value="${esc(mnst.q)}" placeholder="매뉴얼 · 단계 · 표 내용 검색" aria-label="매뉴얼 검색"></label><span class="spacer"></span>${trashBtn('mnTrashBtn',TRASH_SRC.manual.list().length)}`;
   let body;
   if(q){const H=[];const has=v=>String(v||'').toLowerCase().includes(q),snip=v=>{const s=String(v||''),i=s.toLowerCase().indexOf(q);return (i>20?'…':'')+s.slice(Math.max(0,i-20),i+60).replace(/\n/g,' ');};
     manuals.forEach(m=>{if(has(m.title)||has(m.summary))H.push({m,s:null,t:snip(has(m.title)?m.title:m.summary)});
@@ -4688,7 +4713,7 @@ function renderManuals(){
       ${pins.length||rec.length||my.length?'<h4 class="mnSecT">전체 매뉴얼</h4>':''}
       <div class="chips evChips">${['전체',...cats].map(c=>`<button type="button" class="chip" data-mcat="${esc(c)}" aria-pressed="${mnst.cat===c}">${esc(c)} <span class="num">${c==='전체'?manuals.length:manuals.filter(m=>m.category===c).length}</span></button>`).join('')}</div>
       ${L.length?`<div class="mnCards">${L.map(m=>mnCardHtml(m,pins)).join('')}</div>`
-        :`<div class="empty"><h2>${manuals.length?'이 분류에 매뉴얼이 없어요':'아직 등록된 매뉴얼이 없어요'}</h2><p>${canWrite?"'+ 매뉴얼 등록'에서 템플릿(운영 업무 프로세스 · 이벤트 등록)으로 시작해 보세요.":'등록된 매뉴얼이 생기면 여기에 보여요.'}</p></div>`}`;}
+        :`<div class="empty"><h2>${manuals.length?'이 분류에 매뉴얼이 없어요':'아직 등록된 매뉴얼이 없어요'}</h2><p>등록된 매뉴얼이 생기면 여기에 보여요.</p></div>`}`;}
   area.innerHTML=`<div class="rtool">${tools}</div>${body}`;
 }
 const mnStepView=(s,i,tl='')=>`<section class="panel mnStep" id="mn-${esc(s.id)}" data-sid="${esc(s.id)}"><div class="mnStepHead"><span class="mnNo">${i+1}</span><h3>${esc(s.title||'(제목 없음)')}</h3><span class="spacer"></span>${mnFig(s.figmaUrl)}${tl}</div>
@@ -4732,6 +4757,54 @@ async function mnSave(){clearTimeout(mnTimer);mnTimer=null;const d=mnDraft;if(!d
   const {id,...data}=d;try{await db.collection('manuals').doc(id).update({...data,updatedAt:new Date().toISOString(),updatedBy:myMember()?.name||''});const st=$('#mnSaveSt');if(st)st.textContent=`저장됨 ${new Date().toTimeString().slice(0,5)}`;}
   catch(err){handleWriteError(err);}}
 function mnOpen(id,step){if(mnDraft&&(mnst.step||mnst.edit))mnSave();mnst.id=id;mnst.edit=false;mnst.step=null;mnDraft=null;document.activeElement?.blur();mnForce=true;render();window.scrollTo(0,0);if(step)mnFlash(step);}
+// 매뉴얼 문서형 보기: 서버판은 새 탭(#manual=<id>&step=<단계id>), 새 탭을 못 여는 아티팩트판은 화면 위 전체 화면
+var MN_DOC=(()=>{const x=location.hash.match(/^#manual=([^&]+)(?:&step=([^&]+))?/);return x?{id:decodeURIComponent(x[1]),step:x[2]?decodeURIComponent(x[2]):null,tab:true}:null;})();
+function mnDocOpen(id,step){mnSeen(id);
+  // window.open으로 열어야 로그인 세션(sessionStorage)이 새 탭에 복사됨. 막히면 전체 화면으로
+  if(window.wbAuth){try{const w=window.open(location.pathname+location.search+'#manual='+encodeURIComponent(id)+(step?'&step='+encodeURIComponent(step):''),'_blank');if(w)return;}catch(e){}}
+  MN_DOC={id,step:step||null,tab:false};mnDocRender();}
+const mnFirstLine=s=>{const l=String(s.body||'').split('\n').map(x=>x.replace(/^[\s■•·\-–➊-➓①-⑳]+/,'').trim()).find(Boolean)||'';return l.length>64?l.slice(0,64)+'…':l;};
+function mnDocRender(){
+  if(!MN_DOC)return;let box=$('#mnDoc');
+  if(!box){box=document.createElement('div');box.id='mnDoc';box.className='mnDoc';box.setAttribute('role','dialog');box.setAttribute('aria-modal','true');document.body.appendChild(box);document.body.classList.add('mnDocOn');box.addEventListener('click',mnDocClick);}
+  $('#menuPick')?.remove();
+  const m=manuals.find(x=>x.id===MN_DOC.id),close=`<button class="btn" type="button" data-mdclose>${MN_DOC.tab?'창 닫기':'닫기'}</button>`;
+  if(!m){box.innerHTML=`<div class="mdEmpty"><p>${storeReady?'매뉴얼을 찾을 수 없어요. 삭제됐을 수 있어요.':'불러오는 중이에요…'}</p>${close}</div>`;return;}
+  const steps=m.steps||[],old=box.querySelector('.mdMain'),sc=old?.scrollTop||0,first=box.dataset.mid!==m.id,date=(m.updatedAt||m.createdAt||'').slice(0,10);
+  const sec=(s,i)=>`<section class="mdCard" data-mdsec="${esc(s.id)}" aria-labelledby="mdh-${esc(s.id)}"><div class="mdCardH"><h2 id="mdh-${esc(s.id)}"><span class="mdNo">${i+1}</span>${esc(s.title||'(제목 없음)')}</h2>${mnFig(s.figmaUrl)}</div>
+      ${s.body?`<div class="mnBody">${mnBodyHtml(s)}</div>`:''}
+      ${(s.table||[]).length?`<div class="tablebox"><table class="stable mdTable"><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label||'')}</th><td>${mnRuleHtml(r)}</td></tr>`).join('')}</tbody></table></div>`:''}
+      ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
+      ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
+  box.setAttribute('aria-label','매뉴얼: '+(m.title||''));
+  box.innerHTML=`<aside class="mdToc" aria-label="목차"><div class="mdTocHead"><b>${esc(m.title||'(제목 없음)')}</b>${date?`<span>${esc(date)} 기준</span>`:''}</div>
+      <nav>${steps.length?`<button type="button" data-mdgo="__quick">빠른 시작</button>`:''}${steps.map((s,i)=>`<button type="button" data-mdgo="${esc(s.id)}">${i+1}. ${esc(s.title||'(제목 없음)')}</button>`).join('')}</nav></aside>
+    <main class="mdMain" tabindex="-1"><div class="mdWrap">
+      <div class="mdTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${canWrite?'<button class="btn" type="button" data-mdedit>수정</button><button class="btn" type="button" data-mdrun>진행 시작</button>':''}${close}</div>
+      <header class="mdHead"><h1>${esc(m.title||'(제목 없음)')}</h1>${m.summary?`<p>${esc(m.summary)}</p>`:''}<div class="mdHeadL">${mnFig(m.figmaUrl)}${mnLinks(m.links)}</div></header>
+      ${steps.length?`<section class="mdCard" data-mdsec="__quick" aria-labelledby="mdh-quick"><div class="mdCardH"><h2 id="mdh-quick">빠른 시작</h2></div><p class="legend" style="margin:0">처음이라면 아래 ${steps.length}단계를 차례로 따라 하면 돼요. 단계를 누르면 해당 설명으로 이동해요.</p>
+        <div class="mdQuick">${steps.map((s,i)=>`<button type="button" class="mdQ" data-mdgo="${esc(s.id)}"><span class="mdNo">${i+1}</span><b>${esc(s.title||'(제목 없음)')}</b>${mnFirstLine(s)?`<span class="legend">${esc(mnFirstLine(s))}</span>`:''}</button>`).join('')}</div></section>`:'<div class="empty"><h2>단계가 없어요</h2></div>'}
+      ${steps.map(sec).join('')}</div></main>`;
+  const main=box.querySelector('.mdMain');main.scrollTop=sc;main.addEventListener('scroll',mnDocSpy,{passive:true});mnDocSpy();
+  if(first){box.dataset.mid=m.id;if(MN_DOC.tab)document.title=(m.title||'매뉴얼')+' · 매뉴얼';main.focus({preventScroll:true});if(MN_DOC.step){const st=MN_DOC.step;setTimeout(()=>mnDocGo(st,true),0);}}}
+// 스크롤 위치에 맞춰 목차의 현재 단계를 강조
+let mnDocPin=null,mnDocPinT; // 방금 누른 단계(끝쪽 단계는 맨 위까지 못 올라가도 그 단계를 강조)
+function mnDocSpy(){const box=$('#mnDoc'),main=box?.querySelector('.mdMain');if(!main)return;const y=main.scrollTop+120;let cur=main.querySelector('[data-mdsec]')?.dataset.mdsec||null;
+  main.querySelectorAll('[data-mdsec]').forEach(s=>{if(s.offsetTop<=y)cur=s.dataset.mdsec;});
+  if(main.scrollTop+main.clientHeight>=main.scrollHeight-4){const L=main.querySelectorAll('[data-mdsec]');cur=L[L.length-1]?.dataset.mdsec||cur;}
+  if(mnDocPin)cur=mnDocPin;
+  box.querySelectorAll('.mdToc [data-mdgo]').forEach(b=>{const on=b.dataset.mdgo===cur;b.classList.toggle('on',on);if(on)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});}
+function mnDocGo(sid,instant){mnDocPin=sid;clearTimeout(mnDocPinT);mnDocPinT=setTimeout(()=>{mnDocPin=null;},1500);const main=$('#mnDoc .mdMain'),el=main?.querySelector(`[data-mdsec="${CSS.escape(sid)}"]`);if(!el)return;main.scrollTo({top:el.offsetTop-16,behavior:instant?'auto':'smooth'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),1800);setTimeout(mnDocSpy,instant?0:700);}
+// 문서 보기를 끝내고 앱 화면(매뉴얼 관리)으로
+function mnDocExit(){MN_DOC=null;$('#mnDoc')?.remove();document.body.classList.remove('mnDocOn');state.mode='manuals';try{history.replaceState(null,'',location.pathname+location.search+'#manuals');}catch(e){}}
+function mnDocClose(){if(MN_DOC?.tab){window.close();setTimeout(()=>{if(MN_DOC){mnDocExit();mnst.id=null;render();}},200);return;}mnDocExit();render();}
+function mnDocClick(e){const b=e.target.closest('button');if(!b)return;const m=MN_DOC&&manuals.find(x=>x.id===MN_DOC.id);
+  if(b.dataset.mdgo){mnDocGo(b.dataset.mdgo);return;}
+  if(b.dataset.mdclose!=null){mnDocClose();return;}
+  if(!m||!canWrite)return;
+  if(b.dataset.mdedit!=null){mnDocExit();mnst.id=m.id;mnst.run=null;mnst.step=null;mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(m));persistUI();render();window.scrollTo(0,0);return;}
+  if(b.dataset.mdrun!=null){mnDocExit();mnst.id=m.id;mnst.run=null;mnst.edit=false;mnDraft=null;persistUI();render();mnRunStart(m);}}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&MN_DOC&&!MN_DOC.tab&&!$('#modalRoot').innerHTML){e.preventDefault();mnDocClose();}});
 function mnFlash(sid){const el=document.getElementById('mn-'+sid);if(!el)return;el.scrollIntoView({block:'start'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
 function mnNewModal(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>매뉴얼 등록</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>
@@ -4805,14 +4878,13 @@ onArea('#manualsArea','focusout',e=>{if(e.target.matches?.('input,textarea')&&e.
 onArea('#manualsArea','click',async e=>{
   const b=e.target.closest('button,[data-mopen]');if(!b)return;const id=b.id;
   if(b.dataset.mpin){mnTogglePin(b.dataset.mpin);return;}
-  if(b.dataset.mopen){mnOpen(b.dataset.mopen,b.dataset.mstep);return;}
+  if(b.dataset.mopen){mnDocOpen(b.dataset.mopen,b.dataset.mstep);return;}
   if(b.dataset.mcat!=null){mnst.cat=b.dataset.mcat;render();return;}
   if(b.dataset.mgo){mnFlash(b.dataset.mgo);return;}
   if(id==='mnTrashBtn'){openTrash('manual');return;}
   if(id==='mnBack'){if(mnDraft)await mnSave();mnst.step=null;mnst.id=null;mnst.run=null;mnst.edit=false;mnDraft=null;render();return;}
   if(id==='mnVers'){mnVersModal();return;}
   if(!canWrite)return;
-  if(id==='mnNew'){mnNewModal();return;}
   const m=mnCur();if(!m)return;
   if(id==='mnEdit'){if(mnst.step&&mnDraft)await mnSave();mnst.step=null;mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(manuals.find(x=>x.id===mnst.id)));render();return;}
   if(id==='mnEditEnd'){await mnSave();logChange('manual','update',m.id,m.title,null,null,'내용 수정');mnst.edit=false;mnDraft=null;render();toast('저장했어요.');return;}
@@ -5825,7 +5897,7 @@ const memberIn=(m,pid)=>pid==='all'||memberProjectIds(m).has(pid);
 const SITE_DEFAULT={title:'업무 관리 대시보드'};
 let site={...SITE_DEFAULT};
 // 사이트 제목은 화면에 보이지 않고 브라우저 탭 제목으로만 써요(저장된 settings/site 값)
-function renderBrand(){document.title=`${menuName(state.mode==='hours'?'staff':state.mode)} · ${site.title||SITE_DEFAULT.title}`;}
+function renderBrand(){if(MN_DOC?.tab){const m=manuals.find(x=>x.id===MN_DOC.id);document.title=(m?.title||'매뉴얼')+' · 매뉴얼';return;}document.title=`${menuName(state.mode==='hours'?'staff':state.mode)} · ${site.title||SITE_DEFAULT.title}`;}
 
 /* ---------- history (변경 이력) ---------- */
 // 누가·언제·무엇을 바꿨는지 history 컬렉션에 1건씩 기록. 편집 권한(Contributor 이상)만 읽고 쓸 수 있으며 180일이 지난 기록은 자동 정리

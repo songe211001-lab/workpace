@@ -1073,6 +1073,42 @@ body.mnDocOn{overflow:hidden}
 #ppPanel .cmHead,#ppPanel .cmBody{font-size:13px}
 #ppPanel .composer{padding:10px 16px;gap:6px}
 #ppPanel .composer .cpEd{min-height:64px}
+/* 회귀 검증 케이스 패널(업무 관리 패널과 같은 크기) */
+#cvPanel .ppHead{padding:12px 16px;gap:4px}
+#cvPanel .ppPath,#cvPanel .ppDates{font-size:12px;color:var(--muted)}
+#cvPanel .ppSt{font-size:11px;padding:2px 8px}
+#cvPanel .ppHead .tfTitle,#cvPanel .ppHead .tfTitleRo{font-size:17px;font-weight:700;height:auto;padding:2px 0}
+#cvPanel .ppTop .btn{height:32px;font-size:13px;padding:0 12px}
+#cvPanel #tfSaved{white-space:nowrap;font-size:12px}#cvPanel .ppTop .btn{flex:none}
+#cvPanel .ppL,#cvPanel .ppRScroll{padding:14px 16px;gap:14px}
+#cvPanel .ppSecT,#cvPanel .tfSecHead h3,#cvPanel .tlTitle{font-size:13px;font-weight:700;color:var(--accent-dark);margin:0 0 8px}
+#cvPanel .tfSecHead{margin-bottom:0}#cvPanel .tfSecHead h3{margin:0}
+#cvPanel .tfSecHead .legend{font-size:12px}
+#cvPanel .ppL .tfRows{gap:10px 12px}
+#cvPanel .ppL .tfRow{gap:4px}
+#cvPanel .ppL .tfLab{font-size:12px;font-weight:500;color:var(--muted)}
+#cvPanel .ppL .tfIn,#cvPanel .ppL .tfVal,#cvPanel .ppL .asPick>summary,#cvPanel .ppL #evLkIn{height:32px;min-height:32px;font-size:13px;padding:0 10px;border-radius:6px}
+#cvPanel .ppL .tfCtl>.btn.sm,#cvPanel .ppL .tfCtl>a.rmsGo{height:32px;min-width:32px}
+#cvPanel .ppNote{font-size:12px;margin-top:-4px}
+#cvPanel .cpEd,#cvPanel [data-tf="note"]{font-size:13px;line-height:1.6}
+#cvPanel .wlAdd input,#cvPanel .wlAdd select{height:32px;font-size:13px;padding:0 10px;border-radius:6px}
+#cvPanel .wlAdd .btn,#cvPanel #cpSend{height:32px;font-size:13px;padding:0 14px}
+#cvPanel .wlBox .hint,#cvPanel .ppR .hint{font-size:12px}
+#cvPanel .hitems{font-size:13px}
+#cvPanel .cmHead,#cvPanel .cmBody{font-size:13px}
+#cvPanel .composer{padding:10px 16px;gap:6px}
+#cvPanel .composer .cpEd{min-height:64px}
+#cvPanel textarea.tfIn{height:auto!important;min-height:72px;padding:8px 10px!important;line-height:1.6;resize:vertical}
+#cvPanel .ppHead .tfTitleRo{font-size:17px;font-weight:700;margin:0}
+.cvRoTxt{white-space:pre-wrap;font-size:13px;line-height:1.6;padding:6px 10px;border:1px solid var(--line);border-radius:6px;background:var(--surface);min-height:32px}
+.cvpSec{display:flex;flex-direction:column;gap:8px}.cvpRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}.cvpRows .tfRow{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:0;padding:0}.cvpRows .tfRow.wide{grid-column:1/-1}
+.cvpRows .tfLab{font-size:12px;font-weight:500;color:var(--muted)}.cvpRows .tfCtl{display:flex;align-items:center;gap:6px;min-width:0}
+.cvpRows select.tfIn,.cvpRows textarea.tfIn{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);font-size:13px;padding:0 10px;height:32px}
+.cvHist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.cvHist li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.cvHist li:last-child{border-bottom:0}
+.cvHist li.on .cvHistN{font-weight:700;color:var(--accent-dark)}.cvHistN{min-width:120px}
+.cvRow.is-open td{background:var(--accent-soft)}
+@media (max-width:760px){.cvpRows{grid-template-columns:1fr}}
 @media (max-width:760px){.ppPanel{width:100vw;border-left:0}.ppScrim{display:none}.ppCols{display:block;overflow:auto}.ppL{border-right:0;overflow:visible}.ppR{display:block}.ppRScroll{overflow:visible}.ppL .tfRows{grid-template-columns:1fr}}
 .tfPage{gap:18px}
 .tfHead{display:flex;align-items:center;gap:14px;padding-bottom:14px;border-bottom:1px solid var(--line)}
@@ -2116,7 +2152,7 @@ function applyMode(){
 }
 function render(){
   if(MN_DOC){mnDocRender();if(MN_DOC?.tab)return;} // 새 탭 문서 보기는 문서만 그림
-  renderBody();liftTools();bellPaint();
+  renderBody();liftTools();bellPaint();cvPaneSync();
 }
 function liftTools(){
   // 화면별 도구 줄(.rtool)을 헤더로. 다시 그리지 않은 경우(입력 중 보호)엔 기존 것을 둠
@@ -2525,7 +2561,7 @@ document.addEventListener('keydown',e=>{
 /* ---------- 회귀 검증(CVT): 케이스(cvt_cases) × 회차(cvt_runs). 회차 문서에 r_<케이스id>=결과, m_<케이스id>=메모 ---------- */
 let cvtCases=[],cvtRuns=[];
 const CV_RES=[['PASS','PASS'],['MINOR','MINOR'],['MAJOR','MAJOR'],['N/A','N/A']]; // 비어 있으면 미점검(NOT TESTED)
-const cvst={run:null,src:null,svc:'all',res:'all',core:false,q:'',open:new Set()}; // src: 결과를 가져올(비교할) 회차, 비어 있으면 바로 이전 회차
+const cvst={run:null,src:null,svc:'all',res:'all',core:false,q:'',open:new Set(),case:(()=>{try{return sessionStorage.getItem('wb-cvcase')||null;}catch(e){return null;}})()}; // src: 결과를 가져올(비교할) 회차, 비어 있으면 바로 이전 회차
 let cvShown=[]; // 지금 표에 보이는 케이스(이전 회차와 동일 일괄 적용용)
 const cvCases=()=>cvtCases.slice().sort((a,b)=>(a.order??0)-(b.order??0));
 const cvRuns=()=>cvtRuns.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''));
@@ -2536,6 +2572,58 @@ const cvSrc=(run,R)=>{if(!run)return null;const s=cvst.src&&cvst.src!==run.id&&R
 const cvRunName=r=>`${(r.date||'').replace(/-/g,'.')}${r.label?' '+r.label:''}`;
 const cvCls=v=>'cv-'+(v?v.replace('/',''):'NT');
 const cvPill=v=>`<span class="cvPill ${cvCls(v)}">${v||'미점검'}</span>`;
+// 회귀 검증 케이스 상세: 업무 관리처럼 오른쪽 패널(#cvPane). 케이스 정보는 칸에서 나갈 때 그 칸만 저장
+let cvFrom='',cvSavedMsg='';
+function cvPaneEl(){let w=$('#cvPane');if(w)return w;w=document.createElement('div');w.className='postPane';w.id='cvPane';w.hidden=true;
+  w.innerHTML='<div class="ppScrim" aria-hidden="true"></div><section class="ppPanel" id="cvPanel" role="dialog" tabindex="-1" aria-label="회귀 검증 케이스"></section>';document.body.appendChild(w);
+  const p=w.querySelector('#cvPanel');p.addEventListener('click',cvPaneClick);p.addEventListener('change',cvPaneChange);return w;}
+function cvOpenCase(id){const was=cvst.case;cvst.case=id||null;cvSavedMsg='';try{id?sessionStorage.setItem('wb-cvcase',id):sessionStorage.removeItem('wb-cvcase');}catch(e){}render();
+  if(id&&id!==was)setTimeout(()=>$('#cvPanel')?.focus({preventScroll:true}),0);
+  else if(!id&&was)$(`#regressArea .cvRow[data-cv="${CSS.escape(cvFrom||was)}"] .cvItem`)?.focus({preventScroll:true});}
+// 화면 전환·새로 고침 때 패널 보이기/숨기기
+function cvPaneSync(){const c=state.mode==='regress'&&cvst.case&&cvtCases.find(x=>x.id===cvst.case);if(!c&&!$('#cvPane'))return;const w=cvPaneEl();w.hidden=!c;if(!c)$('#cvPanel').dataset.cv='';}
+function cvPaneRender(run,prev,R){const c=cvst.case&&cvtCases.find(x=>x.id===cvst.case);if(!c)return;const p=cvPaneEl().querySelector('#cvPanel');
+  if(p.dataset.cv===c.id&&p.contains(document.activeElement)&&document.activeElement.matches('input,textarea'))return; // 입력 중엔 다시 그리지 않음
+  const w=canWrite,v=cvR(run,c),memo=run?.['m_'+c.id]||'',pv=prev?cvR(prev,c):'';
+  const row=(lab,ctl,wide)=>`<div class="tfRow${wide?' wide':''}"><span class="tfLab">${lab}</span><div class="tfCtl">${ctl}</div></div>`;
+  const ro=x=>`<span class="tfVal">${esc(x||'—')}</span>`,roL=x=>`<div class="cvRoTxt">${esc(x||'—')}</div>`;
+  const groups=[...new Set(cvtCases.map(x=>x.group).filter(Boolean))];
+  p.innerHTML=`<div class="postView tfPage"><div class="ppHead"><div class="ppTop"><span class="ppPath">${esc([c.svc,c.group].filter(Boolean).join(' · ')||'케이스')}</span>${c.core?'<span class="cvCore">핵심</span>':''}${run?cvPill(v):''}<span class="spacer"></span><span class="legend" id="cvSaved" aria-live="polite">${esc(cvSavedMsg)}</span>${w?'<button class="btn ghost" type="button" data-cvpdel>삭제</button>':''}<button class="btn ghost" type="button" data-cvpclose>닫기</button></div>
+      <h2 class="tfTitleRo">${esc(c.item||'(점검 항목 없음)')}</h2></div>
+    <div class="ppCols"><div class="ppL"><h3 class="ppSecT">케이스 정보</h3><div class="tfRows">
+      ${row('서비스',w?`<select class="tfIn" data-cvf="svc" aria-label="서비스">${optH([['FO','FO'],['BO','BO']],c.svc||'FO')}</select>`:ro(c.svc))}
+      ${row('케이스 그룹',w?`<input class="tfIn" data-cvf="group" value="${esc(c.group||'')}" list="cvpGroups" maxlength="60" aria-label="케이스 그룹"><datalist id="cvpGroups">${groups.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>`:ro(c.group))}
+      ${row('점검 항목',w?`<input class="tfIn" data-cvf="item" value="${esc(c.item||'')}" maxlength="200" aria-label="점검 항목">`:ro(c.item),1)}
+      ${row('핵심 케이스',`<label class="cfItem"><input type="checkbox" data-cvf="core" ${c.core?'checked':''} ${w?'':'disabled'}>핵심 케이스로 표시</label>`,1)}
+      ${row('점검 방법',w?`<textarea class="tfIn" data-cvf="method" rows="5" aria-label="점검 방법">${esc(c.method||'')}</textarea>`:roL(c.method),1)}
+      ${row('예상 결과',w?`<textarea class="tfIn" data-cvf="expect" rows="4" aria-label="예상 결과">${esc(c.expect||'')}</textarea>`:roL(c.expect),1)}
+    </div></div>
+    <div class="ppR"><div class="ppRScroll">
+      <section class="cvpSec"><h3 class="ppSecT">이번 회차 결과 ${run?`<span class="legend">${esc(cvRunName(run))}</span>`:''}</h3>
+        ${run?`<div class="tfRows cvpRows">${row('결과',w?`<select class="tfIn" data-cvpr aria-label="결과">${optH([['','미점검'],...CV_RES],v)}</select>`:cvPill(v))}
+          ${row(`비교 회차${prev?` <span class="legend">${esc(cvRunName(prev))}</span>`:''}`,prev?`${cvPill(pv)}${w&&pv&&pv!==v?'<button type="button" class="btn ghost sm" data-cvpsame title="비교 회차 결과로 채우기">동일</button>':''}`:'<span class="legend">비교할 회차가 없어요</span>')}
+          ${row('메모',w?`<textarea class="tfIn" data-cvpm rows="3" placeholder="메모" aria-label="메모">${esc(memo)}</textarea>`:roL(memo),1)}</div>`:'<p class="legend" style="margin:0">회차가 없어요. \'+ 새 회차\'로 시작하세요.</p>'}</section>
+      <section class="cvpSec"><h3 class="ppSecT">회차별 결과 <span class="legend">${R.length}회</span></h3>
+        ${R.length?`<ul class="cvHist">${R.map(r=>`<li${run&&r.id===run.id?' class="on"':''}><span class="cvHistN">${esc(cvRunName(r))}</span>${cvPill(cvR(r,c))}${r['m_'+c.id]?`<span class="legend">${esc(r['m_'+c.id])}</span>`:''}</li>`).join('')}</ul>`:'<p class="legend" style="margin:0">아직 회차가 없어요.</p>'}</section>
+    </div></div></div></div>`;
+  p.dataset.cv=c.id;p.setAttribute('aria-label','회귀 검증 케이스: '+(c.item||''));
+  document.querySelectorAll('#regressArea .cvRow').forEach(tr=>tr.classList.toggle('is-open',tr.dataset.cv===c.id));}
+async function cvPaneChange(e){const el=e.target,c=cvtCases.find(x=>x.id===cvst.case);if(!c||!canWrite)return;
+  const R=cvRuns(),run=R.find(r=>r.id===cvst.run);
+  if(el.dataset.cvf){const f=el.dataset.cvf,v=f==='core'?el.checked:el.value.trim();if((c[f]??(f==='core'?false:''))===v)return;
+    if(f==='item'&&!v){el.value=c.item||'';toast('점검 항목은 비울 수 없어요.');return;}
+    const before={...c};c[f]=v;try{await db.collection('cvt_cases').doc(c.id).update({[f]:v});cvSavedMsg=`저장됨 ${new Date().toTimeString().slice(0,5)}`;logChange('regress','update',c.id,c.item,before,c);}catch(err){Object.assign(c,before);handleWriteError(err);}
+    document.activeElement?.blur?.();render();return;}
+  if(!run)return;
+  if(el.dataset.cvpr!=null||el.dataset.cvpm!=null){const isR=el.dataset.cvpr!=null,k=(isR?'r_':'m_')+c.id,v=isR?el.value:el.value.trim();if((run[k]||'')===v)return;run[k]=v;
+    try{await db.collection('cvt_runs').doc(run.id).update({[k]:v,updatedAt:new Date().toISOString()});cvSavedMsg=`저장됨 ${new Date().toTimeString().slice(0,5)}`;}catch(err){handleWriteError(err);}
+    document.activeElement?.blur?.();render();}}
+function cvPaneClick(e){const b=e.target.closest('button');if(!b)return;const c=cvtCases.find(x=>x.id===cvst.case);
+  if(b.dataset.cvpclose!=null){cvOpenCase(null);return;}
+  if(!c||!canWrite)return;const R=cvRuns(),run=R.find(r=>r.id===cvst.run),prev=cvSrc(run,R);
+  if(b.dataset.cvpsame!=null&&run&&prev){const k='r_'+c.id;run[k]=cvR(prev,c);render();db.collection('cvt_runs').doc(run.id).update({[k]:run[k],updatedAt:new Date().toISOString()}).catch(err=>handleWriteError(err));return;}
+  if(b.dataset.cvpdel!=null){const id=c.id;evConfirm(`'${c.item}' 케이스를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvcase',`케이스 · ${c.item||''}`,[wbDocOf('cvt_cases',c)]);cvtCases=cvtCases.filter(x=>x.id!==id);logChange('regress','delete',id,c.item,null,null,'휴지통으로 옮김');cvOpenCase(null);});}}
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!cvst.case||state.mode!=='regress'||$('#cvPane')?.hidden!==false||$('#modalRoot').innerHTML)return;e.preventDefault();cvOpenCase(null);});
 function renderRegress(){
   const area=$('#regressArea');
   if(!storeReady){area.innerHTML='<div class="empty"><h2>불러오는 중입니다</h2></div>';return;}
@@ -2560,12 +2648,12 @@ function renderRegress(){
     <label class="searchBox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input class="search" id="cvQ" type="search" placeholder="케이스 · 점검 항목 · 메모 검색" value="${esc(cvst.q)}" aria-label="검색"></label><span class="legend">${L.length}건</span>${run&&runs.length>1?`<span class="spacer"></span><label class="cvSrcL"><span class="legend">결과 가져올 회차</span><select class="sel" id="cvSrc" aria-label="결과를 가져올(비교할) 회차">${runs.filter(r=>r.id!==run.id).map(r=>`<option value="${esc(r.id)}" ${prev&&r.id===prev.id?'selected':''}>${esc(cvRunName(r))}${r.testers?` · ${esc(r.testers)}`:''}</option>`).join('')}</select></label>${w?`<button class="btn sm" type="button" id="cvSameAll" ${sameN?'':'disabled'} title="지금 보이는 케이스 중 미점검인 것을 고른 회차의 결과로 채워요">미점검 → 이 회차 결과로 채우기${sameN?` (${sameN})`:''}</button>`:''}`:''}</div>`;
   const rows=L.map(c=>{const v=cvR(run,c),op=cvst.open.has(c.id),memo=run?.['m_'+c.id]||'';
     return `<tr class="cvRow${v==='MAJOR'?' is-major':''}" data-cv="${esc(c.id)}"><td><span class="cvSvc">${esc(c.svc||'')}</span></td><td class="cvGrp">${esc(c.group||'')}</td>
-      <td><button type="button" class="cvItem" data-cvopen aria-expanded="${op}" title="점검 방법 · 예상 결과 보기">${esc(c.item||'(점검 항목 없음)')}</button>${c.core?'<span class="cvCore">핵심</span>':''}</td>
+      <td><button type="button" class="cvItem" data-cvopen aria-expanded="${cvst.case===c.id}" title="케이스 상세 보기 · 수정">${esc(c.item||'(점검 항목 없음)')}</button>${c.core?'<span class="cvCore">핵심</span>':''}</td>
       <td>${run&&w?`<select class="sel cvSel ${cvCls(v)}" data-cvr aria-label="결과">${optH([['','미점검'],...CV_RES],v)}</select>`:cvPill(v)}</td>
       <td>${run&&w?`<input class="sel cvMemo" data-cvm value="${esc(memo)}" placeholder="메모" aria-label="메모">`:esc(memo)}</td>
-      <td><span class="cvPrev">${prev?cvPill(cvR(prev,c)):'<span class="legend">—</span>'}${prev&&run&&w&&cvR(prev,c)&&cvR(prev,c)!==v?'<button type="button" class="btn ghost sm" data-cvsame title="비교 회차 결과로 채우기">동일</button>':''}</span></td></tr>
-      ${op?`<tr class="cvDet" data-cv="${esc(c.id)}"><td></td><td colspan="5"><div class="cvDetGrid"><div><b>점검 방법</b><p>${esc(c.method||'—')}</p></div><div><b>예상 결과</b><p>${esc(c.expect||'—')}</p></div></div>${w?'<div class="cvDetAct"><button type="button" class="btn ghost sm" data-cvedit>케이스 수정</button><button type="button" class="btn ghost sm" data-cvdel>케이스 삭제</button></div>':''}</td></tr>`:''}`;}).join('');
+      <td><span class="cvPrev">${prev?cvPill(cvR(prev,c)):'<span class="legend">—</span>'}${prev&&run&&w&&cvR(prev,c)&&cvR(prev,c)!==v?'<button type="button" class="btn ghost sm" data-cvsame title="비교 회차 결과로 채우기">동일</button>':''}</span></td></tr>`;}).join('');
   area.innerHTML=`${tools}${head}${filt}<div class="statWrap"><table class="stable cvTable"><thead><tr><th>서비스</th><th>케이스</th><th>점검 항목</th><th>결과</th><th>메모</th><th>비교 회차${prev?`<br><span class="legend">${esc(cvRunName(prev))}</span>`:''}</th></tr></thead><tbody>${rows||'<tr><td colspan="6" class="legend">조건에 맞는 케이스가 없어요.</td></tr>'}</tbody></table></div>`;
+  cvPaneRender(run,prev,runs);
 }
 onArea('#regressArea','change',async e=>{const el=e.target;
   if(el.id==='cvRun'){cvst.run=el.value;if(cvst.src===el.value)cvst.src=null;render();return;}
@@ -2579,11 +2667,12 @@ onArea('#regressArea','change',async e=>{const el=e.target;
   if(isR){el.blur();render();}
 });
 let cvqT;onArea('#regressArea','input',e=>{if(e.target.id!=='cvQ')return;clearTimeout(cvqT);cvqT=setTimeout(()=>{cvst.q=e.target.value;renderRegress();liftTools();const i=$('#cvQ');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length);}},200);});
-onArea('#regressArea','click',e=>{const b=e.target.closest('button');if(!b)return;
+onArea('#regressArea','click',e=>{const b=e.target.closest('button');
+  if(!b){if(cvst.case&&!e.target.closest('input,select,textarea,label,a,.cvRow'))cvOpenCase(null);return;}
   if(b.dataset.cvsvc){cvst.svc=b.dataset.cvsvc;render();return;}
   if(b.dataset.cvres){cvst.res=cvst.res===b.dataset.cvres?'all':b.dataset.cvres;render();return;}
   const id=b.closest('[data-cv]')?.dataset.cv,c=id&&cvtCases.find(x=>x.id===id);
-  if(b.dataset.cvopen!=null&&c){cvst.open.has(id)?cvst.open.delete(id):cvst.open.add(id);render();return;}
+  if(b.dataset.cvopen!=null&&c){cvFrom=id;cvOpenCase(id);return;}
   if(b.dataset.cvedit!=null&&c){cvCaseModal(c);return;}
   if(b.dataset.cvdel!=null&&c){evConfirm(`'${c.item}' 케이스를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvcase',`케이스 · ${c.item||''}`,[wbDocOf('cvt_cases',c)]);cvtCases=cvtCases.filter(x=>x.id!==id);logChange('regress','delete',id,c.item,null,null,'휴지통으로 옮김');render();});return;}
   if(b.id==='cvXAll'||b.id==='cvXRun'){const R=cvRuns(),one=b.id==='cvXRun'&&R.find(r=>r.id===cvst.run),label=b.textContent;b.disabled=true;b.textContent='만드는 중…';

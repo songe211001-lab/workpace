@@ -483,6 +483,13 @@ body.mnDocOn{overflow:hidden}
 .mdQ{all:unset;box-sizing:border-box;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;gap:6px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
 .mdQ:hover{border-color:var(--accent)}.mdQ:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.mdQ b{font-size:14px;line-height:1.4}.mdQ .legend{font-size:12px;line-height:1.55}
 .mdTable th[scope=row]{width:30%;text-align:left;vertical-align:top}.mdTable td{white-space:pre-wrap;overflow-wrap:anywhere}
+.mdFig{margin:0;display:flex;flex-direction:column;gap:6px}
+.mdImgBtn{all:unset;box-sizing:border-box;cursor:zoom-in;display:block;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sunk)}
+.mdImgBtn img{display:block;width:100%;height:auto}.mdImgBtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mdFig figcaption{font-size:12px;color:var(--muted)}
+.mdLb{position:absolute;inset:0;z-index:2;background:var(--bg);display:flex;flex-direction:column}
+.mdLbBar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surface);font-size:13px;color:var(--muted)}
+.mdLbBody{flex:1;overflow:auto;padding:16px}.mdLbBody img{display:block;max-width:none;width:auto;height:auto}
 .mdEmpty{grid-column:1/-1;display:grid;place-items:center;align-content:center;gap:12px;height:100%;color:var(--muted)}
 @media (max-width:1023px){.mnDoc{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}.mdToc{border-right:0;border-bottom:1px solid var(--line);padding:10px 12px;overflow-x:auto;overflow-y:hidden}.mdTocHead{display:none}.mdToc nav{flex-direction:row;gap:6px}.mdToc nav button{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:6px 12px}.mdMain{padding:16px 16px 72px}.mdQuick{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:600px){.mdQuick{grid-template-columns:1fr}.mdCard{padding:16px}.mdHead h1{font-size:22px}}
@@ -4763,6 +4770,17 @@ function mnDocOpen(id,step){mnSeen(id);
   // window.open으로 열어야 로그인 세션(sessionStorage)이 새 탭에 복사됨. 막히면 전체 화면으로
   if(window.wbAuth){try{const w=window.open(location.pathname+location.search+'#manual='+encodeURIComponent(id)+(step?'&step='+encodeURIComponent(step):''),'_blank');if(w)return;}catch(e){}}
   MN_DOC={id,step:step||null,tab:false};mnDocRender();}
+// 단계별 화면 이미지: 피그마 프레임(node-id) 캡처를 'mnimg_<node>' 묶음에 저장해 둠(로그인한 직원만 읽음). 문서를 열 때 필요한 것만 불러옴
+const mnImgCache=new Map(); // node → 이미지(data URI) · 불러오는 중이면 null
+const mnNode=u=>{const x=String(u||'').match(/node-id=(\d+)[-:](\d+)/);return x?x[1]+'-'+x[2]:'';};
+function mnImgOf(s){const n=mnNode(s.figmaUrl);if(!n||!window.wbAuth||typeof db==='undefined'||!db)return '';
+  if(mnImgCache.has(n))return mnImgCache.get(n)||'';mnImgCache.set(n,null);
+  db.collection('mnimg_'+n).doc('img').get().then(d=>{const v=d.exists?String(d.data()?.src||''):'';const ok=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(v);mnImgCache.set(n,ok?v:'');if(ok)mnDocRender();}).catch(()=>mnImgCache.set(n,''));
+  return '';}
+function mnDocLightbox(n){const src=mnImgCache.get(n);if(!src)return;const box=$('#mnDoc');box.querySelector('.mdLb')?.remove();
+  const lb=document.createElement('div');lb.className='mdLb';lb.setAttribute('role','dialog');lb.setAttribute('aria-label','화면 크게 보기');
+  lb.innerHTML=`<div class="mdLbBar"><span>화면 크게 보기 · 스크롤로 움직여 보세요</span><span class="spacer"></span><button class="btn" type="button" data-mdlbx>닫기</button></div><div class="mdLbBody"><img src="${src}" alt=""></div>`;
+  box.appendChild(lb);lb.querySelector('[data-mdlbx]').focus();}
 const mnFirstLine=s=>{const l=String(s.body||'').split('\n').map(x=>x.replace(/^[\s■•·\-–➊-➓①-⑳]+/,'').trim()).find(Boolean)||'';return l.length>64?l.slice(0,64)+'…':l;};
 function mnDocRender(){
   if(!MN_DOC)return;let box=$('#mnDoc');
@@ -4770,9 +4788,11 @@ function mnDocRender(){
   $('#menuPick')?.remove();
   const m=manuals.find(x=>x.id===MN_DOC.id),close=`<button class="btn" type="button" data-mdclose>${MN_DOC.tab?'창 닫기':'닫기'}</button>`;
   if(!m){box.innerHTML=`<div class="mdEmpty"><p>${storeReady?'매뉴얼을 찾을 수 없어요. 삭제됐을 수 있어요.':'불러오는 중이에요…'}</p>${close}</div>`;return;}
+  if(box.querySelector('.mdLb'))return; // 크게 보기 중엔 다시 그리지 않음
   const steps=m.steps||[],old=box.querySelector('.mdMain'),sc=old?.scrollTop||0,first=box.dataset.mid!==m.id,date=(m.updatedAt||m.createdAt||'').slice(0,10);
   const sec=(s,i)=>`<section class="mdCard" data-mdsec="${esc(s.id)}" aria-labelledby="mdh-${esc(s.id)}"><div class="mdCardH"><h2 id="mdh-${esc(s.id)}"><span class="mdNo">${i+1}</span>${esc(s.title||'(제목 없음)')}</h2>${mnFig(s.figmaUrl)}</div>
       ${s.body?`<div class="mnBody">${mnBodyHtml(s)}</div>`:''}
+      ${(img=>img?`<figure class="mdFig"><button type="button" class="mdImgBtn" data-mdimg="${esc(mnNode(s.figmaUrl))}" aria-label="${esc(s.title||'')} 화면 크게 보기"><img src="${img}" alt="${esc(s.title||'')} 관리자 화면" loading="lazy"></button><figcaption>화면을 누르면 크게 볼 수 있어요${(s.table||[]).some(r=>/[➊-➓]/.test(r.label||''))?' · 화면의 번호(➊ ➋ …)는 아래 표의 항목과 같아요':''}</figcaption></figure>`:'')(mnImgOf(s))}
       ${(s.table||[]).length?`<div class="tablebox"><table class="stable mdTable"><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody>${s.table.map(r=>`<tr><th scope="row">${esc(r.label||'')}</th><td>${mnRuleHtml(r)}</td></tr>`).join('')}</tbody></table></div>`:''}
       ${(s.checks||[]).length?`<ul class="mnChecks">${s.checks.map(c=>`<li>${esc(c)}</li>`).join('')}</ul>`:''}
       ${(s.links||[]).length?`<div class="mnLinks">${mnLinks(s.links)}</div>`:''}</section>`;
@@ -4780,7 +4800,7 @@ function mnDocRender(){
   box.innerHTML=`<aside class="mdToc" aria-label="목차"><div class="mdTocHead"><b>${esc(m.title||'(제목 없음)')}</b>${date?`<span>${esc(date)} 기준</span>`:''}</div>
       <nav>${steps.length?`<button type="button" data-mdgo="__quick">빠른 시작</button>`:''}${steps.map((s,i)=>`<button type="button" data-mdgo="${esc(s.id)}">${i+1}. ${esc(s.title||'(제목 없음)')}</button>`).join('')}</nav></aside>
     <main class="mdMain" tabindex="-1"><div class="mdWrap">
-      <div class="mdTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${canWrite?'<button class="btn" type="button" data-mdedit>수정</button><button class="btn" type="button" data-mdrun>진행 시작</button>':''}${close}</div>
+      <div class="mdTop">${m.category?`<span class="chip">${esc(m.category)}</span>`:''}<span class="legend">v${esc(m.version||'1.0')}${m.updatedBy?` · ${esc(m.updatedBy)}`:''}</span><span class="spacer"></span>${MN_DOC.tab?'':close}</div>
       <header class="mdHead"><h1>${esc(m.title||'(제목 없음)')}</h1>${m.summary?`<p>${esc(m.summary)}</p>`:''}<div class="mdHeadL">${mnFig(m.figmaUrl)}${mnLinks(m.links)}</div></header>
       ${steps.length?`<section class="mdCard" data-mdsec="__quick" aria-labelledby="mdh-quick"><div class="mdCardH"><h2 id="mdh-quick">빠른 시작</h2></div><p class="legend" style="margin:0">처음이라면 아래 ${steps.length}단계를 차례로 따라 하면 돼요. 단계를 누르면 해당 설명으로 이동해요.</p>
         <div class="mdQuick">${steps.map((s,i)=>`<button type="button" class="mdQ" data-mdgo="${esc(s.id)}"><span class="mdNo">${i+1}</span><b>${esc(s.title||'(제목 없음)')}</b>${mnFirstLine(s)?`<span class="legend">${esc(mnFirstLine(s))}</span>`:''}</button>`).join('')}</div></section>`:'<div class="empty"><h2>단계가 없어요</h2></div>'}
@@ -4799,12 +4819,14 @@ function mnDocGo(sid,instant){mnDocPin=sid;clearTimeout(mnDocPinT);mnDocPinT=set
 function mnDocExit(){MN_DOC=null;$('#mnDoc')?.remove();document.body.classList.remove('mnDocOn');state.mode='manuals';try{history.replaceState(null,'',location.pathname+location.search+'#manuals');}catch(e){}}
 function mnDocClose(){if(MN_DOC?.tab){window.close();setTimeout(()=>{if(MN_DOC){mnDocExit();mnst.id=null;render();}},200);return;}mnDocExit();render();}
 function mnDocClick(e){const b=e.target.closest('button');if(!b)return;const m=MN_DOC&&manuals.find(x=>x.id===MN_DOC.id);
+  if(b.dataset.mdimg){mnDocLightbox(b.dataset.mdimg);return;}
+  if(b.dataset.mdlbx!=null){const n=b.closest('.mdLb');n?.remove();return;}
   if(b.dataset.mdgo){mnDocGo(b.dataset.mdgo);return;}
   if(b.dataset.mdclose!=null){mnDocClose();return;}
   if(!m||!canWrite)return;
   if(b.dataset.mdedit!=null){mnDocExit();mnst.id=m.id;mnst.run=null;mnst.step=null;mnst.edit=true;mnDraft=JSON.parse(JSON.stringify(m));persistUI();render();window.scrollTo(0,0);return;}
   if(b.dataset.mdrun!=null){mnDocExit();mnst.id=m.id;mnst.run=null;mnst.edit=false;mnDraft=null;persistUI();render();mnRunStart(m);}}
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&MN_DOC&&!MN_DOC.tab&&!$('#modalRoot').innerHTML){e.preventDefault();mnDocClose();}});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape'||!MN_DOC)return;const lb=$('#mnDoc .mdLb');if(lb){e.preventDefault();lb.remove();return;}if(!MN_DOC.tab&&!$('#modalRoot').innerHTML){e.preventDefault();mnDocClose();}});
 function mnFlash(sid){const el=document.getElementById('mn-'+sid);if(!el)return;el.scrollIntoView({block:'start'});el.classList.remove('evFlash');void el.offsetWidth;el.classList.add('evFlash');setTimeout(()=>el.classList.remove('evFlash'),2000);}
 function mnNewModal(){
   $('#modalRoot').innerHTML=`<div class="overlay" id="ov"><div class="modal" style="max-width:480px"><header><h2>매뉴얼 등록</h2><button class="btn ghost" type="button" id="xClose">닫기</button></header>

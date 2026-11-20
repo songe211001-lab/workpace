@@ -1104,9 +1104,15 @@ body.mnDocOn{overflow:hidden}
 .cvpSec{display:flex;flex-direction:column;gap:8px}.cvpRows{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}.cvpRows .tfRow{display:flex;flex-direction:column;align-items:stretch;gap:4px;min-height:0;padding:0}.cvpRows .tfRow.wide{grid-column:1/-1}
 .cvpRows .tfLab{font-size:12px;font-weight:500;color:var(--muted)}.cvpRows .tfCtl{display:flex;align-items:center;gap:6px;min-width:0}
 .cvpRows select.tfIn,.cvpRows textarea.tfIn{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:6px;background:var(--surface);color:var(--fg);font-size:13px;padding:0 10px;height:32px}
-.cvHist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.cvHist li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.cvHist li:last-child{border-bottom:0}
-.cvHist li.on .cvHistN{font-weight:700;color:var(--accent-dark)}.cvHistN{min-width:120px}
+.cvHistHead{display:flex;align-items:center;gap:8px}.cvHistHead .ppSecT{flex:1;min-width:0;margin:0!important}
+.cvHistAll{flex:none;height:28px;padding:0 10px;font:inherit;font-size:12px;font-weight:600;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;cursor:pointer}
+.cvHistAll:hover{background:var(--sunk)}.cvHistAll:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.cvHist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.cvHist li{display:flex;align-items:center;gap:10px;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--surface);font-size:13px}
+.cvHist li:hover{background:var(--sunk)}
+.cvHistN{flex:none;white-space:nowrap}.cvHist li.on .cvHistN{font-weight:700;color:var(--accent-dark)}
+.cvHistM{flex:1;min-width:0;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cvHist .cvPill{flex:none;margin-left:auto}.cvHistNT{flex:none;margin-left:auto;font-size:12px;color:var(--muted)}
 .cvRow.is-open td{background:var(--accent-soft)}
 @media (max-width:760px){.cvpRows{grid-template-columns:1fr}}
 @media (max-width:760px){.ppPanel{width:100vw;border-left:0}.ppScrim{display:none}.ppCols{display:block;overflow:auto}.ppL{border-right:0;overflow:visible}.ppR{display:block}.ppRScroll{overflow:visible}.ppL .tfRows{grid-template-columns:1fr}}
@@ -2573,11 +2579,11 @@ const cvRunName=r=>`${(r.date||'').replace(/-/g,'.')}${r.label?' '+r.label:''}`;
 const cvCls=v=>'cv-'+(v?v.replace('/',''):'NT');
 const cvPill=v=>`<span class="cvPill ${cvCls(v)}">${v||'미점검'}</span>`;
 // 회귀 검증 케이스 상세: 업무 관리처럼 오른쪽 패널(#cvPane). 케이스 정보는 칸에서 나갈 때 그 칸만 저장
-let cvFrom='',cvSavedMsg='';
+let cvFrom='',cvSavedMsg='',cvHistAll=false; // cvHistAll: 회차별 결과 전체 펼침(케이스를 바꾸면 접힘)
 function cvPaneEl(){let w=$('#cvPane');if(w)return w;w=document.createElement('div');w.className='postPane';w.id='cvPane';w.hidden=true;
   w.innerHTML='<div class="ppScrim" aria-hidden="true"></div><section class="ppPanel" id="cvPanel" role="dialog" tabindex="-1" aria-label="회귀 검증 케이스"></section>';document.body.appendChild(w);
   const p=w.querySelector('#cvPanel');p.addEventListener('click',cvPaneClick);p.addEventListener('change',cvPaneChange);return w;}
-function cvOpenCase(id){const was=cvst.case;cvst.case=id||null;cvSavedMsg='';try{id?sessionStorage.setItem('wb-cvcase',id):sessionStorage.removeItem('wb-cvcase');}catch(e){}render();
+function cvOpenCase(id){const was=cvst.case;cvst.case=id||null;cvSavedMsg='';if(id!==was)cvHistAll=false;try{id?sessionStorage.setItem('wb-cvcase',id):sessionStorage.removeItem('wb-cvcase');}catch(e){}render();
   if(id&&id!==was)setTimeout(()=>$('#cvPanel')?.focus({preventScroll:true}),0);
   else if(!id&&was)$(`#regressArea .cvRow[data-cv="${CSS.escape(cvFrom||was)}"] .cvItem`)?.focus({preventScroll:true});}
 // 화면 전환·새로 고침 때 패널 보이기/숨기기
@@ -2603,8 +2609,8 @@ function cvPaneRender(run,prev,R){const c=cvst.case&&cvtCases.find(x=>x.id===cvs
         ${run?`<div class="tfRows cvpRows">${row('결과',w?`<select class="tfIn" data-cvpr aria-label="결과">${optH([['','미점검'],...CV_RES],v)}</select>`:cvPill(v))}
           ${row(`비교 회차${prev?` <span class="legend">${esc(cvRunName(prev))}</span>`:''}`,prev?`${cvPill(pv)}${w&&pv&&pv!==v?'<button type="button" class="btn ghost sm" data-cvpsame title="비교 회차 결과로 채우기">동일</button>':''}`:'<span class="legend">비교할 회차가 없어요</span>')}
           ${row('메모',w?`<textarea class="tfIn" data-cvpm rows="3" placeholder="메모" aria-label="메모">${esc(memo)}</textarea>`:roL(memo),1)}</div>`:'<p class="legend" style="margin:0">회차가 없어요. \'+ 새 회차\'로 시작하세요.</p>'}</section>
-      <section class="cvpSec"><h3 class="ppSecT">회차별 결과 <span class="legend">${R.length}회</span></h3>
-        ${R.length?`<ul class="cvHist">${R.map(r=>`<li${run&&r.id===run.id?' class="on"':''}><span class="cvHistN">${esc(cvRunName(r))}</span>${cvPill(cvR(r,c))}${r['m_'+c.id]?`<span class="legend">${esc(r['m_'+c.id])}</span>`:''}</li>`).join('')}</ul>`:'<p class="legend" style="margin:0">아직 회차가 없어요.</p>'}</section>
+      <section class="cvpSec"><div class="cvHistHead"><h3 class="ppSecT">회차별 결과 (${R.length})</h3>${R.length>10?`<button type="button" class="cvHistAll" data-cvhall aria-expanded="${cvHistAll}">${cvHistAll?'최근 10회만 보기':`전체 ${R.length}회 보기`}</button>`:''}</div>
+        ${R.length?`<ul class="cvHist">${(cvHistAll?R:R.slice(0,10)).map(r=>{const rv=cvR(r,c),mm=r['m_'+c.id]||'';return `<li${run&&r.id===run.id?' class="on"':''}><span class="cvHistN">${esc(cvRunName(r))}</span><span class="cvHistM" title="${esc(mm)}">${esc(mm)}</span>${rv?cvPill(rv):'<span class="cvHistNT">미점검</span>'}</li>`;}).join('')}</ul>`:'<p class="legend" style="margin:0">아직 회차가 없어요.</p>'}</section>
     </div></div></div></div>`;
   p.dataset.cv=c.id;p.setAttribute('aria-label','회귀 검증 케이스: '+(c.item||''));
   document.querySelectorAll('#regressArea .cvRow').forEach(tr=>tr.classList.toggle('is-open',tr.dataset.cv===c.id));}
@@ -2620,6 +2626,7 @@ async function cvPaneChange(e){const el=e.target,c=cvtCases.find(x=>x.id===cvst.
     document.activeElement?.blur?.();render();}}
 function cvPaneClick(e){const b=e.target.closest('button');if(!b)return;const c=cvtCases.find(x=>x.id===cvst.case);
   if(b.dataset.cvpclose!=null){cvOpenCase(null);return;}
+  if(b.dataset.cvhall!=null){cvHistAll=!cvHistAll;render();$('#cvPanel [data-cvhall]')?.focus();return;}
   if(!c||!canWrite)return;const R=cvRuns(),run=R.find(r=>r.id===cvst.run),prev=cvSrc(run,R);
   if(b.dataset.cvpsame!=null&&run&&prev){const k='r_'+c.id;run[k]=cvR(prev,c);render();db.collection('cvt_runs').doc(run.id).update({[k]:run[k],updatedAt:new Date().toISOString()}).catch(err=>handleWriteError(err));return;}
   if(b.dataset.cvpdel!=null){const id=c.id;evConfirm(`'${c.item}' 케이스를 삭제할까요?\n휴지통에서 30일 동안 복구할 수 있어요.`,async()=>{await wbDrop('regress','cvcase',`케이스 · ${c.item||''}`,[wbDocOf('cvt_cases',c)]);cvtCases=cvtCases.filter(x=>x.id!==id);logChange('regress','delete',id,c.item,null,null,'휴지통으로 옮김');cvOpenCase(null);});}}

@@ -1048,6 +1048,14 @@ body.mnDocOn{overflow:hidden}
 .ppR .tlTitle{margin:0}
 .ppRScroll{overflow-x:hidden}.ppR .wlAdd{grid-template-columns:1fr 1fr}.ppR .wlAdd #wlNote{grid-column:1/-1}.ppR .wlAdd #wlAddBtn{grid-column:1/-1;justify-self:end}
 
+/* 검수 반영(좁은 화면·다크) */
+@media (max-width:600px){
+  .pageTools .menuList,.rtool .menuList{right:auto;left:0} /* 1. 내보내기 메뉴가 왼쪽 밖으로 나가지 않게 */
+  #bellPop.bellPop{position:fixed;left:16px;right:16px;width:auto;top:var(--bellTop,72px)} /* 2. 종 알림 창을 화면 폭에 맞춤 */
+  .topRight .todayOff{display:none} /* 5. 헤더 줄 수 줄이기 */
+}
+[data-theme="dark"] .bellN{color:#3b0710} /* 6. 다크 모드 숫자 배지 대비 */
+textarea.tfTitle{display:block;width:100%;resize:none;overflow:hidden;font-family:inherit;line-height:1.4;box-sizing:border-box} /* 4. 긴 제목 여러 줄 */
 /* 업무 상세 패널: 촘촘한 글씨·간격 */
 #ppPanel .ppHead{padding:12px 16px;gap:4px}
 #ppPanel .ppPath,#ppPanel .ppDates{font-size:12px;color:var(--muted)}
@@ -1190,7 +1198,7 @@ input.tfIn[type=text]{width:260px}.tfNum{width:90px}
 .cvSvc{font-size:11px;font-weight:700;color:var(--muted)}
 .cvItem{all:unset;cursor:pointer;font-weight:600}.cvItem:hover,.cvItem:focus-visible{text-decoration:underline;outline:none}
 .cvCore{margin-left:6px;font-size:10.5px;font-weight:800;color:var(--accent-dark);background:var(--accent-soft);border-radius:4px;padding:1px 5px}
-.cvSel{height:28px;width:auto;border-radius:999px;font-weight:700;font-size:12px;border-color:transparent}
+.cvSel{height:32px;width:auto;border-radius:999px;font-weight:700;font-size:12px;border-color:transparent}
 .cvSel.cv-NT{background:var(--sunk);color:var(--muted)}
 .cvMemo{height:28px;min-width:160px;width:100%}
 .cvRow.is-major td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
@@ -2278,6 +2286,9 @@ let ppFrom=''; // 패널을 연 목록 행 id(닫으면 그 행으로 포커스�
 function openPost(id){tfSavedMsg='';const was=state.post;state.post=id;persistUI();render();
   if(id&&id!==was)setTimeout(()=>$('#ppPanel')?.focus({preventScroll:true}),0);
   else if(!id&&was&&ppFrom)$('#main').querySelector(`[data-post="${CSS.escape(ppFrom)}"],[data-id="${CSS.escape(ppFrom)}"]`)?.focus?.({preventScroll:true});}
+// 상세 제목 칸 높이를 글 길이에 맞춤
+function tfTitleFit(){const t=$('#ppPanel textarea.tfTitle');if(!t)return;t.style.height='auto';t.style.height=t.scrollHeight+'px';}
+document.addEventListener('input',e=>{if(e.target.matches?.('#ppPanel textarea.tfTitle'))tfTitleFit();});
 function ppShow(on){const w=$('#postPane');if(!w)return;w.hidden=!on;if(!on)$('#ppPanel').dataset.post='';}
 
 // 맨 위 '프로젝트 등록하기' 카드: 게시물(최상위 업무)을 바로 만듦
@@ -2392,7 +2403,7 @@ function renderPost(p){
   const prj=projects.find(x=>x.id===p.projectId);
   const html=`<div class="postView tfPage">
     <div class="ppHead"><div class="ppTop"><span class="ppPath">${esc([prj?.name,partOf(p.part).label].filter(Boolean).join(' · '))}</span><span class="ppSt">${esc(st.label)}</span>${isReq?`<button class="hlink" type="button" id="postParent" data-back="${esc(p.parentId)}">← 게시물: ${esc(rootOf(p).title)}</button>`:''}<span class="spacer"></span><span class="legend" id="tfSaved" aria-live="polite">${esc(tfSavedMsg)}</span>${canWrite?'<button class="btn ghost" type="button" id="tfDel">삭제</button>':''}<button class="btn ghost" type="button" id="postBack" data-back="">닫기</button></div>
-      ${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<input type="text" class="tfTitle" data-tf="title" value="${esc(p.title||'')}" maxlength="200" aria-label="제목">`}
+      ${ro?`<h2 class="tfTitleRo">${esc(p.title)}</h2>`:`<textarea class="tfTitle" data-tf="title" rows="1" maxlength="200" aria-label="제목">${esc(p.title||'')}</textarea>`}
       <div class="ppDates">${p.createdAt?`<span>최초 등록 ${esc(fmtDT(p.createdAt))}</span>`:''}${p.updatedAt?`<span>마지막 수정 ${p.updatedByName?esc(p.updatedByName)+' · ':''}${esc(fmtDT(p.updatedAt))}</span>`:''}</div></div>
     <div class="ppCols"><div class="ppL"><h3 class="ppSecT">업무 정보</h3>
     <div class="tfRows">
@@ -2428,7 +2439,7 @@ function renderPost(p){
       <div class="cpRow">      <span class="spacer"></span><span class="err" id="cpErr"></span><button class="btn primary" type="button" id="cpSend">등록</button></div></div>`:''}
   </div></div></div>`;
   if(main.dataset.post===p.id)keepVals(main,html);else main.innerHTML=html;
-  main.dataset.post=p.id;main.setAttribute('aria-label','업무 상세: '+(p.title||'(제목 없음)'));
+  main.dataset.post=p.id;main.setAttribute('aria-label','업무 상세: '+(p.title||'(제목 없음)'));tfTitleFit();
 }
 // 칸 하나 저장(그 칸만 update — 다른 사람이 다른 칸을 고쳐도 둘 다 남음)
 async function tfSave(p,f,raw){
@@ -2863,7 +2874,7 @@ mainEv('focusout',e=>{const ed=e.target.closest?.('[data-rt][data-tf="note"]');i
 // 상세의 담당자 목록을 닫으면 저장
 mainEv('toggle',e=>{if(e.target.id!=='tfAs'||e.target.open||!canWrite)return;const p=tasks.find(x=>x.id===state.post);if(p)tfSave(p,'assignees',asVals('#tfAs'));},true);
 mainEv('keydown',e=>{if(e.key!=='Enter')return;
-  if(e.target.matches?.('input[data-tf]')){e.preventDefault();e.target.blur();return;}
+  if(e.target.matches?.('input[data-tf],textarea.tfTitle')){e.preventDefault();e.target.blur();return;}
   if(e.target.tagName==='INPUT'&&e.target.closest('.wlAdd')){e.preventDefault();const p=tasks.find(x=>x.id===state.post);if(p)tfAddWl(p);return;}
  const row=e.target.closest('[data-post],.card[data-id]');if(row&&row===e.target)row.click();});
 mainEv('change',e=>{
@@ -3720,6 +3731,7 @@ function bellShut(focusBtn){const p=$('#bellPop');if(!p||p.hidden)return;p.hidde
 async function bellSave(patch){const me=myMember();if(!me)return;Object.assign(me,patch);bellPaint();
   try{await db.collection('members').doc(me.id).update(patch);}catch(err){handleWriteError(err);}}
 $('#bellBtn').addEventListener('click',()=>{const p=$('#bellPop');if(!p.hidden){bellShut(false);return;}
+  if(typeof meShut==='function')meShut(false);p.style.setProperty('--bellTop',Math.round($('#bellBtn').getBoundingClientRect().bottom+6)+'px');
   p.hidden=false;$('#bellBtn').setAttribute('aria-expanded','true');bellList(bellItems(),myMember());(p.querySelector('.bellItem')||p.querySelector('button:not(:disabled)'))?.focus();});
 $('#bellPop').addEventListener('click',e=>{const me=myMember();if(!me)return;
   const tb=e.target.closest('[data-btab]');if(tb){bellTab=tb.dataset.btab;bellList(bellItems(),me);$(`#bellPop [data-btab="${bellTab}"]`)?.focus();return;}

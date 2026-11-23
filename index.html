@@ -1437,6 +1437,22 @@ button.sfProf:hover{background:var(--sunk)}
 .gatePw{position:relative}
 .gateForm .gatePw input{padding-right:64px}
 .gateForm .gatePw .btn{position:absolute;right:4px;top:50%;transform:translateY(-50%);margin:0;height:28px;padding:0 8px}
+/* 로그인 화면: '테스트 시나리오 생성' 도구와 같은 모양 */
+#authGate{padding:16px}
+.gateCard{width:min(400px,100%);max-width:none;padding:28px 24px;gap:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(15,23,42,.08)}
+.gateCard h1{margin:0 0 18px;font-size:19px;font-weight:800;letter-spacing:0;color:var(--fg)}
+.gateCard p{margin:0 0 10px;font-size:13.5px;line-height:1.6;color:var(--ink-soft)}
+.gateTabs{display:flex;gap:4px;margin:0 0 14px;padding:0;border:0;border-bottom:1px solid var(--line);border-radius:0;background:none}
+.gateTabs .gateTab{flex:none;padding:8px 12px;margin-bottom:-1px;border-radius:0;border-bottom:2px solid transparent;font-size:14px;font-weight:600;color:var(--muted)}
+.gateTab[aria-selected="true"]{background:none;box-shadow:none;color:var(--accent-dark);border-bottom-color:var(--accent)}
+.gateForm{gap:6px}
+.gateForm label{margin-top:6px;font-size:12.5px;font-weight:600;color:var(--ink-soft)}
+.gateForm input,.gateForm select{height:40px;padding:0 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:var(--surface);color:var(--fg)}
+.gateForm input:focus,.gateForm select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.gateForm .btn.primary{height:42px;margin-top:12px;justify-content:center}
+.gateCard .err{min-height:18px;margin:6px 0 0;font-size:12.5px;text-align:left;color:var(--bad)}
+.gateLinks{display:flex;justify-content:space-between;gap:8px;margin-top:8px}
+.gateLinks .btn{height:28px;padding:0 10px;font-size:13px}
 @media (max-width:420px){.gateCard{padding:28px 20px}}
 /* 토스(TDS) 디자인 테마: DESIGN.md 토큰을 대시보드 변수에 연결(앞의 기본 값 위에 덮어씀)
    - 색: TDS 팔레트(grey·blue·green·orange·red·teal·purple 50~900)에서만 고름
@@ -1789,7 +1805,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   const emailOk=email=>{if(isStaffEmail(email))return true;$g('#gErr').textContent=`${STAFF_DOMAIN_TEXT} 메일만 쓸 수 있어요.`;return false;};
   const tabs=t=>`<div class="gateTabs" role="tablist" aria-label="로그인 또는 회원가입"><button type="button" role="tab" class="gateTab" data-gt="login" aria-selected="${t==='login'}">로그인</button><button type="button" role="tab" class="gateTab" data-gt="signup" aria-selected="${t==='signup'}">회원가입</button></div>`;
   const emailField=v=>`<label for="gEmail">회사 메일</label><input id="gEmail" type="email" autocomplete="username" placeholder="name@${escH(STAFF_DOMAINS[0])}" value="${escH(v)}">`;
-  const pwField=(id,lab,ac)=>`<label for="${id}">${lab}</label><div class="gatePw"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="btn ghost sm" data-pw="${id}" aria-label="비밀번호 보기" aria-pressed="false">보기</button></div>`;
+  const pwField=(id,lab,ac)=>`<label for="${id}">${lab}</label><input id="${id}" type="password" autocomplete="${ac}">`;
   gate.addEventListener('click',e=>{
     const t=e.target.closest('[data-gt]');if(t){const em=$g('#gEmail')?.value.trim()||'';t.dataset.gt==='login'?loginStep('',em):signupStep(em);return;}
     const b=e.target.closest('[data-pw]');if(b){const i=$g('#'+b.dataset.pw),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'숨기기':'보기';b.setAttribute('aria-pressed',String(show));}
@@ -1800,7 +1816,7 @@ const STAFF_DOMAIN_TEXT=STAFF_DOMAINS.map(d=>'@'+d).join(' · ');
   function loginStep(msg,prefill){
     card(`${tabs('login')}<form id="gLoginF" class="gateForm" novalidate>${emailField(prefill??savedEmail())}${pwField('gPw','비밀번호','current-password')}
       <button class="btn primary" type="submit" id="gGo">로그인</button><p class="err" id="gErr" role="alert">${escH(msg||'')}</p></form>
-      <div class="gateLinks"><button class="btn ghost" type="button" id="gForgot">비밀번호 찾기 · 처음 만들기</button></div>`);
+      <div class="gateLinks"><button class="btn ghost" type="button" id="gForgot">비밀번호 찾기</button></div>`);
     ($g('#gEmail').value?$g('#gPw'):$g('#gEmail')).focus();
     $g('#gForgot').onclick=()=>resetStep($g('#gEmail').value.trim());
     $g('#gLoginF').addEventListener('submit',async e=>{e.preventDefault();$g('#gErr').textContent='';

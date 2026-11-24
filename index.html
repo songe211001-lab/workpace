@@ -363,7 +363,7 @@ a.rms:hover{text-decoration:underline}
 .empty p{margin:0;color:var(--muted);max-width:46ch}
 
 /* modal */
-.overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) 16px 24px;overflow-y:auto;z-index:20}
+.overlay{position:fixed;inset:0;background:var(--overlay);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) 16px 24px;overflow-y:auto;z-index:50} /* 업무 상세 패널(45) 위에 확인 창이 뜨게 */
 .modal{background:var(--surface);border-radius:var(--r-xl);width:100%;max-width:720px;box-shadow:var(--shadow-3)}
 .modal header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--line)}
 .modal header h2{margin:0;font-size:16px;font-weight:700}
@@ -5702,8 +5702,8 @@ function v3Auto(c,thu){
   const deploy=events.filter(e=>e.kind==='deploy'&&e.projectId===c.id).reduce((n,e)=>n+deployDates(e,thu,wed).length,0);
   return {counts:{done:lists.done.length,doing:lists.doing.length,recv:lists.recv.length},deploy,lists};
 }
-// 처음 열 때 그 주 업무로 만드는 본문 초안: ■ 소제목 아래 [파트] 내용(날짜)
-function v3Draft(c,thu){const a=v3Auto(c,thu),pl=t=>`[${partOf(t.part).label}] `,L=[],ln=t=>L.push({t,hl:false});
+// 처음 열 때 그 주 업무로 만드는 본문 초안: ■ 소제목 아래 내용(날짜). [파트] 표시는 붙이지 않음
+function v3Draft(c,thu){const a=v3Auto(c,thu),pl=()=>'',L=[],ln=t=>L.push({t,hl:false});
   ln(`■ 반영 ${a.counts.done}건${a.deploy?`(배포 ${a.deploy}건)`:''}`);a.lists.done.forEach(t=>ln(`${pl(t)}${t.title}(${md(t.doneDate)})`));ln('');
   ln(`■ 진행 ${a.counts.doing}건`);a.lists.doing.forEach(t=>ln(`${pl(t)}${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`));ln('');
   ln(`■ 접수(검토 중) ${a.counts.recv}건`);a.lists.recv.forEach(t=>ln(`${pl(t)}${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`));ln('');
@@ -5716,6 +5716,9 @@ function v3HeadCounts(lines){const o={};lines.forEach(l=>{for(const k in V3_HEAD
 const v3Line={done:t=>`${t.title}(${md(t.doneDate)})`,doing:t=>`${t.title}${t.dueDate?`(~${md(t.dueDate)})`:''}`,recv:t=>`${t.title}${t.requestDate?`(${md(t.requestDate)})`:''}`};
 function v3Merge(c,sec,thu){
   const a=v3Auto(c,thu),seen=new Set(sec.auto||[]);let L=sec.lines.map(l=>({...l})),changed=false;
+  // 예전에 붙던 줄 앞 [파트] 표시를 걷어 냄
+  const ptags=[...PARTS.map(x=>x.label),'미지정'],untag=t=>{const j=t.indexOf(']');return t[0]==='['&&j>0&&ptags.includes(t.slice(1,j))?t.slice(j+1).trimStart():null;};
+  L=L.map(l=>{const t=untag(l.t||'');if(t===null)return l;changed=true;const n={...l,t};if(n.h&&n.h.startsWith(l.t.slice(0,l.t.length-t.length)))n.h=n.h.slice(l.t.length-t.length);return n;});
   const head=k=>L.findIndex(l=>V3_HEAD[k].test(l.t||'')),isHead=l=>/^■/.test(l.t||'')||/^-{5,}/.test(l.t||'');
   const bump=(k,n)=>{const i=head(k);if(i>=0)L[i]={...L[i],t:L[i].t.replace(V3_HEAD[k],(_,x,m,y)=>x+Math.max(0,+m+n)+y),h:undefined};};
   const block=k=>{const i=head(k);if(i<0)return null;let j=i+1;while(j<L.length&&!isHead(L[j]))j++;return [i,j];};
@@ -5724,10 +5727,10 @@ function v3Merge(c,sec,thu){
     seen.add(key);changed=true;
     if(L.slice(b[0]+1,b[1]).some(l=>(l.t||'').includes(t.title)))continue; // 이미 적혀 있음
     // 다른 구분에 자동으로 넣은 그대로 남아 있으면 빼 옴
-    for(const k2 of ['done','doing','recv']){if(k2===k)continue;const b2=block(k2);if(!b2)continue;const pl=`[${partOf(t.part).label}] `;
-      const at=L.findIndex((l,x)=>x>b2[0]&&x<b2[1]&&l.t===pl+v3Line[k2](t));if(at>=0){L.splice(at,1);bump(k2,-1);}}
+    for(const k2 of ['done','doing','recv']){if(k2===k)continue;const b2=block(k2);if(!b2)continue;
+      const at=L.findIndex((l,x)=>x>b2[0]&&x<b2[1]&&l.t===v3Line[k2](t));if(at>=0){L.splice(at,1);bump(k2,-1);}}
     const nb=block(k);let at=nb[1];while(at>nb[0]+1&&!String(L[at-1].t||'').trim())at--;
-    L.splice(at,0,{t:`[${partOf(t.part).label}] `+v3Line[k](t),hl:false});bump(k,1);
+    L.splice(at,0,{t:v3Line[k](t),hl:false});bump(k,1);
   }
   return {lines:L,auto:[...seen],changed};
 }
